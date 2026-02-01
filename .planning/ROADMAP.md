@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Project scaffold + types + API fetch service
+- [x] 01-01-PLAN.md — Project scaffold + types + API fetch service
 - [ ] 01-02-PLAN.md — Schema inference engine (TDD)
 - [ ] 01-03-PLAN.md — UI components + registry + store + app shell wiring
 
