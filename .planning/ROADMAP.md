@@ -29,10 +29,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Objects display as detail views with key-value pairs
   4. Loading states appear during data fetch
   5. Specific error messages show for CORS, network, and parse failures
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] TBD during planning
+- [ ] 01-01-PLAN.md — Project scaffold + types + API fetch service
+- [ ] 01-02-PLAN.md — Schema inference engine (TDD)
+- [ ] 01-03-PLAN.md — UI components + registry + store + app shell wiring
 
 ### Phase 2: Advanced Rendering & OpenAPI
 **Goal**: User can handle complex APIs with nested data, parameters, and OpenAPI spec support
@@ -86,7 +88,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Core Rendering | 0/TBD | Not started | - |
+| 1. Foundation & Core Rendering | 0/3 | Planned | - |
 | 2. Advanced Rendering & OpenAPI | 0/TBD | Not started | - |
 | 3. Configuration System | 0/TBD | Not started | - |
 | 4. Navigation & Polish | 0/TBD | Not started | - |
