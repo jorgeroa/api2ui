@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md — Project scaffold + types + API fetch service
-- [ ] 01-02-PLAN.md — Schema inference engine (TDD)
+- [x] 01-02-PLAN.md — Schema inference engine (TDD)
 - [ ] 01-03-PLAN.md — UI components + registry + store + app shell wiring
 
 ### Phase 2: Advanced Rendering & OpenAPI
@@ -88,7 +88,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Core Rendering | 0/3 | Planned | - |
+| 1. Foundation & Core Rendering | 2/3 | In progress | - |
 | 2. Advanced Rendering & OpenAPI | 0/TBD | Not started | - |
 | 3. Configuration System | 0/TBD | Not started | - |
 | 4. Navigation & Polish | 0/TBD | Not started | - |
