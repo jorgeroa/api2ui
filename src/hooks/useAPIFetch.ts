@@ -35,7 +35,14 @@ export function useAPIFetch() {
   const fetchSpec = async (url: string) => {
     try {
       startFetch()
-      const spec = await parseOpenAPISpec(url)
+      // Fetch spec ourselves to avoid swagger-parser's Node.js HTTP resolver
+      // which uses Buffer (unavailable in browser)
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch spec: ${response.status} ${response.statusText}`)
+      }
+      const specObject = await response.json()
+      const spec = await parseOpenAPISpec(specObject)
       specSuccess(spec)
     } catch (error) {
       if (error instanceof Error) {
