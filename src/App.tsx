@@ -10,6 +10,7 @@ import { ParameterForm } from './components/forms/ParameterForm'
 import { ConfigToggle } from './components/config/ConfigToggle'
 import { ConfigPanel } from './components/config/ConfigPanel'
 import { ThemeApplier } from './components/config/ThemeApplier'
+import { Sidebar } from './components/navigation/Sidebar'
 import 'react-loading-skeleton/dist/skeleton.css'
 
 function App() {
@@ -44,8 +45,19 @@ function App() {
 
   const isConfigureMode = mode === 'configure'
 
+  // Determine if we should show the sidebar
+  const showSidebar = parsedSpec !== null && parsedSpec.operations.length >= 2
+
   return (
     <>
+      {/* Skip to main content link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded"
+      >
+        Skip to main content
+      </a>
+
       {/* Theme and style synchronization */}
       <ThemeApplier />
 
@@ -77,125 +89,209 @@ function App() {
         </div>
       )}
 
-      <div className={`min-h-screen bg-background text-text py-8 px-4 ${isConfigureMode ? 'pt-20' : ''}`}>
-        <div className={`max-w-6xl mx-auto ${isConfigureMode ? 'ring-2 ring-blue-500 ring-offset-4' : ''}`}>
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-text mb-2">api2ui</h1>
-          <p className="text-lg text-gray-600">
-            Paste an API URL, see it rendered
-          </p>
-        </div>
-
-        {/* URL Input */}
-        <div className="flex justify-center mb-8">
-          <URLInput />
-        </div>
-
-        {/* Main Content Area */}
-        <div className="bg-surface rounded-lg shadow-md p-6">
-          {loading && <SkeletonTable />}
-
-          {error && !loading && (
-            <ErrorDisplay error={error} onRetry={handleRetry} />
-          )}
-
-          {/* OpenAPI Spec UI */}
-          {parsedSpec && !loading && !error && (
-            <div className="space-y-6">
-              {/* Spec Info Header */}
-              <div className="border-b border-border pb-4">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-semibold text-text">
-                    {parsedSpec.title}
-                  </h2>
-                  <span className="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded">
-                    v{parsedSpec.version}
-                  </span>
-                  <span className="px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded">
-                    OpenAPI {parsedSpec.specVersion}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-500 mt-1">{parsedSpec.baseUrl}</p>
+      {showSidebar ? (
+        // Sidebar layout for multi-endpoint specs
+        <div className="flex min-h-screen bg-background text-text">
+          <Sidebar
+            parsedSpec={parsedSpec}
+            selectedIndex={selectedOperationIndex}
+            onSelect={setSelectedOperation}
+          />
+          <main
+            id="main-content"
+            className={`flex-1 overflow-y-auto py-8 px-6 ${isConfigureMode ? 'pt-20' : ''}`}
+          >
+            <div className={isConfigureMode ? 'ring-2 ring-blue-500 ring-offset-4' : ''}>
+              {/* Header */}
+              <div className="text-center mb-8">
+                <h1 className="text-4xl font-bold text-text mb-2">api2ui</h1>
+                <p className="text-lg text-gray-600">
+                  Paste an API URL, see it rendered
+                </p>
               </div>
 
-              {/* No GET operations message */}
-              {parsedSpec.operations.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <p className="text-lg">This API spec has no GET endpoints to display.</p>
+              {/* URL Input */}
+              <div className="flex justify-center mb-8">
+                <URLInput />
+              </div>
+
+              {/* Main Content Area */}
+              <div className="bg-surface rounded-lg shadow-md p-6 max-w-6xl mx-auto">
+                {loading && <SkeletonTable />}
+
+                {error && !loading && (
+                  <ErrorDisplay error={error} onRetry={handleRetry} />
+                )}
+
+                {/* OpenAPI Spec UI */}
+                {parsedSpec && !loading && !error && (
+                  <div className="space-y-6">
+                    {/* Spec Info Header */}
+                    <div className="border-b border-border pb-4">
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-xl font-semibold text-text">
+                          {parsedSpec.title}
+                        </h2>
+                        <span className="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded">
+                          v{parsedSpec.version}
+                        </span>
+                        <span className="px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded">
+                          OpenAPI {parsedSpec.specVersion}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">{parsedSpec.baseUrl}</p>
+                    </div>
+
+                    {/* No GET operations message */}
+                    {parsedSpec.operations.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <p className="text-lg">This API spec has no GET endpoints to display.</p>
+                      </div>
+                    )}
+
+                    {/* Parameter Form (no dropdown selector in sidebar mode) */}
+                    {parsedSpec.operations.length > 0 && selectedOperation && (
+                      <>
+                        <ParameterForm
+                          parameters={selectedOperation.parameters}
+                          onSubmit={handleParameterSubmit}
+                          loading={loading}
+                        />
+                      </>
+                    )}
+
+                    {/* Data Rendering (after fetching operation) */}
+                    {schema && data !== null && (
+                      <div className="border-t border-border pt-6">
+                        <h3 className="text-lg font-semibold text-text mb-4">Response Data</h3>
+                        <DynamicRenderer
+                          data={data}
+                          schema={schema.rootType}
+                          path="$"
+                          depth={0}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </main>
+        </div>
+      ) : (
+        // Centered layout for single-endpoint and direct URLs
+        <div className={`min-h-screen bg-background text-text py-8 px-4 ${isConfigureMode ? 'pt-20' : ''}`}>
+          <div className={`max-w-6xl mx-auto ${isConfigureMode ? 'ring-2 ring-blue-500 ring-offset-4' : ''}`}>
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h1 className="text-4xl font-bold text-text mb-2">api2ui</h1>
+              <p className="text-lg text-gray-600">
+                Paste an API URL, see it rendered
+              </p>
+            </div>
+
+            {/* URL Input */}
+            <div className="flex justify-center mb-8">
+              <URLInput />
+            </div>
+
+            {/* Main Content Area */}
+            <div className="bg-surface rounded-lg shadow-md p-6">
+              {loading && <SkeletonTable />}
+
+              {error && !loading && (
+                <ErrorDisplay error={error} onRetry={handleRetry} />
+              )}
+
+              {/* OpenAPI Spec UI */}
+              {parsedSpec && !loading && !error && (
+                <div className="space-y-6">
+                  {/* Spec Info Header */}
+                  <div className="border-b border-border pb-4">
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-xl font-semibold text-text">
+                        {parsedSpec.title}
+                      </h2>
+                      <span className="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded">
+                        v{parsedSpec.version}
+                      </span>
+                      <span className="px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded">
+                        OpenAPI {parsedSpec.specVersion}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">{parsedSpec.baseUrl}</p>
+                  </div>
+
+                  {/* No GET operations message */}
+                  {parsedSpec.operations.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <p className="text-lg">This API spec has no GET endpoints to display.</p>
+                    </div>
+                  )}
+
+                  {/* Operation Selector + Parameter Form */}
+                  {parsedSpec.operations.length > 0 && selectedOperation && (
+                    <>
+                      {parsedSpec.operations.length === 1 && (
+                        <OperationSelector
+                          operations={parsedSpec.operations}
+                          selectedIndex={0}
+                          onSelect={() => {}}
+                        />
+                      )}
+
+                      <ParameterForm
+                        parameters={selectedOperation.parameters}
+                        onSubmit={handleParameterSubmit}
+                        loading={loading}
+                      />
+                    </>
+                  )}
+
+                  {/* Data Rendering (after fetching operation) */}
+                  {schema && data !== null && (
+                    <div className="border-t border-border pt-6">
+                      <h3 className="text-lg font-semibold text-text mb-4">Response Data</h3>
+                      <DynamicRenderer
+                        data={data}
+                        schema={schema.rootType}
+                        path="$"
+                        depth={0}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Operation Selector + Parameter Form */}
-              {parsedSpec.operations.length > 0 && selectedOperation && (
+              {/* Direct API URL flow (existing behavior) */}
+              {!parsedSpec && schema && data !== null && !loading && !error && (
                 <>
-                  {parsedSpec.operations.length > 1 && (
-                    <OperationSelector
-                      operations={parsedSpec.operations}
-                      selectedIndex={selectedOperationIndex}
-                      onSelect={setSelectedOperation}
-                    />
-                  )}
-
-                  {parsedSpec.operations.length === 1 && (
-                    <OperationSelector
-                      operations={parsedSpec.operations}
-                      selectedIndex={0}
-                      onSelect={() => {}}
-                    />
-                  )}
-
-                  <ParameterForm
-                    parameters={selectedOperation.parameters}
-                    onSubmit={handleParameterSubmit}
-                    loading={loading}
-                  />
-                </>
-              )}
-
-              {/* Data Rendering (after fetching operation) */}
-              {schema && data !== null && (
-                <div className="border-t border-border pt-6">
-                  <h3 className="text-lg font-semibold text-text mb-4">Response Data</h3>
                   <DynamicRenderer
                     data={data}
                     schema={schema.rootType}
                     path="$"
                     depth={0}
                   />
+                </>
+              )}
+
+              {/* Welcome Message */}
+              {!loading && !error && !schema && !parsedSpec && (
+                <div className="text-center py-12 text-gray-500">
+                  <p className="text-xl mb-2">Welcome to api2ui</p>
+                  <p className="text-sm">
+                    Enter a JSON API URL above and click Fetch to see your data
+                    rendered as a beautiful UI.
+                  </p>
+                  <p className="text-sm mt-2">
+                    Try one of the example links to get started!
+                  </p>
                 </div>
               )}
             </div>
-          )}
-
-          {/* Direct API URL flow (existing behavior) */}
-          {!parsedSpec && schema && data !== null && !loading && !error && (
-            <>
-              <DynamicRenderer
-                data={data}
-                schema={schema.rootType}
-                path="$"
-                depth={0}
-              />
-            </>
-          )}
-
-          {/* Welcome Message */}
-          {!loading && !error && !schema && !parsedSpec && (
-            <div className="text-center py-12 text-gray-500">
-              <p className="text-xl mb-2">Welcome to api2ui</p>
-              <p className="text-sm">
-                Enter a JSON API URL above and click Fetch to see your data
-                rendered as a beautiful UI.
-              </p>
-              <p className="text-sm mt-2">
-                Try one of the example links to get started!
-              </p>
-            </div>
-          )}
+          </div>
         </div>
-        </div>
-      </div>
+      )}
 
       {/* Floating config toggle and panel */}
       <ConfigToggle />
