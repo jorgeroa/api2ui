@@ -1,4 +1,6 @@
-import type { ParsedSpec } from './types'
+import SwaggerParser from '@apidevtools/swagger-parser'
+import type { OpenAPIV3, OpenAPIV2 } from 'openapi-types'
+import type { ParsedSpec, ParsedOperation, ParsedParameter } from './types'
 
 /**
  * Parse an OpenAPI/Swagger spec URL or object and extract GET operations.
@@ -9,6 +11,185 @@ import type { ParsedSpec } from './types'
 export async function parseOpenAPISpec(
   specUrlOrObject: string | object
 ): Promise<ParsedSpec> {
-  // Stub implementation - tests will fail
-  throw new Error('Not implemented')
+  try {
+    // Dereference the spec to resolve all $refs
+    const apiRaw = await SwaggerParser.dereference(specUrlOrObject)
+    const api = apiRaw as OpenAPIV3.Document | OpenAPIV2.Document
+
+    // Detect spec version
+    const isOpenAPI3 = 'openapi' in api
+    const specVersion = isOpenAPI3
+      ? (api as OpenAPIV3.Document).openapi
+      : (api as OpenAPIV2.Document).swagger
+
+    // Extract metadata
+    const title = api.info.title
+    const version = api.info.version
+
+    // Extract base URL
+    const baseUrl = isOpenAPI3
+      ? extractOpenAPI3BaseUrl(api as OpenAPIV3.Document)
+      : extractSwagger2BaseUrl(api as OpenAPIV2.Document)
+
+    // Extract operations
+    const operations = extractOperations(api, isOpenAPI3)
+
+    return {
+      title,
+      version,
+      specVersion,
+      baseUrl,
+      operations,
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    const urlInfo = typeof specUrlOrObject === 'string' ? ` from ${specUrlOrObject}` : ''
+    throw new Error(`Failed to parse OpenAPI spec${urlInfo}: ${message}`)
+  }
+}
+
+/**
+ * Extract base URL from OpenAPI 3.x servers array
+ */
+function extractOpenAPI3BaseUrl(api: OpenAPIV3.Document): string {
+  return api.servers?.[0]?.url ?? ''
+}
+
+/**
+ * Extract base URL from Swagger 2.0 host, basePath, and schemes
+ */
+function extractSwagger2BaseUrl(api: OpenAPIV2.Document): string {
+  const scheme = api.schemes?.[0] ?? 'https'
+  const host = api.host ?? ''
+  const basePath = api.basePath ?? ''
+  return `${scheme}://${host}${basePath}`
+}
+
+/**
+ * Extract all GET operations from the spec
+ */
+function extractOperations(
+  api: OpenAPIV3.Document | OpenAPIV2.Document,
+  isOpenAPI3: boolean
+): ParsedOperation[] {
+  const operations: ParsedOperation[] = []
+
+  if (!api.paths) {
+    return operations
+  }
+
+  for (const [path, pathItem] of Object.entries(api.paths)) {
+    if (!pathItem) continue
+
+    // Extract path-level parameters (these apply to all operations on this path)
+    const pathLevelParams = 'parameters' in pathItem ? pathItem.parameters ?? [] : []
+
+    // Only extract GET operations
+    if ('get' in pathItem && pathItem.get) {
+      const operation = pathItem.get as OpenAPIV3.OperationObject | OpenAPIV2.OperationObject
+
+      // Merge path-level and operation-level parameters
+      const operationParams = operation.parameters ?? []
+      const allParams = [...pathLevelParams, ...operationParams]
+
+      const parsedParams = allParams.map(param =>
+        parseParameter(param as OpenAPIV3.ParameterObject | OpenAPIV2.Parameter, isOpenAPI3)
+      )
+
+      // Extract response schema
+      const responseSchema = extractResponseSchema(operation, isOpenAPI3)
+
+      operations.push({
+        path,
+        method: 'GET',
+        operationId: operation.operationId,
+        summary: operation.summary,
+        description: operation.description,
+        parameters: parsedParams,
+        responseSchema,
+        tags: operation.tags ?? [],
+      })
+    }
+  }
+
+  return operations
+}
+
+/**
+ * Parse a parameter from OpenAPI 3.x or Swagger 2.0 format
+ */
+function parseParameter(
+  param: OpenAPIV3.ParameterObject | OpenAPIV2.Parameter,
+  isOpenAPI3: boolean
+): ParsedParameter {
+  if (isOpenAPI3) {
+    const p = param as OpenAPIV3.ParameterObject
+    const schema = p.schema as OpenAPIV3.SchemaObject | undefined
+
+    return {
+      name: p.name,
+      in: p.in as 'query' | 'path' | 'header' | 'cookie',
+      required: p.required ?? p.in === 'path',
+      description: p.description ?? '',
+      schema: {
+        type: schema?.type?.toString() ?? 'string',
+        format: schema?.format,
+        enum: schema?.enum,
+        default: schema?.default,
+        minimum: schema?.minimum,
+        maximum: schema?.maximum,
+        maxLength: schema?.maxLength,
+      },
+    }
+  } else {
+    // Swagger 2.0 has type/format at the parameter level, not in schema
+    const p = param as OpenAPIV2.Parameter
+    const inParam = p as OpenAPIV2.InBodyParameterObject |
+                     OpenAPIV2.GeneralParameterObject
+
+    // For non-body parameters, type is at root level
+    const type = 'type' in inParam ? inParam.type : 'string'
+    const format = 'format' in inParam ? inParam.format : undefined
+    const enumValues = 'enum' in inParam ? inParam.enum : undefined
+    const defaultValue = 'default' in inParam ? inParam.default : undefined
+    const minimum = 'minimum' in inParam ? inParam.minimum : undefined
+    const maximum = 'maximum' in inParam ? inParam.maximum : undefined
+    const maxLength = 'maxLength' in inParam ? inParam.maxLength : undefined
+
+    return {
+      name: p.name,
+      in: p.in as 'query' | 'path' | 'header' | 'cookie',
+      required: p.required ?? p.in === 'path',
+      description: p.description ?? '',
+      schema: {
+        type: type?.toString() ?? 'string',
+        format,
+        enum: enumValues,
+        default: defaultValue,
+        minimum,
+        maximum,
+        maxLength,
+      },
+    }
+  }
+}
+
+/**
+ * Extract response schema from 200 response
+ */
+function extractResponseSchema(
+  operation: OpenAPIV3.OperationObject | OpenAPIV2.OperationObject,
+  isOpenAPI3: boolean
+): unknown {
+  const response200 = operation.responses?.['200']
+  if (!response200) return undefined
+
+  if (isOpenAPI3) {
+    const resp = response200 as OpenAPIV3.ResponseObject
+    const content = resp.content?.['application/json']
+    return content?.schema
+  } else {
+    const resp = response200 as OpenAPIV2.ResponseObject
+    return resp.schema
+  }
 }
