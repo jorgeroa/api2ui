@@ -82,10 +82,11 @@ Plans:
   2. Landing page displays URL input field and clickable example APIs
   3. User can click example API and immediately see rendered result
   4. Navigation between endpoints preserves configurations
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] TBD during planning
+- [ ] 04-01-PLAN.md — Sidebar navigation with tag-based grouping for multi-endpoint specs
+- [ ] 04-02-PLAN.md — Landing page example cards with auto-fetch on click
 
 ## Progress
 
@@ -97,7 +98,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Foundation & Core Rendering | 3/3 | Complete | 2026-02-01 |
 | 2. Advanced Rendering & OpenAPI | 3/3 | Complete | 2026-02-01 |
 | 3. Configuration System | 5/5 | Complete | 2026-02-02 |
-| 4. Navigation & Polish | 0/TBD | Not started | - |
+| 4. Navigation & Polish | 0/2 | Not started | - |
 
 ---
 *Created: 2026-02-01*
