@@ -2,6 +2,7 @@ import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { useConfigStore } from '../../store/configStore'
 import { useAppStore } from '../../store/appStore'
 import { FieldListPanel } from './FieldListPanel'
+import { ComponentOverridePanel } from './ComponentOverridePanel'
 
 export function ConfigPanel() {
   const { panelOpen, togglePanel, resetConfig } = useConfigStore()
@@ -95,12 +96,10 @@ export function ConfigPanel() {
 
             {/* Components Section */}
             <section>
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
                 Components
               </h3>
-              <p className="text-sm text-gray-500">
-                Component type overrides
-              </p>
+              <ComponentOverridePanel />
             </section>
 
             {/* Style Section */}
