@@ -86,7 +86,7 @@ Plans:
 
 Plans:
 - [ ] 04-01-PLAN.md — Sidebar navigation with tag-based grouping for multi-endpoint specs
-- [ ] 04-02-PLAN.md — Landing page example cards with auto-fetch on click
+- [x] 04-02-PLAN.md — Landing page example cards with auto-fetch on click
 
 ## Progress
 
@@ -98,7 +98,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Foundation & Core Rendering | 3/3 | Complete | 2026-02-01 |
 | 2. Advanced Rendering & OpenAPI | 3/3 | Complete | 2026-02-01 |
 | 3. Configuration System | 5/5 | Complete | 2026-02-02 |
-| 4. Navigation & Polish | 0/2 | Not started | - |
+| 4. Navigation & Polish | 1/2 | In progress | - |
 
 ---
 *Created: 2026-02-01*
