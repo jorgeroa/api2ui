@@ -64,10 +64,14 @@ Plans:
   4. Developer can map field names to custom display labels
   5. Developer can customize CSS styling
   6. Configurations persist in local storage and reload on page refresh
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] TBD during planning
+- [ ] 03-01-PLAN.md — Config store with persist middleware + theme CSS variables
+- [ ] 03-02-PLAN.md — Configure toggle button + slide-out panel + theme applier
+- [ ] 03-03-PLAN.md — Field visibility controls + label editing (inline + panel)
+- [ ] 03-04-PLAN.md — Component type overrides + preview picker + new renderers
+- [ ] 03-05-PLAN.md — Drag-and-drop reordering + style customization panel
 
 ### Phase 4: Navigation & Polish
 **Goal**: User can navigate multi-endpoint APIs seamlessly and new users can discover value through polished landing page with examples
@@ -92,7 +96,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Foundation & Core Rendering | 3/3 | Complete | 2026-02-01 |
 | 2. Advanced Rendering & OpenAPI | 3/3 | Complete | 2026-02-01 |
-| 3. Configuration System | 0/TBD | Not started | - |
+| 3. Configuration System | 0/5 | In Progress | - |
 | 4. Navigation & Polish | 0/TBD | Not started | - |
 
 ---
