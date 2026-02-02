@@ -3,6 +3,7 @@ import { useConfigStore } from '../../store/configStore'
 import { useAppStore } from '../../store/appStore'
 import { FieldListPanel } from './FieldListPanel'
 import { ComponentOverridePanel } from './ComponentOverridePanel'
+import { StylePanel } from './StylePanel'
 
 export function ConfigPanel() {
   const { panelOpen, togglePanel, resetConfig } = useConfigStore()
@@ -104,12 +105,10 @@ export function ConfigPanel() {
 
             {/* Style Section */}
             <section>
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
                 Style
               </h3>
-              <p className="text-sm text-gray-500">
-                Theme and styling
-              </p>
+              <StylePanel />
             </section>
           </div>
 
