@@ -1,14 +1,46 @@
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { useConfigStore } from '../../store/configStore'
+import { useAppStore } from '../../store/appStore'
+import { FieldListPanel } from './FieldListPanel'
 
 export function ConfigPanel() {
   const { panelOpen, togglePanel, resetConfig } = useConfigStore()
+  const { schema } = useAppStore()
 
   const handleReset = () => {
     if (confirm('Reset all configurations? This will clear all customizations.')) {
       resetConfig()
     }
   }
+
+  // Extract field list from schema
+  const extractFields = (): Array<{ path: string; name: string }> => {
+    if (!schema) return []
+
+    const fields: Array<{ path: string; name: string }> = []
+
+    if (schema.rootType.kind === 'array' && schema.rootType.items.kind === 'object') {
+      // Array of objects: list the item fields with path $[].fieldName
+      for (const [fieldName] of schema.rootType.items.fields.entries()) {
+        fields.push({
+          path: `$[].${fieldName}`,
+          name: fieldName,
+        })
+      }
+    } else if (schema.rootType.kind === 'object') {
+      // Object: list the fields directly with path $.fieldName
+      for (const [fieldName] of schema.rootType.fields.entries()) {
+        fields.push({
+          path: `$.${fieldName}`,
+          name: fieldName,
+        })
+      }
+    }
+
+    return fields
+  }
+
+  const fields = extractFields()
 
   return (
     <Dialog open={panelOpen} onClose={togglePanel} className="relative z-50">
@@ -49,12 +81,16 @@ export function ConfigPanel() {
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
             {/* Fields Section */}
             <section>
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
                 Fields
               </h3>
-              <p className="text-sm text-gray-500">
-                Field visibility and labels
-              </p>
+              {fields.length > 0 ? (
+                <FieldListPanel fields={fields} />
+              ) : (
+                <p className="text-sm text-gray-500 italic">
+                  No data loaded. Fetch an API to configure fields.
+                </p>
+              )}
             </section>
 
             {/* Components Section */}

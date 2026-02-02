@@ -2,6 +2,8 @@ import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react
 import type { RendererProps } from '../../types/components'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DynamicRenderer } from '../DynamicRenderer'
+import { useConfigStore } from '../../store/configStore'
+import { FieldControls } from '../config/FieldControls'
 
 /** Chevron icon that rotates when disclosure is open */
 function ChevronIcon() {
@@ -30,6 +32,8 @@ function getFieldSummary(fieldDef: { type: { kind: string } }, value: unknown): 
 }
 
 export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
+  const { mode, fieldConfigs } = useConfigStore()
+
   if (schema.kind !== 'object') {
     return <div className="text-red-500">DetailRenderer expects object schema</div>
   }
@@ -39,29 +43,64 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
   }
 
   const obj = data as Record<string, unknown>
-  const fields = Array.from(schema.fields.entries())
+  const allFields = Array.from(schema.fields.entries())
 
-  if (fields.length === 0) {
+  if (allFields.length === 0) {
     return <div className="text-gray-500 italic">Empty object</div>
+  }
+
+  // Apply field ordering: sort by order if set, maintain original order otherwise
+  const sortedFields = [...allFields].sort((a, b) => {
+    const pathA = `${path}.${a[0]}`
+    const pathB = `${path}.${b[0]}`
+    const configA = fieldConfigs[pathA]
+    const configB = fieldConfigs[pathB]
+
+    const orderA = configA?.order ?? Number.MAX_SAFE_INTEGER
+    const orderB = configB?.order ?? Number.MAX_SAFE_INTEGER
+
+    if (orderA !== orderB) {
+      return orderA - orderB
+    }
+
+    // Preserve original order for fields with same/no order
+    return allFields.findIndex(f => f[0] === a[0]) - allFields.findIndex(f => f[0] === b[0])
+  })
+
+  // Filter fields based on visibility in View mode
+  const isConfigureMode = mode === 'configure'
+  const visibleFields = isConfigureMode
+    ? sortedFields  // Show all in Configure mode
+    : sortedFields.filter(([fieldName]) => {
+        const fieldPath = `${path}.${fieldName}`
+        const config = fieldConfigs[fieldPath]
+        return config?.visible !== false
+      })
+
+  if (visibleFields.length === 0 && !isConfigureMode) {
+    return <div className="text-gray-500 italic">All fields hidden</div>
   }
 
   return (
     <div className="space-y-3 border border-gray-200 rounded-lg p-4">
-      {fields.map(([fieldName, fieldDef]) => {
+      {visibleFields.map(([fieldName, fieldDef]) => {
         const value = obj[fieldName]
         const fieldPath = `${path}.${fieldName}`
+        const config = fieldConfigs[fieldPath]
+        const isVisible = config?.visible !== false
 
-        // Format label: capitalize first letter, replace underscores with spaces
-        const label = fieldName
+        // Format label: use custom label if set, otherwise auto-format
+        const defaultLabel = fieldName
           .replace(/_/g, ' ')
           .replace(/\b\w/g, (char) => char.toUpperCase())
+        const displayLabel = config?.label || defaultLabel
 
         // Render primitive fields inline
         if (fieldDef.type.kind === 'primitive') {
-          return (
-            <div key={fieldName} className="grid grid-cols-[auto_1fr] gap-x-6">
+          const fieldContent = (
+            <div className="grid grid-cols-[auto_1fr] gap-x-6">
               <div className="text-sm font-medium text-gray-600 py-1">
-                {label}:
+                {displayLabel}:
               </div>
               <div className="py-1">
                 <PrimitiveRenderer
@@ -73,14 +112,31 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
               </div>
             </div>
           )
+
+          // In Configure mode: wrap with FieldControls
+          if (isConfigureMode) {
+            return (
+              <FieldControls
+                key={fieldName}
+                fieldPath={fieldPath}
+                fieldName={fieldName}
+                isVisible={isVisible}
+                customLabel={config?.label}
+              >
+                {fieldContent}
+              </FieldControls>
+            )
+          }
+
+          return <div key={fieldName}>{fieldContent}</div>
         }
 
         // Render nested objects/arrays as collapsible sections
-        return (
-          <Disclosure key={fieldName} defaultOpen={depth === 0}>
+        const nestedContent = (
+          <Disclosure defaultOpen={depth === 0}>
             <DisclosureButton className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
               <ChevronIcon />
-              {label} {getFieldSummary(fieldDef, value)}
+              {displayLabel} {getFieldSummary(fieldDef, value)}
             </DisclosureButton>
             <DisclosurePanel className="ml-4 mt-2 border-l-2 border-gray-200 pl-4">
               <DynamicRenderer
@@ -92,6 +148,23 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
             </DisclosurePanel>
           </Disclosure>
         )
+
+        // In Configure mode: wrap with FieldControls
+        if (isConfigureMode) {
+          return (
+            <FieldControls
+              key={fieldName}
+              fieldPath={fieldPath}
+              fieldName={fieldName}
+              isVisible={isVisible}
+              customLabel={config?.label}
+            >
+              {nestedContent}
+            </FieldControls>
+          )
+        }
+
+        return <div key={fieldName}>{nestedContent}</div>
       })}
     </div>
   )

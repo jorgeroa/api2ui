@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { RendererProps } from '../../types/components'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DetailModal } from '../detail/DetailModal'
+import { useConfigStore } from '../../store/configStore'
+import { FieldControls } from '../config/FieldControls'
 
 /** Compact inline display for non-primitive values in table cells */
 function CompactValue({ data }: { data: unknown }) {
@@ -37,6 +39,7 @@ function CompactValue({ data }: { data: unknown }) {
  */
 export function TableRenderer({ data, schema, path, depth }: RendererProps) {
   const [selectedItem, setSelectedItem] = useState<unknown | null>(null)
+  const { mode, fieldConfigs } = useConfigStore()
 
   if (schema.kind !== 'array') {
     return <div className="text-red-500">TableRenderer expects array schema</div>
@@ -56,30 +59,83 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
     return <div className="text-red-500">TableRenderer expects array of objects</div>
   }
 
-  const columns = Array.from(schema.items.fields.entries())
+  const allColumns = Array.from(schema.items.fields.entries())
 
-  // Format column headers
-  const columnHeaders = columns.map(([fieldName]) =>
-    fieldName
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, (char) => char.toUpperCase())
-  )
+  // Apply field ordering: sort by order if set, maintain original order otherwise
+  const sortedColumns = [...allColumns].sort((a, b) => {
+    const pathA = `$[].${a[0]}`
+    const pathB = `$[].${b[0]}`
+    const configA = fieldConfigs[pathA]
+    const configB = fieldConfigs[pathB]
 
-  const columnWidth = Math.max(150, Math.floor(900 / columns.length))
+    const orderA = configA?.order ?? Number.MAX_SAFE_INTEGER
+    const orderB = configB?.order ?? Number.MAX_SAFE_INTEGER
+
+    if (orderA !== orderB) {
+      return orderA - orderB
+    }
+
+    // Preserve original order for fields with same/no order
+    return allColumns.findIndex(col => col[0] === a[0]) - allColumns.findIndex(col => col[0] === b[0])
+  })
+
+  // Filter columns based on visibility in View mode
+  const isConfigureMode = mode === 'configure'
+  const visibleColumns = isConfigureMode
+    ? sortedColumns  // Show all in Configure mode
+    : sortedColumns.filter(([fieldName]) => {
+        const fieldPath = `$[].${fieldName}`
+        const config = fieldConfigs[fieldPath]
+        return config?.visible !== false
+      })
+
+  if (visibleColumns.length === 0 && !isConfigureMode) {
+    return <div className="text-gray-500 italic p-4">All fields hidden</div>
+  }
+
+  const columnWidth = Math.max(150, Math.floor(900 / visibleColumns.length))
 
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden">
       {/* Header - sticky positioning keeps it visible while scrolling */}
       <div className="flex bg-gray-100 border-b-2 border-gray-300 font-semibold sticky top-0 z-10">
-        {columnHeaders.map((header, index) => (
-          <div
-            key={index}
-            className="px-4 py-3 border-r border-gray-300 text-sm"
-            style={{ width: columnWidth, minWidth: columnWidth }}
-          >
-            {header}
-          </div>
-        ))}
+        {visibleColumns.map(([fieldName]) => {
+          const fieldPath = `$[].${fieldName}`
+          const config = fieldConfigs[fieldPath]
+          const isVisible = config?.visible !== false
+
+          // Format column header: use custom label if set, otherwise auto-format
+          const defaultLabel = fieldName
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, (char) => char.toUpperCase())
+          const displayLabel = config?.label || defaultLabel
+
+          const headerContent = (
+            <div
+              className="px-4 py-3 border-r border-gray-300 text-sm"
+              style={{ width: columnWidth, minWidth: columnWidth }}
+            >
+              {displayLabel}
+            </div>
+          )
+
+          // In Configure mode: wrap with FieldControls
+          if (isConfigureMode) {
+            return (
+              <FieldControls
+                key={fieldName}
+                fieldPath={fieldPath}
+                fieldName={fieldName}
+                isVisible={isVisible}
+                customLabel={config?.label}
+              >
+                {headerContent}
+              </FieldControls>
+            )
+          }
+
+          return <div key={fieldName}>{headerContent}</div>
+        })}
       </div>
 
       {/* Scrollable body */}
@@ -96,7 +152,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
                 isEven ? 'bg-white' : 'bg-gray-50'
               }`}
             >
-              {columns.map(([fieldName, fieldDef]) => {
+              {visibleColumns.map(([fieldName, fieldDef]) => {
                 const value = row[fieldName]
                 const cellPath = `${path}[${rowIndex}].${fieldName}`
 
