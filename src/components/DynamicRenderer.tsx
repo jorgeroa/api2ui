@@ -1,6 +1,7 @@
 import type { TypeSignature } from '../types/schema'
 import { getComponent } from './registry/ComponentRegistry'
 import { JsonFallback } from './renderers/JsonFallback'
+import { useConfigStore } from '../store/configStore'
 
 interface DynamicRendererProps {
   data: unknown
@@ -17,6 +18,8 @@ export function DynamicRenderer({
   path = '$',
   depth = 0,
 }: DynamicRendererProps) {
+  const { fieldConfigs, mode } = useConfigStore()
+
   // Guard against excessive depth
   if (depth > MAX_DEPTH) {
     return (
@@ -29,15 +32,29 @@ export function DynamicRenderer({
     )
   }
 
+  // Look up component override for this path
+  const config = fieldConfigs[path]
+  const override = config?.componentType
+
   // Get the appropriate component from the registry
-  const Component = getComponent(schema)
+  const Component = getComponent(schema, override)
+
+  // In Configure mode, show component type badge/indicator
+  const isConfigureMode = mode === 'configure'
 
   return (
-    <Component
-      data={data}
-      schema={schema}
-      path={path}
-      depth={depth}
-    />
+    <div className="relative">
+      {isConfigureMode && override && (
+        <div className="absolute top-0 right-0 z-10 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-bl font-medium">
+          {override}
+        </div>
+      )}
+      <Component
+        data={data}
+        schema={schema}
+        path={path}
+        depth={depth}
+      />
+    </div>
   )
 }
