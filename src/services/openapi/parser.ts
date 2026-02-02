@@ -122,55 +122,56 @@ function parseParameter(
   param: OpenAPIV3.ParameterObject | OpenAPIV2.Parameter,
   isOpenAPI3: boolean
 ): ParsedParameter {
+  const name = param.name
+  const location = param.in as 'query' | 'path' | 'header' | 'cookie'
+  const required = param.required ?? location === 'path'
+  const description = param.description ?? ''
+
+  // Extract schema - different structure between versions
+  let type: string | string[] | undefined
+  let format: string | undefined
+  let enumValues: unknown[] | undefined
+  let defaultValue: unknown
+  let minimum: number | undefined
+  let maximum: number | undefined
+  let maxLength: number | undefined
+
   if (isOpenAPI3) {
     const p = param as OpenAPIV3.ParameterObject
     const schema = p.schema as OpenAPIV3.SchemaObject | undefined
-
-    return {
-      name: p.name,
-      in: p.in as 'query' | 'path' | 'header' | 'cookie',
-      required: p.required ?? p.in === 'path',
-      description: p.description ?? '',
-      schema: {
-        type: schema?.type?.toString() ?? 'string',
-        format: schema?.format,
-        enum: schema?.enum,
-        default: schema?.default,
-        minimum: schema?.minimum,
-        maximum: schema?.maximum,
-        maxLength: schema?.maxLength,
-      },
-    }
+    type = schema?.type
+    format = schema?.format
+    enumValues = schema?.enum
+    defaultValue = schema?.default
+    minimum = schema?.minimum
+    maximum = schema?.maximum
+    maxLength = schema?.maxLength
   } else {
-    // Swagger 2.0 has type/format at the parameter level, not in schema
-    const p = param as OpenAPIV2.Parameter
-    const inParam = p as OpenAPIV2.InBodyParameterObject |
-                     OpenAPIV2.GeneralParameterObject
+    // Swagger 2.0 has type/format at parameter level
+    const p = param as OpenAPIV2.GeneralParameterObject
+    type = 'type' in p ? p.type : undefined
+    format = 'format' in p ? p.format : undefined
+    enumValues = 'enum' in p ? p.enum : undefined
+    defaultValue = 'default' in p ? p.default : undefined
+    minimum = 'minimum' in p ? p.minimum : undefined
+    maximum = 'maximum' in p ? p.maximum : undefined
+    maxLength = 'maxLength' in p ? p.maxLength : undefined
+  }
 
-    // For non-body parameters, type is at root level
-    const type = 'type' in inParam ? inParam.type : 'string'
-    const format = 'format' in inParam ? inParam.format : undefined
-    const enumValues = 'enum' in inParam ? inParam.enum : undefined
-    const defaultValue = 'default' in inParam ? inParam.default : undefined
-    const minimum = 'minimum' in inParam ? inParam.minimum : undefined
-    const maximum = 'maximum' in inParam ? inParam.maximum : undefined
-    const maxLength = 'maxLength' in inParam ? inParam.maxLength : undefined
-
-    return {
-      name: p.name,
-      in: p.in as 'query' | 'path' | 'header' | 'cookie',
-      required: p.required ?? p.in === 'path',
-      description: p.description ?? '',
-      schema: {
-        type: type?.toString() ?? 'string',
-        format,
-        enum: enumValues,
-        default: defaultValue,
-        minimum,
-        maximum,
-        maxLength,
-      },
-    }
+  return {
+    name,
+    in: location,
+    required,
+    description,
+    schema: {
+      type: type?.toString() ?? 'string',
+      format,
+      enum: enumValues,
+      default: defaultValue,
+      minimum,
+      maximum,
+      maxLength,
+    },
   }
 }
 
