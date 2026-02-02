@@ -10,17 +10,17 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 ## Current Position
 
 Phase: 2 of 4 (Advanced Rendering & OpenAPI)
-Plan: 1 of TBD in current phase
+Plan: 2 of TBD in current phase
 Status: In progress
-Last activity: 2026-02-01 — Completed 02-01-PLAN.md (Master-detail navigation)
+Last activity: 2026-02-01 — Completed 02-02-PLAN.md (OpenAPI spec parser)
 
-Progress: [███░░░░░░░] 28%
+Progress: [███░░░░░░░] 30%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 7 min
+- Total plans completed: 5
+- Average duration: 6 min
 - Total execution time: 0.5 hours
 
 **By Phase:**
@@ -28,11 +28,11 @@ Progress: [███░░░░░░░] 28%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 3 | 24 min | 8 min |
-| 2 | 1 | 3 min | 3 min |
+| 2 | 2 | 6.5 min | 3.25 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (5min), 01-02 (4min), 01-03 (15min), 02-01 (3min)
-- Trend: Phase 2 first plan very fast, building on solid Phase 1 foundation
+- Last 5 plans: 01-02 (4min), 01-03 (15min), 02-01 (3min), 02-02 (3.5min)
+- Trend: Phase 2 maintaining fast velocity with TDD and focused tasks
 
 *Updated after each plan completion*
 
@@ -70,6 +70,14 @@ Recent decisions affecting current work:
 - Default Disclosure open at depth=0, closed at deeper levels
 - Smart title extraction checks name, title, label, id fields in order
 
+**From 02-02 (OpenAPI Spec Parser):**
+- Use @apidevtools/swagger-parser for spec dereference ($ref resolution)
+- Extract only GET operations in v1 (read-only API explorer)
+- Merge path-level and operation-level parameters with operation precedence
+- Default path parameters to required=true regardless of spec declaration
+- Extract base URL from servers[0] (3.x) or scheme+host+basePath (2.0)
+- TDD pattern: RED (failing tests) → GREEN (implementation) → REFACTOR (cleanup)
+
 ### Pending Todos
 
 None yet.
@@ -84,7 +92,7 @@ None yet.
 
 **Research-flagged items for Phase 2:**
 - Virtualization library choice needs validation for performance
-- OpenAPI spec parsing library selection
+- ~~OpenAPI spec parsing library selection~~ (RESOLVED: @apidevtools/swagger-parser chosen and implemented)
 
 ## Phase 1 Verification
 
@@ -98,7 +106,7 @@ Non-blocking items noted:
 ## Session Continuity
 
 Last session: 2026-02-01 (Phase 2 execution)
-Stopped at: Completed 02-01-PLAN.md (Master-detail navigation)
+Stopped at: Completed 02-02-PLAN.md (OpenAPI spec parser)
 Resume file: None
 
 ---
