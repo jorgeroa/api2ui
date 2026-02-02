@@ -13,7 +13,7 @@ Transform any API into a visual interface through four focused phases: establish
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Core Rendering** - Prove the pipeline: URL → schema → UI
-- [ ] **Phase 2: Advanced Rendering & OpenAPI** - Handle complexity and industry standards
+- [x] **Phase 2: Advanced Rendering & OpenAPI** - Handle complexity and industry standards
 - [ ] **Phase 3: Configuration System** - Enable customization and persistence
 - [ ] **Phase 4: Navigation & Polish** - Complete the user experience
 
@@ -49,9 +49,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Master-detail modal + collapsible nested sections
-- [ ] 02-02-PLAN.md — OpenAPI parser service (TDD)
-- [ ] 02-03-PLAN.md — Parameter forms + store integration + app wiring
+- [x] 02-01-PLAN.md — Master-detail modal + collapsible nested sections
+- [x] 02-02-PLAN.md — OpenAPI parser service (TDD)
+- [x] 02-03-PLAN.md — Parameter forms + store integration + app wiring
 
 ### Phase 3: Configuration System
 **Goal**: User can customize component types, visibility, labels, and styling with configurations persisting across sessions
@@ -91,7 +91,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Core Rendering | 3/3 | Complete | 2026-02-01 |
-| 2. Advanced Rendering & OpenAPI | 0/3 | Planned | - |
+| 2. Advanced Rendering & OpenAPI | 3/3 | Complete | 2026-02-01 |
 | 3. Configuration System | 0/TBD | Not started | - |
 | 4. Navigation & Polish | 0/TBD | Not started | - |
 

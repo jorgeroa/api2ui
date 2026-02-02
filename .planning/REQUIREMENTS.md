@@ -10,7 +10,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Core Engine
 
 - [x] **ENG-01**: App infers API structure by analyzing response JSON (type detection, nesting, arrays)
-- [ ] **ENG-02**: App parses OpenAPI/Swagger spec when user provides spec URL
+- [x] **ENG-02**: App parses OpenAPI/Swagger spec when user provides spec URL
 - [x] **ENG-03**: Engine maps detected types to default UI components (array→table, object→detail, string→text, number→number, enum→dropdown, bool→toggle)
 - [x] **ENG-04**: App fetches live data from API on each page load (direct browser fetch, CORS-enabled APIs only)
 
@@ -18,9 +18,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **RND-01**: Arrays render as table, card list, or list view (user-selectable)
 - [x] **RND-02**: Objects render as detail/key-value view
-- [ ] **RND-03**: Master-detail navigation: click item in collection → detail view (modal or panel)
-- [ ] **RND-04**: Nested data handled with configurable max depth, deeper levels collapsed
-- [ ] **RND-05**: API parameters render as form controls (required params prominent, optional expandable)
+- [x] **RND-03**: Master-detail navigation: click item in collection → detail view (modal or panel)
+- [x] **RND-04**: Nested data handled with configurable max depth, deeper levels collapsed
+- [x] **RND-05**: API parameters render as form controls (required params prominent, optional expandable)
 
 ### Configuration
 
@@ -84,14 +84,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | ENG-01 | Phase 1 | Complete |
-| ENG-02 | Phase 2 | Pending |
+| ENG-02 | Phase 2 | Complete |
 | ENG-03 | Phase 1 | Complete |
 | ENG-04 | Phase 1 | Complete |
 | RND-01 | Phase 1 | Complete |
 | RND-02 | Phase 1 | Complete |
-| RND-03 | Phase 2 | Pending |
-| RND-04 | Phase 2 | Pending |
-| RND-05 | Phase 2 | Pending |
+| RND-03 | Phase 2 | Complete |
+| RND-04 | Phase 2 | Complete |
+| RND-05 | Phase 2 | Complete |
 | CFG-01 | Phase 3 | Pending |
 | CFG-02 | Phase 3 | Pending |
 | CFG-03 | Phase 3 | Pending |
@@ -111,4 +111,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-01*
-*Last updated: 2026-02-01 after roadmap creation*
+*Last updated: 2026-02-01 after Phase 2 completion*
