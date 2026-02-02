@@ -46,10 +46,12 @@ Plans:
   3. Nested arrays render as sub-tables within detail views
   4. Deep nesting is handled with configurable max depth (deeper levels collapsed)
   5. API parameters render as form controls with required params prominent and optional params expandable
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] TBD during planning
+- [ ] 02-01-PLAN.md — Master-detail modal + collapsible nested sections
+- [ ] 02-02-PLAN.md — OpenAPI parser service (TDD)
+- [ ] 02-03-PLAN.md — Parameter forms + store integration + app wiring
 
 ### Phase 3: Configuration System
 **Goal**: User can customize component types, visibility, labels, and styling with configurations persisting across sessions
@@ -89,7 +91,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Core Rendering | 3/3 | Complete | 2026-02-01 |
-| 2. Advanced Rendering & OpenAPI | 0/TBD | Not started | - |
+| 2. Advanced Rendering & OpenAPI | 0/3 | Planned | - |
 | 3. Configuration System | 0/TBD | Not started | - |
 | 4. Navigation & Polish | 0/TBD | Not started | - |
 
