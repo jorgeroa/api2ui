@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react'
-import { ChevronRightIcon } from '@heroicons/react/20/solid'
 import type { ParsedParameter } from '../../services/openapi/types'
 import { ParameterInput } from './ParameterInput'
 
@@ -88,9 +87,17 @@ export function ParameterForm({ parameters, onSubmit, loading = false }: Paramet
           {({ open }) => (
             <>
               <DisclosureButton className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900">
-                <ChevronRightIcon
+                <svg
                   className={`h-5 w-5 transition-transform ${open ? 'rotate-90' : ''}`}
-                />
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                    clipRule="evenodd"
+                  />
+                </svg>
                 <span>
                   {optionalParams.length} Optional Parameter{optionalParams.length !== 1 ? 's' : ''}
                 </span>

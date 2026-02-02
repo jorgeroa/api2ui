@@ -10,6 +10,9 @@ export function OperationSelector({ operations, selectedIndex, onSelect }: Opera
   // Single operation: render as static text
   if (operations.length === 1) {
     const operation = operations[0]
+    if (!operation) {
+      return null
+    }
     return (
       <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
         <div className="flex items-center gap-3">
