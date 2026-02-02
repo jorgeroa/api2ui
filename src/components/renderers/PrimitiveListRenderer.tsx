@@ -12,7 +12,7 @@ export function PrimitiveListRenderer({ data, schema, path, depth }: RendererPro
   }
 
   if (data.length === 0) {
-    return <span className="text-gray-400 italic">Empty list</span>
+    return <span className="text-gray-500 text-xs">[0 items]</span>
   }
 
   return (
