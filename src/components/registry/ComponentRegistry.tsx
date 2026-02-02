@@ -3,6 +3,7 @@ import type { RendererProps } from '../../types/components'
 import { TableRenderer } from '../renderers/TableRenderer'
 import { DetailRenderer } from '../renderers/DetailRenderer'
 import { PrimitiveRenderer } from '../renderers/PrimitiveRenderer'
+import { PrimitiveListRenderer } from '../renderers/PrimitiveListRenderer'
 import { JsonFallback } from '../renderers/JsonFallback'
 
 type RendererComponent = React.ComponentType<RendererProps>
@@ -20,11 +21,11 @@ const registry: RegistryEntry[] = [
       schema.kind === 'array' && schema.items.kind === 'object',
     component: TableRenderer,
   },
-  // Array of primitives -> List (using PrimitiveRenderer wrapper)
+  // Array of primitives -> List
   {
     match: (schema) =>
       schema.kind === 'array' && schema.items.kind === 'primitive',
-    component: PrimitiveRenderer,
+    component: PrimitiveListRenderer,
   },
   // Object -> Detail view
   {
