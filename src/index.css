@@ -1,1 +1,43 @@
 @import "tailwindcss";
+
+@theme {
+  --color-primary: #3b82f6;
+  --color-secondary: #8b5cf6;
+  --color-background: #f9fafb;
+  --color-text: #1f2937;
+  --color-surface: #ffffff;
+  --color-border: #e5e7eb;
+  --spacing-row: 0.5rem;
+  --font-size-base: 1rem;
+  --border-radius-base: 0.375rem;
+}
+
+/* Color picker swatch palette:
+   #3b82f6 blue, #8b5cf6 purple, #ec4899 pink, #ef4444 red,
+   #f59e0b amber, #10b981 green, #06b6d4 cyan, #6366f1 indigo */
+
+@layer base {
+  .theme-light {
+    --color-background: #f9fafb;
+    --color-text: #1f2937;
+    --color-surface: #ffffff;
+    --color-border: #e5e7eb;
+  }
+
+  .theme-dark {
+    --color-background: #111827;
+    --color-text: #f9fafb;
+    --color-surface: #1f2937;
+    --color-border: #374151;
+  }
+
+  .theme-compact {
+    --spacing-row: 0.25rem;
+    --font-size-base: 0.875rem;
+  }
+
+  .theme-spacious {
+    --spacing-row: 1rem;
+    --font-size-base: 1.125rem;
+  }
+}
