@@ -13,8 +13,8 @@ export async function parseOpenAPISpec(
 ): Promise<ParsedSpec> {
   try {
     // Dereference the spec to resolve all $refs
-    const apiRaw = await SwaggerParser.dereference(specUrlOrObject)
-    const api = apiRaw as OpenAPIV3.Document | OpenAPIV2.Document
+    const apiRaw = await SwaggerParser.dereference(specUrlOrObject as string)
+    const api = apiRaw as unknown as OpenAPIV3.Document | OpenAPIV2.Document
 
     // Detect spec version
     const isOpenAPI3 = 'openapi' in api
