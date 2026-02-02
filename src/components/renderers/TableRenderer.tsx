@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import type { RendererProps } from '../../types/components'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
+import { DetailModal } from '../detail/DetailModal'
 
 /** Compact inline display for non-primitive values in table cells */
 function CompactValue({ data }: { data: unknown }) {
@@ -34,6 +36,8 @@ function CompactValue({ data }: { data: unknown }) {
  * This implementation provides the same UX with simpler, more reliable code.
  */
 export function TableRenderer({ data, schema, path, depth }: RendererProps) {
+  const [selectedItem, setSelectedItem] = useState<unknown | null>(null)
+
   if (schema.kind !== 'array') {
     return <div className="text-red-500">TableRenderer expects array schema</div>
   }
@@ -87,7 +91,8 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
           return (
             <div
               key={rowIndex}
-              className={`flex border-b border-gray-200 ${
+              onClick={() => setSelectedItem(item)}
+              className={`flex border-b border-gray-200 cursor-pointer hover:bg-blue-50 ${
                 isEven ? 'bg-white' : 'bg-gray-50'
               }`}
             >
@@ -120,6 +125,13 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
           )
         })}
       </div>
+
+      {/* Detail modal */}
+      <DetailModal
+        item={selectedItem}
+        schema={schema.items}
+        onClose={() => setSelectedItem(null)}
+      />
     </div>
   )
 }
