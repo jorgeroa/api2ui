@@ -24,18 +24,18 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Configuration
 
-- [ ] **CFG-01**: Configure mode with settings panel (global) and inline editing (per-element)
-- [ ] **CFG-02**: View mode with clean output, no configuration controls
-- [ ] **CFG-03**: Developer can override component type for any field
-- [ ] **CFG-04**: Developer can set field visibility (show/hide fields)
-- [ ] **CFG-05**: Developer can map field names to display labels
-- [ ] **CFG-06**: CSS customizable styling
-- [ ] **CFG-07**: View configurations persist in local storage
+- [x] **CFG-01**: Configure mode with settings panel (global) and inline editing (per-element)
+- [x] **CFG-02**: View mode with clean output, no configuration controls
+- [x] **CFG-03**: Developer can override component type for any field
+- [x] **CFG-04**: Developer can set field visibility (show/hide fields)
+- [x] **CFG-05**: Developer can map field names to display labels
+- [x] **CFG-06**: CSS customizable styling
+- [x] **CFG-07**: View configurations persist in local storage
 
 ### Navigation & UX
 
-- [ ] **NAV-01**: Auto-generated sidebar navigation for multi-endpoint APIs
-- [ ] **NAV-02**: Landing page with URL input and clickable example APIs
+- [x] **NAV-01**: Auto-generated sidebar navigation for multi-endpoint APIs
+- [x] **NAV-02**: Landing page with URL input and clickable example APIs
 - [x] **NAV-03**: Loading states (spinners/skeletons) during API calls
 - [x] **NAV-04**: Specific error messages for CORS, network, API, and parse failures
 
@@ -92,15 +92,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RND-03 | Phase 2 | Complete |
 | RND-04 | Phase 2 | Complete |
 | RND-05 | Phase 2 | Complete |
-| CFG-01 | Phase 3 | Pending |
-| CFG-02 | Phase 3 | Pending |
-| CFG-03 | Phase 3 | Pending |
-| CFG-04 | Phase 3 | Pending |
-| CFG-05 | Phase 3 | Pending |
-| CFG-06 | Phase 3 | Pending |
-| CFG-07 | Phase 3 | Pending |
-| NAV-01 | Phase 4 | Pending |
-| NAV-02 | Phase 4 | Pending |
+| CFG-01 | Phase 3 | Complete |
+| CFG-02 | Phase 3 | Complete |
+| CFG-03 | Phase 3 | Complete |
+| CFG-04 | Phase 3 | Complete |
+| CFG-05 | Phase 3 | Complete |
+| CFG-06 | Phase 3 | Complete |
+| CFG-07 | Phase 3 | Complete |
+| NAV-01 | Phase 4 | Complete |
+| NAV-02 | Phase 4 | Complete |
 | NAV-03 | Phase 1 | Complete |
 | NAV-04 | Phase 1 | Complete |
 
@@ -111,4 +111,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-01*
-*Last updated: 2026-02-01 after Phase 2 completion*
+*Last updated: 2026-02-02 after Phase 4 completion — all v1 requirements complete*
