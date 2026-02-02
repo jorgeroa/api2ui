@@ -1,0 +1,39 @@
+/**
+ * TypeScript types for parsed OpenAPI/Swagger specifications.
+ * These types represent the cleaned, typed data structure that the UI layer consumes.
+ */
+
+export interface ParsedParameter {
+  name: string
+  in: 'query' | 'path' | 'header' | 'cookie'
+  required: boolean
+  description: string
+  schema: {
+    type: string          // 'string' | 'integer' | 'number' | 'boolean' | 'array'
+    format?: string       // 'date', 'date-time', 'email', 'uri', 'password', etc.
+    enum?: unknown[]      // For select inputs
+    default?: unknown     // Default value
+    minimum?: number
+    maximum?: number
+    maxLength?: number
+  }
+}
+
+export interface ParsedOperation {
+  path: string            // e.g., '/users', '/users/{userId}'
+  method: string          // 'GET' (v1 only extracts GET)
+  operationId?: string
+  summary?: string
+  description?: string
+  parameters: ParsedParameter[]
+  responseSchema: unknown // The dereferenced response schema (JSON Schema)
+  tags: string[]
+}
+
+export interface ParsedSpec {
+  title: string
+  version: string
+  specVersion: string    // '2.0', '3.0.x', '3.1.x'
+  baseUrl: string        // Server URL or host+basePath
+  operations: ParsedOperation[]
+}
