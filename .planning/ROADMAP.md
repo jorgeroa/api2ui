@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Foundation & Core Rendering** - Prove the pipeline: URL → schema → UI
 - [x] **Phase 2: Advanced Rendering & OpenAPI** - Handle complexity and industry standards
 - [x] **Phase 3: Configuration System** - Enable customization and persistence
-- [ ] **Phase 4: Navigation & Polish** - Complete the user experience
+- [x] **Phase 4: Navigation & Polish** - Complete the user experience
 
 ## Phase Details
 
@@ -85,7 +85,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Sidebar navigation with tag-based grouping for multi-endpoint specs
+- [x] 04-01-PLAN.md — Sidebar navigation with tag-based grouping for multi-endpoint specs
 - [x] 04-02-PLAN.md — Landing page example cards with auto-fetch on click
 
 ## Progress
@@ -98,7 +98,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Foundation & Core Rendering | 3/3 | Complete | 2026-02-01 |
 | 2. Advanced Rendering & OpenAPI | 3/3 | Complete | 2026-02-01 |
 | 3. Configuration System | 5/5 | Complete | 2026-02-02 |
-| 4. Navigation & Polish | 1/2 | In progress | - |
+| 4. Navigation & Polish | 2/2 | Complete | 2026-02-02 |
 
 ---
 *Created: 2026-02-01*
