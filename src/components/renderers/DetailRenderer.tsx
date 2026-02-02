@@ -154,7 +154,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
             <ChevronIcon />
             {displayLabel} {getFieldSummary(fieldDef, value)}
           </DisclosureButton>
-          <DisclosurePanel className="ml-4 mt-2 border-l-2 border-gray-200 pl-4">
+          <DisclosurePanel className="ml-4 mt-2 border-l-2 border-border pl-4">
             <DynamicRenderer
               data={value}
               schema={fieldDef.type}
@@ -197,7 +197,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
   // In Configure mode: wrap with SortableFieldList
   if (isConfigureMode) {
     return (
-      <div className="space-y-3 border border-gray-200 rounded-lg p-4">
+      <div className="space-y-3 border border-border rounded-lg p-4">
         <SortableFieldList items={fieldPaths} onReorder={handleReorder}>
           {fieldsContent}
         </SortableFieldList>
@@ -206,7 +206,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
   }
 
   return (
-    <div className="space-y-3 border border-gray-200 rounded-lg p-4">
+    <div className="space-y-3 border border-border rounded-lg p-4">
       {fieldsContent}
     </div>
   )

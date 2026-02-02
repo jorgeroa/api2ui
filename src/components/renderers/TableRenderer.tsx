@@ -106,7 +106,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
 
   const renderHeader = () => {
     const headerRow = (
-      <div className="flex bg-gray-100 border-b-2 border-gray-300 font-semibold sticky top-0 z-10">
+      <div className="flex bg-background border-b-2 border-border font-semibold sticky top-0 z-10">
         {visibleColumns.map(([fieldName]) => {
           const fieldPath = `$[].${fieldName}`
           const config = fieldConfigs[fieldPath]
@@ -120,7 +120,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
 
           const headerContent = (
             <div
-              className="px-4 py-3 border-r border-gray-300 text-sm"
+              className="px-4 py-3 border-r border-border text-sm"
               style={{ width: columnWidth, minWidth: columnWidth }}
             >
               {displayLabel}
@@ -168,7 +168,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
   }
 
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
+    <div className="border border-border rounded-lg overflow-hidden">
       {/* Header - sticky positioning keeps it visible while scrolling */}
       {renderHeader()}
 
@@ -182,8 +182,8 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
             <div
               key={rowIndex}
               onClick={() => setSelectedItem(item)}
-              className={`flex border-b border-gray-200 cursor-pointer hover:bg-blue-50 ${
-                isEven ? 'bg-white' : 'bg-gray-50'
+              className={`flex border-b border-border cursor-pointer hover:bg-blue-50 ${
+                isEven ? 'bg-surface' : 'bg-background'
               }`}
             >
               {visibleColumns.map(([fieldName, fieldDef]) => {
@@ -193,7 +193,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
                 return (
                   <div
                     key={fieldName}
-                    className="px-4 py-2 border-r border-gray-200 flex items-center overflow-hidden"
+                    className="px-4 py-2 border-r border-border flex items-center overflow-hidden"
                     style={{ width: columnWidth, minWidth: columnWidth, height: '40px' }}
                   >
                     <div className="truncate w-full">

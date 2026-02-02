@@ -37,7 +37,7 @@ export function DetailModal({ item, schema, onClose }: DetailModalProps) {
 
       {/* Container to center the panel */}
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="max-w-3xl w-full bg-white rounded-xl shadow-lg p-6 max-h-[80vh] overflow-y-auto">
+        <DialogPanel className="max-w-3xl w-full bg-surface text-text rounded-xl shadow-lg p-6 max-h-[80vh] overflow-y-auto">
           <DialogTitle className="text-xl font-semibold mb-4">
             {getItemTitle(item)}
           </DialogTitle>

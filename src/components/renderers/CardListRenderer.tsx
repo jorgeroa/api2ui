@@ -64,10 +64,10 @@ export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
             <div
               key={index}
               onClick={() => setSelectedItem(item)}
-              className="border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer transition-all"
+              className="border border-border rounded-lg p-4 shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer transition-all"
             >
               {/* Card header with title */}
-              <div className="font-semibold text-lg mb-3 text-gray-800 border-b border-gray-200 pb-2">
+              <div className="font-semibold text-lg mb-3 text-text border-b border-border pb-2">
                 {title}
               </div>
 

@@ -77,11 +77,11 @@ function App() {
         </div>
       )}
 
-      <div className={`min-h-screen bg-gray-50 py-8 px-4 ${isConfigureMode ? 'pt-20' : ''}`}>
+      <div className={`min-h-screen bg-background text-text py-8 px-4 ${isConfigureMode ? 'pt-20' : ''}`}>
         <div className={`max-w-6xl mx-auto ${isConfigureMode ? 'ring-2 ring-blue-500 ring-offset-4' : ''}`}>
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">api2ui</h1>
+          <h1 className="text-4xl font-bold text-text mb-2">api2ui</h1>
           <p className="text-lg text-gray-600">
             Paste an API URL, see it rendered
           </p>
@@ -93,7 +93,7 @@ function App() {
         </div>
 
         {/* Main Content Area */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-surface rounded-lg shadow-md p-6">
           {loading && <SkeletonTable />}
 
           {error && !loading && (
@@ -104,9 +104,9 @@ function App() {
           {parsedSpec && !loading && !error && (
             <div className="space-y-6">
               {/* Spec Info Header */}
-              <div className="border-b border-gray-200 pb-4">
+              <div className="border-b border-border pb-4">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-semibold text-gray-900">
+                  <h2 className="text-xl font-semibold text-text">
                     {parsedSpec.title}
                   </h2>
                   <span className="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded">
@@ -155,8 +155,8 @@ function App() {
 
               {/* Data Rendering (after fetching operation) */}
               {schema && data !== null && (
-                <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Response Data</h3>
+                <div className="border-t border-border pt-6">
+                  <h3 className="text-lg font-semibold text-text mb-4">Response Data</h3>
                   <DynamicRenderer
                     data={data}
                     schema={schema.rootType}

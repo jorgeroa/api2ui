@@ -52,7 +52,7 @@ export function ListRenderer({ data, schema, path, depth }: RendererProps) {
 
   return (
     <div>
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <div className="border border-border rounded-lg overflow-hidden">
         {data.map((item, index) => {
           const obj = item as Record<string, unknown>
           const title = getItemTitle(item)
@@ -71,10 +71,10 @@ export function ListRenderer({ data, schema, path, depth }: RendererProps) {
             <div
               key={index}
               onClick={() => setSelectedItem(item)}
-              className="border-b border-gray-200 last:border-b-0 px-4 py-3 hover:bg-blue-50 cursor-pointer transition-colors"
+              className="border-b border-border last:border-b-0 px-4 py-3 hover:bg-blue-50 cursor-pointer transition-colors"
             >
               <div className="flex items-center gap-4">
-                <span className="font-medium text-gray-800">{title}</span>
+                <span className="font-medium text-text">{title}</span>
                 {displayFields.map(([fieldName, fieldDef]) => {
                   const value = obj[fieldName]
                   const fieldPath = `${path}[${index}].${fieldName}`
