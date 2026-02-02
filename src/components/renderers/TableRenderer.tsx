@@ -4,6 +4,8 @@ import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DetailModal } from '../detail/DetailModal'
 import { useConfigStore } from '../../store/configStore'
 import { FieldControls } from '../config/FieldControls'
+import { SortableFieldList } from '../config/SortableFieldList'
+import { DraggableField } from '../config/DraggableField'
 
 /** Compact inline display for non-primitive values in table cells */
 function CompactValue({ data }: { data: unknown }) {
@@ -39,7 +41,7 @@ function CompactValue({ data }: { data: unknown }) {
  */
 export function TableRenderer({ data, schema, path, depth }: RendererProps) {
   const [selectedItem, setSelectedItem] = useState<unknown | null>(null)
-  const { mode, fieldConfigs } = useConfigStore()
+  const { mode, fieldConfigs, reorderFields } = useConfigStore()
 
   if (schema.kind !== 'array') {
     return <div className="text-red-500">TableRenderer expects array schema</div>
@@ -95,9 +97,15 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
 
   const columnWidth = Math.max(150, Math.floor(900 / visibleColumns.length))
 
-  return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
-      {/* Header - sticky positioning keeps it visible while scrolling */}
+  // Column paths for drag-and-drop ordering
+  const columnPaths = visibleColumns.map(([fieldName]) => `$[].${fieldName}`)
+
+  const handleReorder = (orderedPaths: string[]) => {
+    reorderFields(orderedPaths)
+  }
+
+  const renderHeader = () => {
+    const headerRow = (
       <div className="flex bg-gray-100 border-b-2 border-gray-300 font-semibold sticky top-0 z-10">
         {visibleColumns.map(([fieldName]) => {
           const fieldPath = `$[].${fieldName}`
@@ -119,24 +127,50 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
             </div>
           )
 
-          // In Configure mode: wrap with FieldControls
+          const headerCell = isConfigureMode ? (
+            <FieldControls
+              key={fieldName}
+              fieldPath={fieldPath}
+              fieldName={fieldName}
+              isVisible={isVisible}
+              customLabel={config?.label}
+            >
+              {headerContent}
+            </FieldControls>
+          ) : (
+            <div key={fieldName}>{headerContent}</div>
+          )
+
+          // In Configure mode: wrap each header cell in DraggableField
           if (isConfigureMode) {
             return (
-              <FieldControls
-                key={fieldName}
-                fieldPath={fieldPath}
-                fieldName={fieldName}
-                isVisible={isVisible}
-                customLabel={config?.label}
-              >
-                {headerContent}
-              </FieldControls>
+              <DraggableField key={fieldName} id={fieldPath}>
+                {headerCell}
+              </DraggableField>
             )
           }
 
-          return <div key={fieldName}>{headerContent}</div>
+          return headerCell
         })}
       </div>
+    )
+
+    // In Configure mode: wrap the entire header row in SortableFieldList
+    if (isConfigureMode) {
+      return (
+        <SortableFieldList items={columnPaths} onReorder={handleReorder}>
+          {headerRow}
+        </SortableFieldList>
+      )
+    }
+
+    return headerRow
+  }
+
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      {/* Header - sticky positioning keeps it visible while scrolling */}
+      {renderHeader()}
 
       {/* Scrollable body */}
       <div className="overflow-y-auto" style={{ maxHeight: '600px' }}>
