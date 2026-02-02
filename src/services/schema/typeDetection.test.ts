@@ -88,13 +88,13 @@ describe('detectFieldType', () => {
       // Arrays should be handled by inferrer, not type detection
       // This function focuses on primitive type detection
       const result = detectFieldType([])
-      expect(result).toBe('string') // typeof [] is 'object', but not a date
+      expect(result).toBe('unknown') // arrays handled by inferrer, not here
     })
 
     it('does not handle objects', () => {
       // Objects should be handled by inferrer
       const result = detectFieldType({})
-      expect(result).toBe('string') // typeof {} is 'object', but not a date
+      expect(result).toBe('unknown') // objects handled by inferrer, not here
     })
   })
 })

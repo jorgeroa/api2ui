@@ -125,7 +125,7 @@ function inferObjectArrayType(items: Record<string, unknown>[], depth: number): 
     }
 
     // Mark absent fields
-    for (const [key, fieldData] of fieldMap.entries()) {
+    for (const key of fieldMap.keys()) {
       if (!seenFields.has(key)) {
         // Field was not present in this item
         // presentCount stays the same

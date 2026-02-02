@@ -1,6 +1,32 @@
 import type { RendererProps } from '../../types/components'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
 
+/** Compact inline display for non-primitive values in table cells */
+function CompactValue({ data }: { data: unknown }) {
+  if (data === null || data === undefined) {
+    return <span className="text-gray-400 italic">null</span>
+  }
+  if (Array.isArray(data)) {
+    return (
+      <span className="text-gray-500 text-xs" title={JSON.stringify(data)}>
+        [{data.length} items]
+      </span>
+    )
+  }
+  if (typeof data === 'object') {
+    const keys = Object.keys(data)
+    return (
+      <span className="text-gray-500 text-xs" title={JSON.stringify(data)}>
+        {'{'}
+        {keys.slice(0, 2).join(', ')}
+        {keys.length > 2 ? ', ...' : ''}
+        {'}'}
+      </span>
+    )
+  }
+  return <span>{String(data)}</span>
+}
+
 /**
  * TableRenderer displays arrays of objects as a scrollable table.
  * Uses CSS-based scrolling with good performance for large datasets.
@@ -76,12 +102,16 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
                     style={{ width: columnWidth, minWidth: columnWidth, height: '40px' }}
                   >
                     <div className="truncate w-full">
-                      <PrimitiveRenderer
-                        data={value}
-                        schema={fieldDef.type}
-                        path={cellPath}
-                        depth={depth + 1}
-                      />
+                      {fieldDef.type.kind === 'primitive' ? (
+                        <PrimitiveRenderer
+                          data={value}
+                          schema={fieldDef.type}
+                          path={cellPath}
+                          depth={depth + 1}
+                        />
+                      ) : (
+                        <CompactValue data={value} />
+                      )}
                     </div>
                   </div>
                 )

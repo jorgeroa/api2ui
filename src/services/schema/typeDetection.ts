@@ -13,20 +13,18 @@ export function detectFieldType(value: unknown): FieldType {
     return 'null'
   }
 
-  const type = typeof value
-
   // Handle boolean
-  if (type === 'boolean') {
+  if (typeof value === 'boolean') {
     return 'boolean'
   }
 
   // Handle number
-  if (type === 'number') {
+  if (typeof value === 'number') {
     return 'number'
   }
 
   // Handle string (including date detection)
-  if (type === 'string') {
+  if (typeof value === 'string') {
     // Check for ISO 8601 date format
     if (ISO_8601_PATTERN.test(value)) {
       // Validate with Date.parse to reject false positives
@@ -38,7 +36,7 @@ export function detectFieldType(value: unknown): FieldType {
     return 'string'
   }
 
-  // Arrays and objects fall through to 'string' as a safe default
+  // Arrays and objects fall through to 'unknown' as a safe default
   // (they should be handled by the schema inferrer, not here)
-  return 'string'
+  return 'unknown'
 }
