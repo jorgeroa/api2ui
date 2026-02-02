@@ -1,4 +1,5 @@
 import { useAppStore } from './store/appStore'
+import { useConfigStore } from './store/configStore'
 import { useAPIFetch } from './hooks/useAPIFetch'
 import { URLInput } from './components/URLInput'
 import { DynamicRenderer } from './components/DynamicRenderer'
@@ -6,6 +7,9 @@ import { ErrorDisplay } from './components/error/ErrorDisplay'
 import { SkeletonTable } from './components/loading/SkeletonTable'
 import { OperationSelector } from './components/openapi/OperationSelector'
 import { ParameterForm } from './components/forms/ParameterForm'
+import { ConfigToggle } from './components/config/ConfigToggle'
+import { ConfigPanel } from './components/config/ConfigPanel'
+import { ThemeApplier } from './components/config/ThemeApplier'
 import 'react-loading-skeleton/dist/skeleton.css'
 
 function App() {
@@ -19,6 +23,7 @@ function App() {
     selectedOperationIndex,
     setSelectedOperation
   } = useAppStore()
+  const { mode, setMode } = useConfigStore()
   const { fetchAndInfer, fetchOperation } = useAPIFetch()
 
   const handleRetry = () => {
@@ -37,9 +42,43 @@ function App() {
     }
   }
 
+  const isConfigureMode = mode === 'configure'
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-6xl mx-auto">
+    <>
+      {/* Theme and style synchronization */}
+      <ThemeApplier />
+
+      {/* Configure mode indicator bar */}
+      {isConfigureMode && (
+        <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white px-4 py-2 flex items-center justify-between z-30 shadow-md">
+          <div className="flex items-center gap-2">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+              />
+            </svg>
+            <span className="font-medium">Configure Mode</span>
+          </div>
+          <button
+            onClick={() => setMode('view')}
+            className="px-3 py-1 bg-white text-blue-600 font-medium rounded hover:bg-blue-50 transition-colors"
+          >
+            Done
+          </button>
+        </div>
+      )}
+
+      <div className={`min-h-screen bg-gray-50 py-8 px-4 ${isConfigureMode ? 'pt-20' : ''}`}>
+        <div className={`max-w-6xl mx-auto ${isConfigureMode ? 'ring-2 ring-blue-500 ring-offset-4' : ''}`}>
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">api2ui</h1>
@@ -155,8 +194,13 @@ function App() {
             </div>
           )}
         </div>
+        </div>
       </div>
-    </div>
+
+      {/* Floating config toggle and panel */}
+      <ConfigToggle />
+      <ConfigPanel />
+    </>
   )
 }
 
