@@ -9,15 +9,15 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Core Engine
 
-- [ ] **ENG-01**: App infers API structure by analyzing response JSON (type detection, nesting, arrays)
+- [x] **ENG-01**: App infers API structure by analyzing response JSON (type detection, nesting, arrays)
 - [ ] **ENG-02**: App parses OpenAPI/Swagger spec when user provides spec URL
-- [ ] **ENG-03**: Engine maps detected types to default UI components (array→table, object→detail, string→text, number→number, enum→dropdown, bool→toggle)
-- [ ] **ENG-04**: App fetches live data from API on each page load (direct browser fetch, CORS-enabled APIs only)
+- [x] **ENG-03**: Engine maps detected types to default UI components (array→table, object→detail, string→text, number→number, enum→dropdown, bool→toggle)
+- [x] **ENG-04**: App fetches live data from API on each page load (direct browser fetch, CORS-enabled APIs only)
 
 ### UI Rendering
 
-- [ ] **RND-01**: Arrays render as table, card list, or list view (user-selectable)
-- [ ] **RND-02**: Objects render as detail/key-value view
+- [x] **RND-01**: Arrays render as table, card list, or list view (user-selectable)
+- [x] **RND-02**: Objects render as detail/key-value view
 - [ ] **RND-03**: Master-detail navigation: click item in collection → detail view (modal or panel)
 - [ ] **RND-04**: Nested data handled with configurable max depth, deeper levels collapsed
 - [ ] **RND-05**: API parameters render as form controls (required params prominent, optional expandable)
@@ -36,8 +36,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **NAV-01**: Auto-generated sidebar navigation for multi-endpoint APIs
 - [ ] **NAV-02**: Landing page with URL input and clickable example APIs
-- [ ] **NAV-03**: Loading states (spinners/skeletons) during API calls
-- [ ] **NAV-04**: Specific error messages for CORS, network, API, and parse failures
+- [x] **NAV-03**: Loading states (spinners/skeletons) during API calls
+- [x] **NAV-04**: Specific error messages for CORS, network, API, and parse failures
 
 ## v2 Requirements
 
@@ -83,12 +83,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ENG-01 | Phase 1 | Pending |
+| ENG-01 | Phase 1 | Complete |
 | ENG-02 | Phase 2 | Pending |
-| ENG-03 | Phase 1 | Pending |
-| ENG-04 | Phase 1 | Pending |
-| RND-01 | Phase 1 | Pending |
-| RND-02 | Phase 1 | Pending |
+| ENG-03 | Phase 1 | Complete |
+| ENG-04 | Phase 1 | Complete |
+| RND-01 | Phase 1 | Complete |
+| RND-02 | Phase 1 | Complete |
 | RND-03 | Phase 2 | Pending |
 | RND-04 | Phase 2 | Pending |
 | RND-05 | Phase 2 | Pending |
@@ -101,8 +101,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CFG-07 | Phase 3 | Pending |
 | NAV-01 | Phase 4 | Pending |
 | NAV-02 | Phase 4 | Pending |
-| NAV-03 | Phase 1 | Pending |
-| NAV-04 | Phase 1 | Pending |
+| NAV-03 | Phase 1 | Complete |
+| NAV-04 | Phase 1 | Complete |
 
 **Coverage:**
 - v1 requirements: 20 total

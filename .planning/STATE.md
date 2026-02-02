@@ -5,33 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** Any API becomes instantly usable through a visual interface — paste a URL, see your data rendered as a real UI.
-**Current focus:** Phase 1 - Foundation & Core Rendering
+**Current focus:** Phase 2 - Advanced Rendering & OpenAPI
 
 ## Current Position
 
-Phase: 1 of 4 (Foundation & Core Rendering)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-01 — Completed 01-02-PLAN.md (Schema Inference & Type-to-Component Mapping)
+Phase: 2 of 4 (Advanced Rendering & OpenAPI)
+Plan: 0 of TBD in current phase
+Status: Not started (planning needed)
+Last activity: 2026-02-01 — Completed Phase 1 (Foundation & Core Rendering)
 
-Progress: [██░░░░░░░░] 20%
+Progress: [███░░░░░░░] 25%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 4.5 min
-- Total execution time: 0.15 hours
+- Total plans completed: 3
+- Average duration: 8 min
+- Total execution time: 0.4 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1 | 2 | 9 min | 4.5 min |
+| 1 | 3 | 24 min | 8 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (5min), 01-02 (4min)
-- Trend: Consistent execution speed
+- Last 5 plans: 01-01 (5min), 01-02 (4min), 01-03 (15min)
+- Trend: UI components take longer due to integration + bug fixing
 
 *Updated after each plan completion*
 
@@ -56,27 +56,42 @@ Recent decisions affecting current work:
 - Type merging: use first non-null type when fields have mixed types
 - Path notation: $ for root, $.field for top-level, $.field.nested for nested
 
+**From 01-03 (UI Components):**
+- CSS-based scrolling instead of react-window (2.x API incompatible)
+- CompactValue for non-primitive table cells (inline summary)
+- PrimitiveListRenderer for array-of-primitives (separate component)
+- Consistent [0 items] format for empty arrays across renderers
+- Component registry pattern: array of {match, component} entries
+
 ### Pending Todos
 
 None yet.
 
 ### Blockers/Concerns
 
-**Resolved in 01-01:**
+**Resolved in Phase 1:**
 - CORS strategy: Heuristic detection using no-cors mode fallback
 - Library versions: React 19.2, Vite 7.2, Tailwind 4.1, TypeScript 5.9 installed and verified
-
-**Resolved in 01-02:**
-- Type inference algorithms: Implemented with multi-sample analysis and confidence scoring
-- Schema inference handles arrays, objects, nesting, optional/nullable fields
+- Type inference: Multi-sample analysis with confidence scoring
+- react-window 2.x: Breaking API, used CSS scrolling alternative
 
 **Research-flagged items for Phase 2:**
 - Virtualization library choice needs validation for performance
+- OpenAPI spec parsing library selection
+
+## Phase 1 Verification
+
+**Result:** PASSED (9/9 must-haves)
+**Report:** .planning/phases/01-foundation-core-rendering/01-VERIFICATION.md
+
+Non-blocking items noted:
+- react-window installed but unused (CSS scrolling used instead)
+- SkeletonDetail.tsx is orphaned (exists but never imported)
 
 ## Session Continuity
 
-Last session: 2026-02-01 (plan 01-02 execution)
-Stopped at: Completed 01-02-PLAN.md (Schema Inference & Type-to-Component Mapping)
+Last session: 2026-02-01 (Phase 1 completion)
+Stopped at: Completed Phase 1, ready for Phase 2 planning
 Resume file: None
 
 ---
