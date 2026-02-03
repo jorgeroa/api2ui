@@ -6,6 +6,7 @@ import { useConfigStore } from '../../store/configStore'
 import { FieldControls } from '../config/FieldControls'
 import { SortableFieldList } from '../config/SortableFieldList'
 import { DraggableField } from '../config/DraggableField'
+import { isImageUrl } from '../../utils/imageDetection'
 
 /** Chevron icon that rotates when disclosure is open */
 function ChevronIcon() {
@@ -105,6 +106,43 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
 
       // Render primitive fields inline
       if (fieldDef.type.kind === 'primitive') {
+        // Check if this is an image URL — render full-width
+        const isImage = typeof value === 'string' && isImageUrl(value)
+
+        if (isImage) {
+          const imageContent = (
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-gray-600">
+                {displayLabel}
+              </div>
+              <img
+                src={value as string}
+                alt={displayLabel}
+                loading="lazy"
+                className="w-full max-h-96 object-contain rounded-lg border border-gray-200 bg-gray-50"
+                onError={(e) => { e.currentTarget.style.display = 'none' }}
+              />
+            </div>
+          )
+
+          // Wrap with FieldControls/DraggableField in Configure mode (same pattern as existing)
+          if (isConfigureMode) {
+            return (
+              <DraggableField key={fieldName} id={fieldPath}>
+                <FieldControls
+                  fieldPath={fieldPath}
+                  fieldName={fieldName}
+                  isVisible={isVisible}
+                  customLabel={config?.label}
+                >
+                  {imageContent}
+                </FieldControls>
+              </DraggableField>
+            )
+          }
+          return <div key={fieldName}>{imageContent}</div>
+        }
+
         const fieldContent = (
           <div className="grid grid-cols-[auto_1fr] gap-x-6">
             <div className="text-sm font-medium text-gray-600 py-1">
