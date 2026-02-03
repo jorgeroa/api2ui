@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { RendererProps } from '../../types/components'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DetailModal } from '../detail/DetailModal'
+import { isImageUrl } from '../../utils/imageDetection'
+import type { FieldDefinition } from '../../types/schema'
 
 /** Get a title from an item by checking common name fields */
 function getItemTitle(item: unknown): string {
@@ -20,6 +22,22 @@ function getItemTitle(item: unknown): string {
   }
 
   return 'Item'
+}
+
+/** Get the first image URL field from an item for hero image display */
+function getHeroImageField(
+  item: Record<string, unknown>,
+  fields: Array<[string, FieldDefinition]>
+): { fieldName: string; url: string } | null {
+  for (const [fieldName, fieldDef] of fields) {
+    if (fieldDef.type.kind === 'primitive') {
+      const value = item[fieldName]
+      if (typeof value === 'string' && isImageUrl(value)) {
+        return { fieldName, url: value }
+      }
+    }
+  }
+  return null
 }
 
 /**
@@ -57,6 +75,9 @@ export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
           const obj = item as Record<string, unknown>
           const title = getItemTitle(item)
 
+          // Detect hero image from first image-URL field
+          const heroImage = getHeroImageField(obj, fields)
+
           // Show first 4-5 fields
           const displayFields = fields.slice(0, 5)
 
@@ -64,52 +85,73 @@ export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
             <div
               key={index}
               onClick={() => setSelectedItem(item)}
-              className="border border-border rounded-lg p-4 shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer transition-all"
+              className="border border-border rounded-lg overflow-hidden shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer transition-all"
             >
-              {/* Card header with title */}
-              <div className="font-semibold text-lg mb-3 text-text border-b border-border pb-2">
-                {title}
-              </div>
+              {/* Hero image - full width at top of card */}
+              {heroImage && (
+                <div className="w-full h-48 bg-gray-100 overflow-hidden">
+                  <img
+                    src={heroImage.url}
+                    alt={title}
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget.parentElement as HTMLElement).style.display = 'none'
+                    }}
+                  />
+                </div>
+              )}
 
-              {/* Card content: key-value pairs */}
-              <div className="space-y-2">
-                {displayFields.map(([fieldName, fieldDef]) => {
-                  const value = obj[fieldName]
-                  const fieldPath = `${path}[${index}].${fieldName}`
+              {/* Card content wrapper with padding */}
+              <div className="p-4">
+                {/* Card header with title */}
+                <div className="font-semibold text-lg mb-3 text-text border-b border-border pb-2">
+                  {title}
+                </div>
 
-                  const displayLabel = fieldName
-                    .replace(/_/g, ' ')
-                    .replace(/\b\w/g, (char) => char.toUpperCase())
+                {/* Card content: key-value pairs */}
+                <div className="space-y-2">
+                  {displayFields.map(([fieldName, fieldDef]) => {
+                    // Skip hero image field to avoid duplication
+                    if (heroImage && fieldName === heroImage.fieldName) return null
 
-                  return (
-                    <div key={fieldName} className="text-sm">
-                      <span className="text-gray-600 font-medium">
-                        {displayLabel}:{' '}
-                      </span>
-                      {fieldDef.type.kind === 'primitive' ? (
-                        <PrimitiveRenderer
-                          data={value}
-                          schema={fieldDef.type}
-                          path={fieldPath}
-                          depth={depth + 1}
-                        />
-                      ) : (
-                        <span className="text-gray-500 text-xs">
-                          {Array.isArray(value)
-                            ? `[${value.length} items]`
-                            : typeof value === 'object'
-                            ? '{object}'
-                            : String(value)}
+                    const value = obj[fieldName]
+                    const fieldPath = `${path}[${index}].${fieldName}`
+
+                    const displayLabel = fieldName
+                      .replace(/_/g, ' ')
+                      .replace(/\b\w/g, (char) => char.toUpperCase())
+
+                    return (
+                      <div key={fieldName} className="text-sm">
+                        <span className="text-gray-600 font-medium">
+                          {displayLabel}:{' '}
                         </span>
-                      )}
+                        {fieldDef.type.kind === 'primitive' ? (
+                          <PrimitiveRenderer
+                            data={value}
+                            schema={fieldDef.type}
+                            path={fieldPath}
+                            depth={depth + 1}
+                          />
+                        ) : (
+                          <span className="text-gray-500 text-xs">
+                            {Array.isArray(value)
+                              ? `[${value.length} items]`
+                              : typeof value === 'object'
+                              ? '{object}'
+                              : String(value)}
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })}
+                  {fields.length > 5 && (
+                    <div className="text-xs text-gray-400 italic">
+                      +{fields.length - 5} more fields
                     </div>
-                  )
-                })}
-                {fields.length > 5 && (
-                  <div className="text-xs text-gray-400 italic">
-                    +{fields.length - 5} more fields
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           )
