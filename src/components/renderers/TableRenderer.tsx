@@ -6,6 +6,7 @@ import { useConfigStore } from '../../store/configStore'
 import { FieldControls } from '../config/FieldControls'
 import { SortableFieldList } from '../config/SortableFieldList'
 import { DraggableField } from '../config/DraggableField'
+import { isImageUrl } from '../../utils/imageDetection'
 
 /** Compact inline display for non-primitive values in table cells */
 function CompactValue({ data }: { data: unknown }) {
@@ -190,24 +191,44 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
                 const value = row[fieldName]
                 const cellPath = `${path}[${rowIndex}].${fieldName}`
 
+                // Check if this cell contains an image URL
+                const isImage = fieldDef.type.kind === 'primitive' &&
+                               typeof value === 'string' &&
+                               isImageUrl(value)
+
                 return (
                   <div
                     key={fieldName}
                     className="px-4 py-2 border-r border-border flex items-center overflow-hidden"
                     style={{ width: columnWidth, minWidth: columnWidth, height: '40px' }}
                   >
-                    <div className="truncate w-full">
-                      {fieldDef.type.kind === 'primitive' ? (
-                        <PrimitiveRenderer
-                          data={value}
-                          schema={fieldDef.type}
-                          path={cellPath}
-                          depth={depth + 1}
+                    {isImage ? (
+                      <div className="flex items-center gap-2 w-full">
+                        <img
+                          src={value as string}
+                          alt={fieldName}
+                          loading="lazy"
+                          className="h-8 w-8 rounded object-cover flex-shrink-0"
+                          onError={(e) => { e.currentTarget.style.display = 'none' }}
                         />
-                      ) : (
-                        <CompactValue data={value} />
-                      )}
-                    </div>
+                        <span className="text-xs text-gray-500 truncate" title={value as string}>
+                          {(value as string).split('/').pop() || value}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="truncate w-full">
+                        {fieldDef.type.kind === 'primitive' ? (
+                          <PrimitiveRenderer
+                            data={value}
+                            schema={fieldDef.type}
+                            path={cellPath}
+                            depth={depth + 1}
+                          />
+                        ) : (
+                          <CompactValue data={value} />
+                        )}
+                      </div>
+                    )}
                   </div>
                 )
               })}
