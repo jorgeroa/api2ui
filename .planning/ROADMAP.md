@@ -22,9 +22,9 @@ Transform api2ui from a functional data explorer into a visually polished direct
   4. Primary fields (name/title/label) render with larger/bolder typography than secondary fields
   5. Detail views render image fields as full-width images with section headings for nested objects
 **Plans**: 3 plans
-- [ ] 05-01-PLAN.md -- Image detection utility + PrimitiveRenderer auto-image rendering
-- [ ] 05-02-PLAN.md -- Card hero images + Table thumbnail previews
-- [ ] 05-03-PLAN.md -- Detail view full-width images + Typography hierarchy
+- [x] 05-01-PLAN.md -- Image detection utility + PrimitiveRenderer auto-image rendering
+- [x] 05-02-PLAN.md -- Card hero images + Table thumbnail previews
+- [x] 05-03-PLAN.md -- Detail view full-width images + Typography hierarchy
 
 ### Phase 6: Discoverable Component Switching & Per-Element Config
 
@@ -67,7 +67,7 @@ Transform api2ui from a functional data explorer into a visually polished direct
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 5. Smart Visual Defaults | 0/3 | Planned | — |
+| 5. Smart Visual Defaults | 3/3 | Complete | 2026-02-03 |
 | 6. Discoverable Switching | 0/TBD | Not Started | — |
 | 7. Pagination | 0/TBD | Not Started | — |
 | 8. Enhanced Details | 0/TBD | Not Started | — |

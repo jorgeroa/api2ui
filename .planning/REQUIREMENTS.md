@@ -4,11 +4,11 @@ Requirements for UX Polish & Visual Intelligence milestone. Each maps to roadmap
 
 ### Smart Visual Defaults
 
-- [ ] **VIZ-01**: Image URLs auto-detected by file extension and CDN patterns, rendered as `<img>` by default
-- [ ] **VIZ-02**: Cards display hero image from first detected image-URL field
-- [ ] **VIZ-03**: Tables show inline thumbnail previews for image-URL columns
-- [ ] **VIZ-04**: Typography hierarchy: primary fields (name/title) visually distinct from secondary data
-- [ ] **VIZ-05**: Detail views render image fields as full-width images with section headings for nested objects
+- [x] **VIZ-01**: Image URLs auto-detected by file extension and CDN patterns, rendered as `<img>` by default
+- [x] **VIZ-02**: Cards display hero image from first detected image-URL field
+- [x] **VIZ-03**: Tables show inline thumbnail previews for image-URL columns
+- [x] **VIZ-04**: Typography hierarchy: primary fields (name/title) visually distinct from secondary data
+- [x] **VIZ-05**: Detail views render image fields as full-width images with section headings for nested objects
 
 ### Discoverable Component Switching
 
@@ -36,11 +36,11 @@ Requirements for UX Polish & Visual Intelligence milestone. Each maps to roadmap
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VIZ-01 | Phase 5 | Pending |
-| VIZ-02 | Phase 5 | Pending |
-| VIZ-03 | Phase 5 | Pending |
-| VIZ-04 | Phase 5 | Pending |
-| VIZ-05 | Phase 5 | Pending |
+| VIZ-01 | Phase 5 | Complete |
+| VIZ-02 | Phase 5 | Complete |
+| VIZ-03 | Phase 5 | Complete |
+| VIZ-04 | Phase 5 | Complete |
+| VIZ-05 | Phase 5 | Complete |
 | DSC-01 | Phase 6 | Pending |
 | DSC-02 | Phase 6 | Pending |
 | DSC-03 | Phase 6 | Pending |
@@ -57,6 +57,6 @@ Requirements for UX Polish & Visual Intelligence milestone. Each maps to roadmap
 
 **Coverage:**
 - v1.1 requirements: 18 total
-- Completed: 0/18
+- Completed: 5/18
 - Adjusted: 0
 - Dropped: 0
