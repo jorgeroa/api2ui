@@ -9,20 +9,21 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 
 ## Current Position
 
-Phase: 5 of 8 — NOT STARTED
-Status: v1.1 milestone initialized, ready to plan Phase 5
-Last activity: 2026-02-02 — v1.1 milestone setup
+Phase: 5 of 8 (Smart Visual Defaults)
+Plan: 1 of 3 completed
+Status: In progress
+Last activity: 2026-02-03 — Completed 05-01-PLAN.md
 
-Progress: [░░░░░░░░░░░░░░] 0% (0 of TBD plans, 0 of 4 phases)
+Progress: [█░░░░░░░░░░░░░] 7% (1 of 14 plans, 0.25 of 4 phases)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13 (v1.0)
-- Average duration: 4.2 min
-- Total execution time: ~55 min
+- Total plans completed: 14 (13 v1.0 + 1 v1.1)
+- Average duration: 4.0 min
+- Total execution time: ~56 min
 
-**By Phase (v1.0):**
+**By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
@@ -30,6 +31,7 @@ Progress: [░░░░░░░░░░░░░░] 0% (0 of TBD plans, 0 of 
 | 2 | 3 | 9.5 min | 3.2 min |
 | 3 | 5 | 20 min | 4 min |
 | 4 | 2 | 3 min | 1.5 min |
+| 5 | 1/3 | 1 min | 1 min |
 
 ## Milestone History
 
@@ -37,11 +39,19 @@ Progress: [░░░░░░░░░░░░░░] 0% (0 of TBD plans, 0 of 
   - Archive: .planning/milestones/v1.0-ROADMAP.md
   - Requirements: .planning/milestones/v1.0-REQUIREMENTS.md
 
+## Decisions Log
+
+| ID | Decision | Phase | Rationale | Status |
+|----|----------|-------|-----------|--------|
+| D-05-01-01 | Use pathname-based image detection | 5 | Avoids query param false positives | Active |
+| D-05-01-02 | User overrides take precedence over auto-detection | 5 | Explicit user intent wins | Active |
+| D-05-01-03 | Lazy loading for auto-detected images | 5 | Performance optimization | Active |
+
 ## Session Continuity
 
-Last session: 2026-02-02
-Stopped at: v1.1 milestone initialized, ready for `/gsd:plan-phase 5`
+Last session: 2026-02-03
+Stopped at: Completed 05-01-PLAN.md (Image Detection Utility)
 Resume file: None
 
 ---
-*Last updated: 2026-02-02*
+*Last updated: 2026-02-03*
