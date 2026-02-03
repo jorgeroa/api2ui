@@ -4,6 +4,7 @@ interface ViewModeBadgeProps {
   currentType: string
   availableTypes: string[]
   onSelect: (type: string) => void
+  onOpenPicker?: () => void
 }
 
 const AUTO_CONFIRM_DELAY = 2000
@@ -17,6 +18,7 @@ export function ViewModeBadge({
   currentType,
   availableTypes,
   onSelect,
+  onOpenPicker,
 }: ViewModeBadgeProps) {
   const [tempSelection, setTempSelection] = useState(currentType)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -68,6 +70,7 @@ export function ViewModeBadge({
       role="button"
       tabIndex={hasAlternatives ? 0 : undefined}
       onClick={handleClick}
+      onDoubleClick={hasAlternatives && onOpenPicker ? (e) => { e.stopPropagation(); onOpenPicker() } : undefined}
       className={`absolute top-2 right-2 z-10 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium transition-all select-none ${
         hasAlternatives
           ? 'hover:bg-blue-200 cursor-pointer'

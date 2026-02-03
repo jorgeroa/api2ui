@@ -40,12 +40,14 @@ export function ComponentOverridePanel() {
           </div>
 
           <div className="flex items-center gap-2 ml-4">
-            {/* TODO: Change button - would open ComponentPicker */}
-            {/* <button
+            <button
+              onClick={() => {
+                document.dispatchEvent(new CustomEvent('api2ui:open-picker', { detail: { fieldPath: path } }))
+              }}
               className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
             >
               Change
-            </button> */}
+            </button>
 
             {/* Revert button */}
             <button

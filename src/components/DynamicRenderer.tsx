@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { TypeSignature } from '../types/schema'
 import { getComponent } from './registry/ComponentRegistry'
 import { JsonFallback } from './renderers/JsonFallback'
@@ -46,6 +46,19 @@ export function DynamicRenderer({
   const [showPicker, setShowPicker] = useState(false)
   const [showBadge, setShowBadge] = useState(false)
 
+  // Listen for open-picker events from ComponentOverridePanel
+  useEffect(() => {
+    if (depth !== 0) return
+    const handler = (e: Event) => {
+      const { fieldPath } = (e as CustomEvent).detail
+      if (fieldPath === path) {
+        setShowPicker(true)
+      }
+    }
+    document.addEventListener('api2ui:open-picker', handler)
+    return () => document.removeEventListener('api2ui:open-picker', handler)
+  }, [depth, path])
+
   // Guard against excessive depth
   if (depth > MAX_DEPTH) {
     return (
@@ -86,6 +99,7 @@ export function DynamicRenderer({
           onSelect={(type) => {
             setFieldComponentType(path, type)
           }}
+          onOpenPicker={availableTypes.length > 1 ? () => setShowPicker(true) : undefined}
         />
       )}
       {showPicker && (
