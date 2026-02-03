@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react'
 import type { RendererProps } from '../../types/components'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DynamicRenderer } from '../DynamicRenderer'
 import { useConfigStore } from '../../store/configStore'
 import { FieldControls } from '../config/FieldControls'
+import { FieldConfigPopover } from '../config/FieldConfigPopover'
 import { SortableFieldList } from '../config/SortableFieldList'
 import { DraggableField } from '../config/DraggableField'
 import { isImageUrl } from '../../utils/imageDetection'
@@ -45,7 +47,24 @@ function getFieldSummary(fieldDef: { type: { kind: string } }, value: unknown): 
 }
 
 export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
+  const [popoverState, setPopoverState] = useState<{
+    fieldPath: string
+    fieldName: string
+    fieldValue: unknown
+    position: { x: number; y: number }
+  } | null>(null)
   const { mode, fieldConfigs, reorderFields } = useConfigStore()
+
+  const handleFieldContextMenu = (
+    e: React.MouseEvent,
+    fieldPath: string,
+    fieldName: string,
+    fieldValue: unknown
+  ) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setPopoverState({ fieldPath, fieldName, fieldValue, position: { x: e.clientX, y: e.clientY } })
+  }
 
   if (schema.kind !== 'object') {
     return <div className="text-red-500">DetailRenderer expects object schema</div>
@@ -121,7 +140,28 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
 
         if (isImage) {
           const imageContent = (
-            <div className="space-y-2">
+            <div
+              className="space-y-2"
+              onContextMenu={(e) => handleFieldContextMenu(e, fieldPath, fieldName, value)}
+              onTouchStart={(e) => {
+                const touch = e.touches[0]
+                if (!touch) return
+                const touchX = touch.clientX
+                const touchY = touch.clientY
+                const timer = setTimeout(() => {
+                  setPopoverState({ fieldPath, fieldName, fieldValue: value, position: { x: touchX, y: touchY } })
+                }, 800)
+                ;(e.currentTarget as HTMLElement).dataset.longPressTimer = String(timer)
+              }}
+              onTouchEnd={(e) => {
+                const timer = (e.currentTarget as HTMLElement).dataset.longPressTimer
+                if (timer) clearTimeout(Number(timer))
+              }}
+              onTouchMove={(e) => {
+                const timer = (e.currentTarget as HTMLElement).dataset.longPressTimer
+                if (timer) clearTimeout(Number(timer))
+              }}
+            >
               <div className="text-sm font-medium text-gray-600">
                 {displayLabel}
               </div>
@@ -155,8 +195,30 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
 
         const primary = isPrimaryField(fieldName)
 
+        const contextMenuHandlers = {
+          onContextMenu: (e: React.MouseEvent) => handleFieldContextMenu(e, fieldPath, fieldName, value),
+          onTouchStart: (e: React.TouchEvent) => {
+            const touch = e.touches[0]
+            if (!touch) return
+            const touchX = touch.clientX
+            const touchY = touch.clientY
+            const timer = setTimeout(() => {
+              setPopoverState({ fieldPath, fieldName, fieldValue: value, position: { x: touchX, y: touchY } })
+            }, 800)
+            ;(e.currentTarget as HTMLElement).dataset.longPressTimer = String(timer)
+          },
+          onTouchEnd: (e: React.TouchEvent) => {
+            const timer = (e.currentTarget as HTMLElement).dataset.longPressTimer
+            if (timer) clearTimeout(Number(timer))
+          },
+          onTouchMove: (e: React.TouchEvent) => {
+            const timer = (e.currentTarget as HTMLElement).dataset.longPressTimer
+            if (timer) clearTimeout(Number(timer))
+          },
+        }
+
         const fieldContent = (
-          <div className="grid grid-cols-[auto_1fr] gap-x-6">
+          <div className="grid grid-cols-[auto_1fr] gap-x-6" {...contextMenuHandlers}>
             <div className={primary
               ? "text-base font-semibold text-gray-700 py-1"
               : "text-sm font-medium text-gray-600 py-1"
@@ -250,6 +312,16 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
 
   const fieldsContent = renderFields()
 
+  const popoverElement = popoverState && (
+    <FieldConfigPopover
+      fieldPath={popoverState.fieldPath}
+      fieldName={popoverState.fieldName}
+      fieldValue={popoverState.fieldValue}
+      position={popoverState.position}
+      onClose={() => setPopoverState(null)}
+    />
+  )
+
   // In Configure mode: wrap with SortableFieldList
   if (isConfigureMode) {
     return (
@@ -257,6 +329,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
         <SortableFieldList items={fieldPaths} onReorder={handleReorder}>
           {fieldsContent}
         </SortableFieldList>
+        {popoverElement}
       </div>
     )
   }
@@ -264,6 +337,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
   return (
     <div className="space-y-3 border border-border rounded-lg p-4">
       {fieldsContent}
+      {popoverElement}
     </div>
   )
 }

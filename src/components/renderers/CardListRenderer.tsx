@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { RendererProps } from '../../types/components'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DetailModal } from '../detail/DetailModal'
+import { FieldConfigPopover } from '../config/FieldConfigPopover'
 import { isImageUrl } from '../../utils/imageDetection'
 import type { FieldDefinition } from '../../types/schema'
 
@@ -47,6 +48,23 @@ function getHeroImageField(
  */
 export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
   const [selectedItem, setSelectedItem] = useState<unknown | null>(null)
+  const [popoverState, setPopoverState] = useState<{
+    fieldPath: string
+    fieldName: string
+    fieldValue: unknown
+    position: { x: number; y: number }
+  } | null>(null)
+
+  const handleFieldContextMenu = (
+    e: React.MouseEvent,
+    fieldPath: string,
+    fieldName: string,
+    fieldValue: unknown
+  ) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setPopoverState({ fieldPath, fieldName, fieldValue, position: { x: e.clientX, y: e.clientY } })
+  }
 
   if (schema.kind !== 'array') {
     return <div className="text-red-500">CardListRenderer expects array schema</div>
@@ -123,7 +141,29 @@ export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
                       .replace(/\b\w/g, (char) => char.toUpperCase())
 
                     return (
-                      <div key={fieldName} className="text-sm">
+                      <div
+                        key={fieldName}
+                        className="text-sm"
+                        onContextMenu={(e) => handleFieldContextMenu(e, `$[].${fieldName}`, fieldName, value)}
+                        onTouchStart={(e) => {
+                          const touch = e.touches[0]
+                          if (!touch) return
+                          const touchX = touch.clientX
+                          const touchY = touch.clientY
+                          const timer = setTimeout(() => {
+                            setPopoverState({ fieldPath: `$[].${fieldName}`, fieldName, fieldValue: value, position: { x: touchX, y: touchY } })
+                          }, 800)
+                          ;(e.currentTarget as HTMLElement).dataset.longPressTimer = String(timer)
+                        }}
+                        onTouchEnd={(e) => {
+                          const timer = (e.currentTarget as HTMLElement).dataset.longPressTimer
+                          if (timer) clearTimeout(Number(timer))
+                        }}
+                        onTouchMove={(e) => {
+                          const timer = (e.currentTarget as HTMLElement).dataset.longPressTimer
+                          if (timer) clearTimeout(Number(timer))
+                        }}
+                      >
                         <span className="text-gray-600 font-medium">
                           {displayLabel}:{' '}
                         </span>
@@ -164,6 +204,17 @@ export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
         schema={schema.items}
         onClose={() => setSelectedItem(null)}
       />
+
+      {/* Field config popover */}
+      {popoverState && (
+        <FieldConfigPopover
+          fieldPath={popoverState.fieldPath}
+          fieldName={popoverState.fieldName}
+          fieldValue={popoverState.fieldValue}
+          position={popoverState.position}
+          onClose={() => setPopoverState(null)}
+        />
+      )}
     </div>
   )
 }

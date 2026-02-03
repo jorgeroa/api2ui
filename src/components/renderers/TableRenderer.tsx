@@ -4,6 +4,7 @@ import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DetailModal } from '../detail/DetailModal'
 import { useConfigStore } from '../../store/configStore'
 import { FieldControls } from '../config/FieldControls'
+import { FieldConfigPopover } from '../config/FieldConfigPopover'
 import { SortableFieldList } from '../config/SortableFieldList'
 import { DraggableField } from '../config/DraggableField'
 import { isImageUrl } from '../../utils/imageDetection'
@@ -42,7 +43,24 @@ function CompactValue({ data }: { data: unknown }) {
  */
 export function TableRenderer({ data, schema, path, depth }: RendererProps) {
   const [selectedItem, setSelectedItem] = useState<unknown | null>(null)
+  const [popoverState, setPopoverState] = useState<{
+    fieldPath: string
+    fieldName: string
+    fieldValue: unknown
+    position: { x: number; y: number }
+  } | null>(null)
   const { mode, fieldConfigs, reorderFields } = useConfigStore()
+
+  const handleFieldContextMenu = (
+    e: React.MouseEvent,
+    fieldPath: string,
+    fieldName: string,
+    fieldValue: unknown
+  ) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setPopoverState({ fieldPath, fieldName, fieldValue, position: { x: e.clientX, y: e.clientY } })
+  }
 
   if (schema.kind !== 'array') {
     return <div className="text-red-500">TableRenderer expects array schema</div>
@@ -190,6 +208,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
               {visibleColumns.map(([fieldName, fieldDef]) => {
                 const value = row[fieldName]
                 const cellPath = `${path}[${rowIndex}].${fieldName}`
+                const columnFieldPath = `$[].${fieldName}`
 
                 // Check if this cell contains an image URL
                 const isImage = fieldDef.type.kind === 'primitive' &&
@@ -201,6 +220,26 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
                     key={fieldName}
                     className="px-4 py-2 border-r border-border flex items-center overflow-hidden"
                     style={{ width: columnWidth, minWidth: columnWidth, height: '40px' }}
+                    onContextMenu={(e) => handleFieldContextMenu(e, columnFieldPath, fieldName, value)}
+                    onTouchStart={(e) => {
+                      const touch = e.touches[0]
+                      if (!touch) return
+                      const touchX = touch.clientX
+                      const touchY = touch.clientY
+                      const timer = setTimeout(() => {
+                        e.preventDefault()
+                        setPopoverState({ fieldPath: columnFieldPath, fieldName, fieldValue: value, position: { x: touchX, y: touchY } })
+                      }, 800)
+                      ;(e.currentTarget as HTMLElement).dataset.longPressTimer = String(timer)
+                    }}
+                    onTouchEnd={(e) => {
+                      const timer = (e.currentTarget as HTMLElement).dataset.longPressTimer
+                      if (timer) clearTimeout(Number(timer))
+                    }}
+                    onTouchMove={(e) => {
+                      const timer = (e.currentTarget as HTMLElement).dataset.longPressTimer
+                      if (timer) clearTimeout(Number(timer))
+                    }}
                   >
                     {isImage ? (
                       <div className="flex items-center gap-2 w-full">
@@ -243,6 +282,17 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
         schema={schema.items}
         onClose={() => setSelectedItem(null)}
       />
+
+      {/* Field config popover */}
+      {popoverState && (
+        <FieldConfigPopover
+          fieldPath={popoverState.fieldPath}
+          fieldName={popoverState.fieldName}
+          fieldValue={popoverState.fieldValue}
+          position={popoverState.position}
+          onClose={() => setPopoverState(null)}
+        />
+      )}
     </div>
   )
 }

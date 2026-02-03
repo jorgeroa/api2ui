@@ -4,6 +4,7 @@ import { getComponent } from './registry/ComponentRegistry'
 import { JsonFallback } from './renderers/JsonFallback'
 import { useConfigStore } from '../store/configStore'
 import { ComponentPicker } from './config/ComponentPicker'
+import { ViewModeBadge } from './config/ViewModeBadge'
 
 interface DynamicRendererProps {
   data: unknown
@@ -31,7 +32,7 @@ function getAvailableTypes(schema: TypeSignature): string[] {
   if (schema.kind === 'object') {
     return ['detail', 'json']
   }
-  return []
+  return [getDefaultTypeName(schema)]
 }
 
 export function DynamicRenderer({
@@ -40,8 +41,9 @@ export function DynamicRenderer({
   path = '$',
   depth = 0,
 }: DynamicRendererProps) {
-  const { fieldConfigs, mode, setFieldComponentType } = useConfigStore()
+  const { fieldConfigs, setFieldComponentType } = useConfigStore()
   const [showPicker, setShowPicker] = useState(false)
+  const [showBadge, setShowBadge] = useState(false)
 
   // Guard against excessive depth
   if (depth > MAX_DEPTH) {
@@ -62,22 +64,28 @@ export function DynamicRenderer({
   // Get the appropriate component from the registry
   const Component = getComponent(schema, override)
 
-  // In Configure mode, show component type badge/indicator
-  const isConfigureMode = mode === 'configure'
+  // Determine component types for badge
   const defaultType = getDefaultTypeName(schema)
   const currentType = override || defaultType
   const availableTypes = getAvailableTypes(schema)
-  const showBadge = isConfigureMode && availableTypes.length > 1
+
+  // Only show badge on top-level renderers (depth === 0) to avoid visual clutter
+  const canShowBadge = depth === 0
 
   return (
-    <div className="relative">
-      {showBadge && (
-        <button
-          onClick={() => setShowPicker(true)}
-          className="absolute top-0 right-0 z-10 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-bl font-medium hover:bg-blue-200 transition-colors cursor-pointer"
-        >
-          {currentType} ▾
-        </button>
+    <div
+      className="relative"
+      onMouseEnter={canShowBadge ? () => setShowBadge(true) : undefined}
+      onMouseLeave={canShowBadge ? () => setShowBadge(false) : undefined}
+    >
+      {showBadge && canShowBadge && (
+        <ViewModeBadge
+          currentType={currentType}
+          availableTypes={availableTypes}
+          onSelect={(type) => {
+            setFieldComponentType(path, type)
+          }}
+        />
       )}
       {showPicker && (
         <ComponentPicker
