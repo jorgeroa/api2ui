@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react'
 import type { RendererProps } from '../../types/components'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
@@ -54,6 +54,30 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
     position: { x: number; y: number }
   } | null>(null)
   const { mode, fieldConfigs, reorderFields } = useConfigStore()
+
+  // Listen for cross-navigation events from ConfigPanel
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { fieldPath } = (e as CustomEvent).detail
+      if (schema.kind === 'object') {
+        const fields = Array.from(schema.fields.entries())
+        const match = fields.find(([name]) => `${path}.${name}` === fieldPath)
+        if (match) {
+          const [fieldName] = match
+          const obj = (typeof data === 'object' && data !== null) ? data as Record<string, unknown> : {}
+          const fieldValue = obj[fieldName]
+          const el = document.querySelector(`[data-field-path="${fieldPath}"]`)
+          const rect = el?.getBoundingClientRect()
+          const pos = rect
+            ? { x: rect.right, y: rect.top }
+            : { x: window.innerWidth / 2, y: window.innerHeight / 3 }
+          setPopoverState({ fieldPath, fieldName, fieldValue, position: pos })
+        }
+      }
+    }
+    document.addEventListener('api2ui:configure-field', handler)
+    return () => document.removeEventListener('api2ui:configure-field', handler)
+  }, [schema, data, path])
 
   const handleFieldContextMenu = (
     e: React.MouseEvent,

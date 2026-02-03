@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { RendererProps } from '../../types/components'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DetailModal } from '../detail/DetailModal'
@@ -50,6 +50,33 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
     position: { x: number; y: number }
   } | null>(null)
   const { mode, fieldConfigs, reorderFields } = useConfigStore()
+
+  // Listen for cross-navigation events from ConfigPanel
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { fieldPath } = (e as CustomEvent).detail
+      // Check if this renderer owns this field (table columns use $[].fieldName pattern)
+      if (schema.kind === 'array' && schema.items.kind === 'object') {
+        const columns = Array.from(schema.items.fields.entries())
+        const match = columns.find(([name]) => `$[].${name}` === fieldPath)
+        if (match) {
+          const [fieldName] = match
+          // Get sample value from first row if available
+          const firstRow = Array.isArray(data) && data.length > 0 ? data[0] as Record<string, unknown> : null
+          const fieldValue = firstRow ? firstRow[fieldName] : undefined
+          // Position near the field's header element
+          const el = document.querySelector(`[data-field-path="${fieldPath}"]`)
+          const rect = el?.getBoundingClientRect()
+          const pos = rect
+            ? { x: rect.right, y: rect.top }
+            : { x: window.innerWidth / 2, y: window.innerHeight / 3 }
+          setPopoverState({ fieldPath, fieldName, fieldValue, position: pos })
+        }
+      }
+    }
+    document.addEventListener('api2ui:configure-field', handler)
+    return () => document.removeEventListener('api2ui:configure-field', handler)
+  }, [schema, data])
 
   const handleFieldContextMenu = (
     e: React.MouseEvent,
@@ -139,6 +166,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
 
           const headerContent = (
             <div
+              data-field-path={fieldPath}
               className="px-4 py-3 border-r border-border text-sm"
               style={{ width: columnWidth, minWidth: columnWidth }}
             >

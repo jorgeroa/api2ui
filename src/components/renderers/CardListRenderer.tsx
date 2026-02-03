@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { RendererProps } from '../../types/components'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DetailModal } from '../detail/DetailModal'
@@ -54,6 +54,30 @@ export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
     fieldValue: unknown
     position: { x: number; y: number }
   } | null>(null)
+
+  // Listen for cross-navigation events from ConfigPanel
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { fieldPath } = (e as CustomEvent).detail
+      if (schema.kind === 'array' && schema.items.kind === 'object') {
+        const columns = Array.from(schema.items.fields.entries())
+        const match = columns.find(([name]) => `$[].${name}` === fieldPath)
+        if (match) {
+          const [fieldName] = match
+          const firstRow = Array.isArray(data) && data.length > 0 ? data[0] as Record<string, unknown> : null
+          const fieldValue = firstRow ? firstRow[fieldName] : undefined
+          const el = document.querySelector(`[data-field-path="${fieldPath}"]`)
+          const rect = el?.getBoundingClientRect()
+          const pos = rect
+            ? { x: rect.right, y: rect.top }
+            : { x: window.innerWidth / 2, y: window.innerHeight / 3 }
+          setPopoverState({ fieldPath, fieldName, fieldValue, position: pos })
+        }
+      }
+    }
+    document.addEventListener('api2ui:configure-field', handler)
+    return () => document.removeEventListener('api2ui:configure-field', handler)
+  }, [schema, data])
 
   const handleFieldContextMenu = (
     e: React.MouseEvent,

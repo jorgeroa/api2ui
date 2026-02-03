@@ -5,6 +5,7 @@ import { JsonFallback } from './renderers/JsonFallback'
 import { useConfigStore } from '../store/configStore'
 import { ComponentPicker } from './config/ComponentPicker'
 import { ViewModeBadge } from './config/ViewModeBadge'
+import { OnboardingTooltip } from './config/OnboardingTooltip'
 
 interface DynamicRendererProps {
   data: unknown
@@ -107,6 +108,7 @@ export function DynamicRenderer({
         path={path}
         depth={depth}
       />
+      {depth === 0 && data != null && <OnboardingTooltip />}
     </div>
   )
 }
