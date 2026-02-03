@@ -8,6 +8,16 @@ import { SortableFieldList } from '../config/SortableFieldList'
 import { DraggableField } from '../config/DraggableField'
 import { isImageUrl } from '../../utils/imageDetection'
 
+/** Detect primary fields (name, title, label, heading, subject) for typography hierarchy */
+function isPrimaryField(fieldName: string): boolean {
+  const nameLower = fieldName.toLowerCase()
+  const primaryExact = ['name', 'title', 'label', 'heading', 'subject']
+  if (primaryExact.includes(nameLower)) return true
+
+  const primarySuffixes = ['_name', '_title', '_label', '-name', '-title', '-label', 'Name', 'Title']
+  return primarySuffixes.some(suffix => fieldName.endsWith(suffix))
+}
+
 /** Chevron icon that rotates when disclosure is open */
 function ChevronIcon() {
   return (
@@ -143,12 +153,20 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
           return <div key={fieldName}>{imageContent}</div>
         }
 
+        const primary = isPrimaryField(fieldName)
+
         const fieldContent = (
           <div className="grid grid-cols-[auto_1fr] gap-x-6">
-            <div className="text-sm font-medium text-gray-600 py-1">
+            <div className={primary
+              ? "text-base font-semibold text-gray-700 py-1"
+              : "text-sm font-medium text-gray-600 py-1"
+            }>
               {displayLabel}:
             </div>
-            <div className="py-1">
+            <div className={primary
+              ? "py-1 text-lg font-semibold text-gray-900"
+              : "py-1"
+            }>
               <PrimitiveRenderer
                 data={value}
                 schema={fieldDef.type}
