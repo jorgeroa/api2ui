@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { RendererProps } from '../../types/components'
 import type { FieldType } from '../../types/schema'
 import { useConfigStore } from '../../store/configStore'
+import { isImageUrl } from '../../utils/imageDetection'
 
 /** Time ago helper for relative date rendering */
 function timeAgo(date: Date): string {
@@ -126,6 +127,7 @@ export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
 
     // URL detection and render modes
     if (isURL(data)) {
+      // Explicit link override takes precedence
       if (renderMode === 'link') {
         return (
           <a
@@ -140,7 +142,9 @@ export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
         )
       }
 
-      if (renderMode === 'image') {
+      // Auto-detect image URLs or explicit image mode
+      const shouldAutoImage = isImageUrl(data) && renderMode !== 'text'
+      if (shouldAutoImage || renderMode === 'image') {
         if (imageError) {
           return <span className="text-gray-500" title={data}>{data}</span>
         }
@@ -149,6 +153,7 @@ export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
             src={data}
             alt={fieldName}
             className="max-h-48 object-contain"
+            loading="lazy"
             onError={() => setImageError(true)}
           />
         )
