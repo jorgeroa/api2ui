@@ -37,7 +37,7 @@ Transform api2ui from a functional data explorer into a visually polished direct
   3. Clicking a field/element opens a contextual config popover (visibility, label, component type)
   4. ConfigPanel provides cross-navigation links to per-element config
 **Plans**: 3 plans
-- [ ] 06-01-PLAN.md -- ViewModeBadge with carousel cycling + DynamicRenderer integration
+- [x] 06-01-PLAN.md -- ViewModeBadge with carousel cycling + DynamicRenderer integration
 - [ ] 06-02-PLAN.md -- FieldConfigPopover with right-click/long-press + renderer integration
 - [ ] 06-03-PLAN.md -- Cross-navigation + onboarding tooltip
 
@@ -71,6 +71,6 @@ Transform api2ui from a functional data explorer into a visually polished direct
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 5. Smart Visual Defaults | 3/3 | Complete | 2026-02-03 |
-| 6. Discoverable Switching | 0/TBD | Not Started | — |
+| 6. Discoverable Switching | 1/3 | In Progress | — |
 | 7. Pagination | 0/TBD | Not Started | — |
 | 8. Enhanced Details | 0/TBD | Not Started | — |

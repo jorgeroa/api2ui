@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 
 ## Current Position
 
-Phase: 5 of 8 (Smart Visual Defaults) — COMPLETE ✓
-Plan: 3 of 3 completed
-Status: Phase verified, ready for Phase 6
-Last activity: 2026-02-03 — Phase 5 verified (17/17 must-haves passed)
+Phase: 6 of 8 (Discoverable Component Switching)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-03 — Completed 06-01-PLAN.md
 
-Progress: [████░░░░░░░░░░] 25% (3 of ~12 plans, 1 of 4 phases)
+Progress: [█████░░░░░░░░░] 33% (4 of ~12 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 16 (13 v1.0 + 3 v1.1)
+- Total plans completed: 17 (13 v1.0 + 4 v1.1)
 - Average duration: 3.6 min
-- Total execution time: ~60 min
+- Total execution time: ~64 min
 
 **By Phase:**
 
@@ -32,6 +32,7 @@ Progress: [████░░░░░░░░░░] 25% (3 of ~12 plans, 1 of
 | 3 | 5 | 20 min | 4 min |
 | 4 | 2 | 3 min | 1.5 min |
 | 5 | 3/3 | 5 min | 1.7 min |
+| 6 | 1/3 | 4 min | 4 min |
 
 ## Milestone History
 
@@ -53,11 +54,14 @@ Progress: [████░░░░░░░░░░] 25% (3 of ~12 plans, 1 of
 | D-05-03-01 | Primary field detection via exact+suffix matching | 5 | Covers common patterns, avoids false positives | Active |
 | D-05-03-02 | Full-width images separate from grid layout | 5 | More prominent and visually impactful | Active |
 | D-05-03-03 | Typography size progression (text-base/lg vs text-sm) | 5 | Noticeable hierarchy without overwhelming | Active |
+| D-06-01-01 | Badge shows on all renderers including no-alternative ones | 6 | Consistent UX, dimmed state signals awareness | Active |
+| D-06-01-02 | Badge only on depth===0 renderers | 6 | Avoids visual clutter on nested sub-renderers | Active |
+| D-06-01-03 | Same carousel behavior in View and Configure modes | 6 | Consistent interaction pattern across modes | Active |
 
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Phase 5 complete and verified, ready for Phase 6
+Stopped at: Completed 06-01-PLAN.md
 Resume file: None
 
 ---
