@@ -31,7 +31,17 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 
 ### Active
 
-(None — ready for next milestone requirements)
+- Image URLs auto-detected and rendered as images by default — v1.1
+- Cards display hero images from detected image-URL fields — v1.1
+- Tables show inline thumbnail previews for image columns — v1.1
+- Typography hierarchy distinguishes primary fields from secondary data — v1.1
+- Component type switching discoverable in View mode (not just Configure mode) — v1.1
+- Per-element contextual configuration popover — v1.1
+- Client-side pagination for large arrays (tables and cards) — v1.1
+- Configurable items-per-page with page navigation controls — v1.1
+- Detail views with hero images, two-column layout, and visual grouping — v1.1
+- Nested arrays render as horizontal card scrollers in detail views — v1.1
+- Breadcrumb navigation for nested detail drill-down — v1.1
 
 ### Out of Scope
 

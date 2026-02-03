@@ -1,0 +1,62 @@
+# v1.1 Requirements
+
+Requirements for UX Polish & Visual Intelligence milestone. Each maps to roadmap phases.
+
+### Smart Visual Defaults
+
+- [ ] **VIZ-01**: Image URLs auto-detected by file extension and CDN patterns, rendered as `<img>` by default
+- [ ] **VIZ-02**: Cards display hero image from first detected image-URL field
+- [ ] **VIZ-03**: Tables show inline thumbnail previews for image-URL columns
+- [ ] **VIZ-04**: Typography hierarchy: primary fields (name/title) visually distinct from secondary data
+- [ ] **VIZ-05**: Detail views render image fields as full-width images with section headings for nested objects
+
+### Discoverable Component Switching
+
+- [ ] **DSC-01**: View-mode badge/chip on renderers allows component type switching without Configure mode
+- [ ] **DSC-02**: Enhanced ComponentPicker with live previews accessible from view-mode badge
+- [ ] **DSC-03**: Per-element config popover for contextual field configuration (visibility, label, component type)
+- [ ] **DSC-04**: ConfigPanel links to per-element config for cross-navigation
+
+### Pagination
+
+- [ ] **PAG-01**: Client-side pagination component shared across table and card renderers
+- [ ] **PAG-02**: Configurable items-per-page (default: 20 tables, 12 cards) with selector control
+- [ ] **PAG-03**: Page navigation controls (prev/next, page numbers, status indicator)
+- [ ] **PAG-04**: Pagination preferences persist per-endpoint in ConfigStore
+
+### Enhanced Detail Views
+
+- [ ] **DTL-01**: Detail views with hero image at top when image field detected
+- [ ] **DTL-02**: Two-column layout for detail fields with visual grouping of related fields
+- [ ] **DTL-03**: Nested arrays render as horizontal card scrollers (alternative to sub-tables)
+- [ ] **DTL-04**: Breadcrumb navigation when drilling into nested detail views
+- [ ] **DTL-05**: Card detail view mode selectable (modal vs panel)
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| VIZ-01 | Phase 5 | Pending |
+| VIZ-02 | Phase 5 | Pending |
+| VIZ-03 | Phase 5 | Pending |
+| VIZ-04 | Phase 5 | Pending |
+| VIZ-05 | Phase 5 | Pending |
+| DSC-01 | Phase 6 | Pending |
+| DSC-02 | Phase 6 | Pending |
+| DSC-03 | Phase 6 | Pending |
+| DSC-04 | Phase 6 | Pending |
+| PAG-01 | Phase 7 | Pending |
+| PAG-02 | Phase 7 | Pending |
+| PAG-03 | Phase 7 | Pending |
+| PAG-04 | Phase 7 | Pending |
+| DTL-01 | Phase 8 | Pending |
+| DTL-02 | Phase 8 | Pending |
+| DTL-03 | Phase 8 | Pending |
+| DTL-04 | Phase 8 | Pending |
+| DTL-05 | Phase 8 | Pending |
+
+**Coverage:**
+- v1.1 requirements: 18 total
+- Completed: 0/18
+- Adjusted: 0
+- Dropped: 0
