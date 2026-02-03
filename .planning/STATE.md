@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 ## Current Position
 
 Phase: 5 of 8 (Smart Visual Defaults)
-Plan: 1 of 3 completed
+Plan: 2 of 3 completed
 Status: In progress
-Last activity: 2026-02-03 — Completed 05-01-PLAN.md
+Last activity: 2026-02-02 — Completed 05-02-PLAN.md
 
-Progress: [█░░░░░░░░░░░░░] 7% (1 of 14 plans, 0.25 of 4 phases)
+Progress: [█░░░░░░░░░░░░░] 14% (2 of 14 plans, 0.5 of 4 phases)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14 (13 v1.0 + 1 v1.1)
-- Average duration: 4.0 min
-- Total execution time: ~56 min
+- Total plans completed: 15 (13 v1.0 + 2 v1.1)
+- Average duration: 3.7 min
+- Total execution time: ~58 min
 
 **By Phase:**
 
@@ -31,7 +31,7 @@ Progress: [█░░░░░░░░░░░░░] 7% (1 of 14 plans, 0.25 o
 | 2 | 3 | 9.5 min | 3.2 min |
 | 3 | 5 | 20 min | 4 min |
 | 4 | 2 | 3 min | 1.5 min |
-| 5 | 1/3 | 1 min | 1 min |
+| 5 | 2/3 | 3 min | 1.5 min |
 
 ## Milestone History
 
@@ -46,12 +46,16 @@ Progress: [█░░░░░░░░░░░░░] 7% (1 of 14 plans, 0.25 o
 | D-05-01-01 | Use pathname-based image detection | 5 | Avoids query param false positives | Active |
 | D-05-01-02 | User overrides take precedence over auto-detection | 5 | Explicit user intent wins | Active |
 | D-05-01-03 | Lazy loading for auto-detected images | 5 | Performance optimization | Active |
+| D-05-02-01 | Hero image uses first detected image-URL field | 5 | Simple, predictable behavior | Active |
+| D-05-02-02 | Hero field excluded from card body | 5 | Avoid visual duplication | Active |
+| D-05-02-03 | Table thumbnails include filename | 5 | Context when image fails/unclear | Active |
+| D-05-02-04 | Fixed dimensions prevent layout shift | 5 | Better Core Web Vitals | Active |
 
 ## Session Continuity
 
-Last session: 2026-02-03
-Stopped at: Completed 05-01-PLAN.md (Image Detection Utility)
+Last session: 2026-02-02
+Stopped at: Completed 05-02-PLAN.md (Card Hero Images & Table Thumbnails)
 Resume file: None
 
 ---
-*Last updated: 2026-02-03*
+*Last updated: 2026-02-02*
