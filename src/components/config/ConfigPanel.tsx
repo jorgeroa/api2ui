@@ -1,3 +1,4 @@
+import { useEffect, useCallback } from 'react'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { useConfigStore } from '../../store/configStore'
 import { useAppStore } from '../../store/appStore'
@@ -8,6 +9,47 @@ import { StylePanel } from './StylePanel'
 export function ConfigPanel() {
   const { panelOpen, togglePanel, resetConfig } = useConfigStore()
   const { schema } = useAppStore()
+
+  // Scroll to a specific field row in the panel and highlight it briefly
+  const scrollToField = useCallback((fieldPath: string) => {
+    // Use a short delay to allow panel to render if just opened
+    setTimeout(() => {
+      const el = document.querySelector(`[data-field-path="${fieldPath}"]`) as HTMLElement | null
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        // Add a temporary highlight ring
+        el.classList.add('ring-2', 'ring-blue-500', 'ring-offset-1')
+        setTimeout(() => {
+          el.classList.remove('ring-2', 'ring-blue-500', 'ring-offset-1')
+        }, 2000)
+      }
+    }, 150)
+  }, [])
+
+  // Listen for 'api2ui:open-config-panel' events from FieldConfigPopover "More settings..."
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { fieldPath } = (e as CustomEvent).detail
+      // Open the panel if not already open
+      const store = useConfigStore.getState()
+      if (!store.panelOpen) {
+        store.togglePanel()
+      }
+      // Scroll to the field after panel opens
+      scrollToField(fieldPath)
+    }
+    document.addEventListener('api2ui:open-config-panel', handler)
+    return () => document.removeEventListener('api2ui:open-config-panel', handler)
+  }, [scrollToField])
+
+  // Handle "configure in context" from FieldListPanel: close panel, dispatch event for renderer
+  const handleConfigureField = useCallback((fieldPath: string) => {
+    togglePanel() // Close the config panel
+    // Dispatch event for renderers to pick up and open popover
+    document.dispatchEvent(
+      new CustomEvent('api2ui:configure-field', { detail: { fieldPath } })
+    )
+  }, [togglePanel])
 
   const handleReset = () => {
     if (confirm('Reset all configurations? This will clear all customizations.')) {
@@ -87,7 +129,7 @@ export function ConfigPanel() {
                 Fields
               </h3>
               {fields.length > 0 ? (
-                <FieldListPanel fields={fields} />
+                <FieldListPanel fields={fields} onConfigureField={handleConfigureField} />
               ) : (
                 <p className="text-sm text-gray-500 italic">
                   No data loaded. Fetch an API to configure fields.

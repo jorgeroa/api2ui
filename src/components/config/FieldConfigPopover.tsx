@@ -8,7 +8,6 @@ interface FieldConfigPopoverProps {
   fieldValue: unknown
   position: { x: number; y: number }
   onClose: () => void
-  onOpenConfigPanel?: (fieldPath: string) => void
 }
 
 export function FieldConfigPopover({
@@ -17,7 +16,6 @@ export function FieldConfigPopover({
   fieldValue,
   position,
   onClose,
-  onOpenConfigPanel,
 }: FieldConfigPopoverProps) {
   const { getFieldConfig, toggleFieldVisibility, setFieldLabel, setFieldComponentType } =
     useConfigStore()
@@ -189,15 +187,18 @@ export function FieldConfigPopover({
           </button>
         </div>
 
-        {/* More settings link */}
-        {onOpenConfigPanel && (
-          <button
-            onClick={() => onOpenConfigPanel(fieldPath)}
-            className="mt-2 text-xs text-blue-600 hover:text-blue-800 hover:underline w-full text-left"
-          >
-            More settings...
-          </button>
-        )}
+        {/* More settings link - opens ConfigPanel scrolled to this field */}
+        <button
+          onClick={() => {
+            onClose()
+            document.dispatchEvent(
+              new CustomEvent('api2ui:open-config-panel', { detail: { fieldPath } })
+            )
+          }}
+          className="mt-2 text-xs text-blue-600 hover:text-blue-800 hover:underline w-full text-left"
+        >
+          More settings...
+        </button>
       </div>
     </>
   )
