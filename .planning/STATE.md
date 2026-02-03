@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 ## Current Position
 
 Phase: 6 of 8 (Discoverable Component Switching)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-03 — Completed 06-02-PLAN.md
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-02-03 — Completed 06-03-PLAN.md
 
-Progress: [██████░░░░░░░░] 42% (5 of ~12 plans)
+Progress: [████████░░░░░░] 50% (6 of ~12 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18 (13 v1.0 + 5 v1.1)
+- Total plans completed: 19 (13 v1.0 + 6 v1.1)
 - Average duration: 3.6 min
-- Total execution time: ~69 min
+- Total execution time: ~73 min
 
 **By Phase:**
 
@@ -32,7 +32,7 @@ Progress: [██████░░░░░░░░] 42% (5 of ~12 plans)
 | 3 | 5 | 20 min | 4 min |
 | 4 | 2 | 3 min | 1.5 min |
 | 5 | 3/3 | 5 min | 1.7 min |
-| 6 | 2/3 | 9 min | 4.5 min |
+| 6 | 3/3 | 13 min | 4.3 min |
 
 ## Milestone History
 
@@ -60,11 +60,13 @@ Progress: [██████░░░░░░░░] 42% (5 of ~12 plans)
 | D-06-02-01 | Inline touch timer pattern instead of useLongPress per-element | 6 | Avoids hook-in-loop violations | Active |
 | D-06-02-02 | Viewport boundary detection flips popover direction | 6 | Prevents off-screen clipping | Active |
 | D-06-02-03 | Component type selector hidden when only one mode available | 6 | Reduces clutter for simple fields | Active |
+| D-06-03-01 | Custom DOM events for cross-navigation instead of store state | 6 | Avoids store pollution, works across disconnected trees | Active |
+| D-06-03-02 | "More settings..." always visible, dispatches DOM event | 6 | All popovers can navigate to ConfigPanel regardless of context | Active |
 
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 06-02-PLAN.md
+Stopped at: Completed 06-03-PLAN.md (Phase 06 complete)
 Resume file: None
 
 ---
