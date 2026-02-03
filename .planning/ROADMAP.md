@@ -39,7 +39,7 @@ Transform api2ui from a functional data explorer into a visually polished direct
 **Plans**: 3 plans
 - [x] 06-01-PLAN.md -- ViewModeBadge with carousel cycling + DynamicRenderer integration
 - [x] 06-02-PLAN.md -- FieldConfigPopover with right-click/long-press + renderer integration
-- [ ] 06-03-PLAN.md -- Cross-navigation + onboarding tooltip
+- [x] 06-03-PLAN.md -- Cross-navigation + onboarding tooltip
 
 ### Phase 7: Pagination & Large Dataset Handling
 
@@ -71,6 +71,6 @@ Transform api2ui from a functional data explorer into a visually polished direct
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 5. Smart Visual Defaults | 3/3 | Complete | 2026-02-03 |
-| 6. Discoverable Switching | 2/3 | In Progress | — |
+| 6. Discoverable Switching | 3/3 | Complete | 2026-02-03 |
 | 7. Pagination | 0/TBD | Not Started | — |
 | 8. Enhanced Details | 0/TBD | Not Started | — |

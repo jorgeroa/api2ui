@@ -12,10 +12,10 @@ Requirements for UX Polish & Visual Intelligence milestone. Each maps to roadmap
 
 ### Discoverable Component Switching
 
-- [ ] **DSC-01**: View-mode badge/chip on renderers allows component type switching without Configure mode
-- [ ] **DSC-02**: Enhanced ComponentPicker with live previews accessible from view-mode badge
-- [ ] **DSC-03**: Per-element config popover for contextual field configuration (visibility, label, component type)
-- [ ] **DSC-04**: ConfigPanel links to per-element config for cross-navigation
+- [x] **DSC-01**: View-mode badge/chip on renderers allows component type switching without Configure mode
+- [x] **DSC-02**: Enhanced ComponentPicker with live previews accessible from view-mode badge
+- [x] **DSC-03**: Per-element config popover for contextual field configuration (visibility, label, component type)
+- [x] **DSC-04**: ConfigPanel links to per-element config for cross-navigation
 
 ### Pagination
 
@@ -41,10 +41,10 @@ Requirements for UX Polish & Visual Intelligence milestone. Each maps to roadmap
 | VIZ-03 | Phase 5 | Complete |
 | VIZ-04 | Phase 5 | Complete |
 | VIZ-05 | Phase 5 | Complete |
-| DSC-01 | Phase 6 | Pending |
-| DSC-02 | Phase 6 | Pending |
-| DSC-03 | Phase 6 | Pending |
-| DSC-04 | Phase 6 | Pending |
+| DSC-01 | Phase 6 | Complete |
+| DSC-02 | Phase 6 | Complete |
+| DSC-03 | Phase 6 | Complete |
+| DSC-04 | Phase 6 | Complete |
 | PAG-01 | Phase 7 | Pending |
 | PAG-02 | Phase 7 | Pending |
 | PAG-03 | Phase 7 | Pending |
@@ -57,6 +57,6 @@ Requirements for UX Polish & Visual Intelligence milestone. Each maps to roadmap
 
 **Coverage:**
 - v1.1 requirements: 18 total
-- Completed: 5/18
+- Completed: 9/18
 - Adjusted: 0
 - Dropped: 0
