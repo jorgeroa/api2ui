@@ -36,7 +36,10 @@ Transform api2ui from a functional data explorer into a visually polished direct
   2. ComponentPicker shows live previews and is accessible from the view-mode badge
   3. Clicking a field/element opens a contextual config popover (visibility, label, component type)
   4. ConfigPanel provides cross-navigation links to per-element config
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 06-01-PLAN.md -- ViewModeBadge with carousel cycling + DynamicRenderer integration
+- [ ] 06-02-PLAN.md -- FieldConfigPopover with right-click/long-press + renderer integration
+- [ ] 06-03-PLAN.md -- Cross-navigation + onboarding tooltip
 
 ### Phase 7: Pagination & Large Dataset Handling
 
