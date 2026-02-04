@@ -100,14 +100,16 @@ export function FieldControls({
         )}
       </div>
 
-      {/* Editable label overlay (shown below controls) */}
-      <div className="absolute top-full left-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white px-2 py-1 rounded shadow-md text-sm">
-        <EditableLabel
-          value={displayLabel}
-          originalName={fieldName}
-          fieldPath={fieldPath}
-          onChange={handleLabelChange}
-        />
+      {/* Editable label (shown on hover, z-index to prevent overlap) */}
+      <div className="absolute -bottom-1 left-0 translate-y-full opacity-0 group-hover:opacity-100 transition-opacity z-30 pointer-events-none">
+        <div className="pointer-events-auto bg-white px-2 py-1 rounded shadow-md text-sm border border-gray-200">
+          <EditableLabel
+            value={displayLabel}
+            originalName={fieldName}
+            fieldPath={fieldPath}
+            onChange={handleLabelChange}
+          />
+        </div>
       </div>
     </div>
   )

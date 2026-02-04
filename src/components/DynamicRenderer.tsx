@@ -44,7 +44,6 @@ export function DynamicRenderer({
 }: DynamicRendererProps) {
   const { fieldConfigs, setFieldComponentType } = useConfigStore()
   const [showPicker, setShowPicker] = useState(false)
-  const [showBadge, setShowBadge] = useState(false)
 
   // Listen for open-picker events from ComponentOverridePanel
   useEffect(() => {
@@ -83,24 +82,22 @@ export function DynamicRenderer({
   const currentType = override || defaultType
   const availableTypes = getAvailableTypes(schema)
 
-  // Only show badge on top-level renderers (depth === 0) to avoid visual clutter
-  const canShowBadge = depth === 0
+  // Show badge on top-level renderers with alternatives
+  const canShowBadge = depth === 0 && availableTypes.length > 1
 
   return (
-    <div
-      className="relative"
-      onMouseEnter={canShowBadge ? () => setShowBadge(true) : undefined}
-      onMouseLeave={canShowBadge ? () => setShowBadge(false) : undefined}
-    >
-      {showBadge && canShowBadge && (
-        <ViewModeBadge
-          currentType={currentType}
-          availableTypes={availableTypes}
-          onSelect={(type) => {
-            setFieldComponentType(path, type)
-          }}
-          onOpenPicker={availableTypes.length > 1 ? () => setShowPicker(true) : undefined}
-        />
+    <div>
+      {canShowBadge && (
+        <div className="flex justify-end mb-1">
+          <ViewModeBadge
+            currentType={currentType}
+            availableTypes={availableTypes}
+            onSelect={(type) => {
+              setFieldComponentType(path, type)
+            }}
+            onOpenPicker={() => setShowPicker(true)}
+          />
+        </div>
       )}
       {showPicker && (
         <ComponentPicker
@@ -116,12 +113,14 @@ export function DynamicRenderer({
           onClose={() => setShowPicker(false)}
         />
       )}
-      <Component
-        data={data}
-        schema={schema}
-        path={path}
-        depth={depth}
-      />
+      <div className="overflow-x-auto">
+        <Component
+          data={data}
+          schema={schema}
+          path={path}
+          depth={depth}
+        />
+      </div>
       {depth === 0 && data != null && <OnboardingTooltip />}
     </div>
   )

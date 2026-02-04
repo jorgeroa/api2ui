@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface ViewModeBadgeProps {
   currentType: string
@@ -7,77 +7,91 @@ interface ViewModeBadgeProps {
   onOpenPicker?: () => void
 }
 
-const AUTO_CONFIRM_DELAY = 2000
-
 /**
  * ViewModeBadge displays a pill showing the current component type.
- * Clicking cycles through available alternatives with auto-confirm after ~2s.
- * Appears dimmed/disabled when no alternatives exist.
+ * Clicking opens a dropdown to select from available alternatives.
  */
 export function ViewModeBadge({
   currentType,
   availableTypes,
   onSelect,
-  onOpenPicker,
 }: ViewModeBadgeProps) {
-  const [tempSelection, setTempSelection] = useState(currentType)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [open, setOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   const hasAlternatives = availableTypes.length > 1
 
-  // Sync tempSelection when currentType changes externally
+  // Close on click outside
   useEffect(() => {
-    setTempSelection(currentType)
-  }, [currentType])
-
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (timerRef.current !== null) {
-        clearTimeout(timerRef.current)
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false)
       }
     }
-  }, [])
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
 
-  const handleClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation()
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [open])
 
-      if (!hasAlternatives) return
-
-      const currentIndex = availableTypes.indexOf(tempSelection)
-      const nextIndex = (currentIndex + 1) % availableTypes.length
-      const nextType = availableTypes[nextIndex]!
-      setTempSelection(nextType)
-
-      // Reset/start auto-confirm timer
-      if (timerRef.current !== null) {
-        clearTimeout(timerRef.current)
-      }
-      timerRef.current = setTimeout(() => {
-        onSelect(nextType)
-        timerRef.current = null
-      }, AUTO_CONFIRM_DELAY)
-    },
-    [hasAlternatives, availableTypes, tempSelection, onSelect]
-  )
-
-  const isPending = tempSelection !== currentType
-  const displayName = tempSelection.charAt(0).toUpperCase() + tempSelection.slice(1)
+  const displayName = currentType.charAt(0).toUpperCase() + currentType.slice(1)
 
   return (
-    <span
-      role="button"
-      tabIndex={hasAlternatives ? 0 : undefined}
-      onClick={handleClick}
-      onDoubleClick={hasAlternatives && onOpenPicker ? (e) => { e.stopPropagation(); onOpenPicker() } : undefined}
-      className={`absolute top-2 right-2 z-10 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium transition-all select-none ${
-        hasAlternatives
-          ? 'hover:bg-blue-200 cursor-pointer'
-          : 'opacity-50 cursor-not-allowed'
-      }${isPending ? ' ring-2 ring-blue-300 animate-pulse' : ''}`}
-    >
-      {displayName}{hasAlternatives ? ' \u25BE' : ''}
-    </span>
+    <div ref={menuRef} className="relative inline-block">
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          if (hasAlternatives) setOpen(!open)
+        }}
+        className={`inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded-full font-medium transition-all select-none ${
+          hasAlternatives
+            ? 'hover:bg-blue-200 cursor-pointer'
+            : 'opacity-50 cursor-not-allowed'
+        }`}
+      >
+        {displayName}
+        {hasAlternatives && (
+          <svg className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-35">
+          {availableTypes.map((type) => {
+            const label = type.charAt(0).toUpperCase() + type.slice(1)
+            const isActive = type === currentType
+            return (
+              <button
+                key={type}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onSelect(type)
+                  setOpen(false)
+                }}
+                className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${
+                  isActive
+                    ? 'bg-blue-50 text-blue-800 font-semibold'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                {label}
+                {isActive && ' ✓'}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
   )
 }
