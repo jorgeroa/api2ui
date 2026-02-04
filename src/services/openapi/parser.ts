@@ -132,6 +132,7 @@ function parseParameter(
   let format: string | undefined
   let enumValues: unknown[] | undefined
   let defaultValue: unknown
+  let exampleValue: unknown
   let minimum: number | undefined
   let maximum: number | undefined
   let maxLength: number | undefined
@@ -143,6 +144,8 @@ function parseParameter(
     format = schema?.format
     enumValues = schema?.enum
     defaultValue = schema?.default
+    // Example can be on the parameter itself or in the schema
+    exampleValue = p.example ?? schema?.example
     minimum = schema?.minimum
     maximum = schema?.maximum
     maxLength = schema?.maxLength
@@ -153,6 +156,7 @@ function parseParameter(
     format = 'format' in p ? p.format : undefined
     enumValues = 'enum' in p ? p.enum : undefined
     defaultValue = 'default' in p ? p.default : undefined
+    exampleValue = 'x-example' in p ? (p as Record<string, unknown>)['x-example'] : undefined
     minimum = 'minimum' in p ? p.minimum : undefined
     maximum = 'maximum' in p ? p.maximum : undefined
     maxLength = 'maxLength' in p ? p.maxLength : undefined
@@ -168,6 +172,7 @@ function parseParameter(
       format,
       enum: enumValues,
       default: defaultValue,
+      example: exampleValue,
       minimum,
       maximum,
       maxLength,

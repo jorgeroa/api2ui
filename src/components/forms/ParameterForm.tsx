@@ -11,11 +11,13 @@ interface ParameterFormProps {
 
 export function ParameterForm({ parameters, onSubmit, loading = false }: ParameterFormProps) {
   const [values, setValues] = useState<Record<string, string>>(() => {
-    // Initialize with default values from schema
+    // Initialize with default or example values from schema
     const initial: Record<string, string> = {}
     for (const param of parameters) {
       if (param.schema.default !== undefined) {
         initial[param.name] = String(param.schema.default)
+      } else if (param.schema.example !== undefined) {
+        initial[param.name] = String(param.schema.example)
       } else {
         initial[param.name] = ''
       }

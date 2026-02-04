@@ -13,6 +13,7 @@ export interface ParsedParameter {
     format?: string       // 'date', 'date-time', 'email', 'uri', 'password', etc.
     enum?: unknown[]      // For select inputs
     default?: unknown     // Default value
+    example?: unknown     // Example value from spec
     minimum?: number
     maximum?: number
     maxLength?: number

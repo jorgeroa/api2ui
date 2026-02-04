@@ -12,7 +12,10 @@ export function ParameterInput({ parameter, value, onChange }: ParameterInputPro
   // Determine input type based on parameter schema
   const renderInput = () => {
     const baseClasses = 'w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
-    const placeholder = schema.default ? String(schema.default) : undefined
+    // Build placeholder: prefer example, then default
+    const exampleHint = schema.example !== undefined ? `e.g. ${schema.example}` : undefined
+    const defaultHint = schema.default !== undefined ? String(schema.default) : undefined
+    const placeholder = exampleHint ?? defaultHint
 
     // Enum → select dropdown
     if (schema.enum && schema.enum.length > 0) {
@@ -130,15 +133,25 @@ export function ParameterInput({ parameter, value, onChange }: ParameterInputPro
     )
   }
 
+  const hintParts: string[] = []
+  if (description) hintParts.push(description)
+  if (schema.example !== undefined && !description?.includes(String(schema.example))) {
+    hintParts.push(`Example: ${schema.example}`)
+  }
+  const hint = hintParts.join(' — ')
+
   return (
     <div className="mb-4">
       <label className="block text-sm font-medium text-gray-700 mb-1">
         {name}
         {required && <span className="text-red-500 ml-1">*</span>}
+        {parameter.in === 'path' && (
+          <span className="text-gray-400 ml-1 font-normal text-xs">(path)</span>
+        )}
       </label>
       {renderInput()}
-      {description && (
-        <p className="mt-1 text-xs text-gray-500">{description}</p>
+      {hint && (
+        <p className="mt-1 text-xs text-gray-500">{hint}</p>
       )}
     </div>
   )
