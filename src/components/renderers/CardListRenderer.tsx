@@ -236,7 +236,7 @@ export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
       </div>
 
       {/* Pagination controls */}
-      {data.length > paginationConfig.itemsPerPage && (
+      {(pagination.totalPages > 1 || data.length > 12) && (
         <PaginationControls
           currentPage={pagination.currentPage}
           totalPages={pagination.totalPages}

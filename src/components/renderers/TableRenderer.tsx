@@ -337,7 +337,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
       </div>
 
       {/* Pagination controls */}
-      {data.length > paginationConfig.itemsPerPage && (
+      {(pagination.totalPages > 1 || data.length > 20) && (
         <PaginationControls
           currentPage={pagination.currentPage}
           totalPages={pagination.totalPages}
