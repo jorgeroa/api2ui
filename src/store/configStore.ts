@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { FieldConfig, ThemePreset, StyleOverrides, ConfigState, DrilldownMode } from '../types/config'
+import type { FieldConfig, ThemePreset, StyleOverrides, ConfigState, DrilldownMode, PaginationConfig } from '../types/config'
 
 function deepMerge<T extends Record<string, unknown>>(target: T, source: Partial<T>): T {
   const result = { ...target }
@@ -52,6 +52,10 @@ interface ConfigStore extends ConfigState {
   clearEndpointOverrides: (endpoint: string) => void
   getEndpointStyleOverrides: (endpoint: string) => StyleOverrides
 
+  // Pagination
+  setPaginationConfig: (path: string, config: Partial<PaginationConfig>) => void
+  getPaginationConfig: (path: string, defaultItemsPerPage: number) => PaginationConfig
+
   // Utility
   clearFieldConfigs: () => void
   resetConfig: () => void
@@ -75,6 +79,7 @@ export const useConfigStore = create<ConfigStore>()(
       styleOverrides: {} as StyleOverrides,
       endpointOverrides: {},
       panelOpen: false,
+      paginationConfigs: {},
 
       // Mode
       setMode: (mode) => set({ mode }),
@@ -193,6 +198,23 @@ export const useConfigStore = create<ConfigStore>()(
         return { ...state.styleOverrides, ...endpointOverrides }
       },
 
+      // Pagination
+      setPaginationConfig: (path, config) =>
+        set((state) => {
+          const existing = state.paginationConfigs[path] ?? { itemsPerPage: 20, currentPage: 1 }
+          return {
+            paginationConfigs: {
+              ...state.paginationConfigs,
+              [path]: { ...existing, ...config },
+            },
+          }
+        }),
+
+      getPaginationConfig: (path, defaultItemsPerPage) => {
+        const state = get()
+        return state.paginationConfigs[path] ?? { itemsPerPage: defaultItemsPerPage, currentPage: 1 }
+      },
+
       // Utility
       clearFieldConfigs: () => set({ fieldConfigs: {} }),
       resetConfig: () =>
@@ -201,6 +223,7 @@ export const useConfigStore = create<ConfigStore>()(
           styleOverrides: {} as StyleOverrides,
           endpointOverrides: {},
           globalTheme: 'light' as ThemePreset,
+          paginationConfigs: {},
         }),
 
       getHiddenFieldCount: () => {
@@ -215,7 +238,7 @@ export const useConfigStore = create<ConfigStore>()(
     }),
     {
       name: 'api2ui-config',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         fieldConfigs: state.fieldConfigs,
@@ -223,6 +246,7 @@ export const useConfigStore = create<ConfigStore>()(
         globalTheme: state.globalTheme,
         styleOverrides: state.styleOverrides,
         endpointOverrides: state.endpointOverrides,
+        paginationConfigs: state.paginationConfigs,
       }),
       merge: (persistedState, currentState) => {
         if (!persistedState || typeof persistedState !== 'object') return currentState

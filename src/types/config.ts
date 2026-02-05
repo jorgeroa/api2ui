@@ -23,6 +23,11 @@ export interface StyleOverrides {
 
 export type DrilldownMode = 'page' | 'dialog'
 
+export interface PaginationConfig {
+  itemsPerPage: number
+  currentPage: number
+}
+
 export interface ConfigState {
   mode: 'configure' | 'view'
   drilldownMode: DrilldownMode
@@ -31,4 +36,5 @@ export interface ConfigState {
   styleOverrides: StyleOverrides
   endpointOverrides: Record<string, StyleOverrides>
   panelOpen: boolean
+  paginationConfigs: Record<string, PaginationConfig>  // keyed by field path (e.g., "$")
 }
