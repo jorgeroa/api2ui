@@ -4,6 +4,13 @@ import { TableRenderer } from '../renderers/TableRenderer'
 import { CardListRenderer } from '../renderers/CardListRenderer'
 import { ListRenderer } from '../renderers/ListRenderer'
 import { JsonFallback } from '../renderers/JsonFallback'
+import { PrimitiveListRenderer } from '../renderers/PrimitiveListRenderer'
+import { ChipsRenderer } from '../renderers/ChipsRenderer'
+import { InlineRenderer } from '../renderers/InlineRenderer'
+import { GridRenderer } from '../renderers/GridRenderer'
+import { GalleryRenderer } from '../renderers/GalleryRenderer'
+import { TimelineRenderer } from '../renderers/TimelineRenderer'
+import { StatsRenderer } from '../renderers/StatsRenderer'
 import { getAvailableRenderModes } from '../renderers/PrimitiveRenderer'
 
 interface ComponentPickerProps {
@@ -36,6 +43,8 @@ export function ComponentPicker({
 }: ComponentPickerProps) {
   // Determine if we're dealing with array components or primitive render modes
   const isArrayComponent = sampleSchema.kind === 'array' && sampleSchema.items.kind === 'object'
+  const isArrayPrimitive = sampleSchema.kind === 'array' && sampleSchema.items.kind === 'primitive'
+  const isObjectComponent = sampleSchema.kind === 'object'
   const isPrimitiveField = sampleSchema.kind === 'primitive'
 
   // For primitive fields, use getAvailableRenderModes to determine options
@@ -93,6 +102,14 @@ export function ComponentPicker({
                       data={previewData}
                       schema={sampleSchema}
                     />
+                  ) : isArrayPrimitive ? (
+                    <ArrayPrimitivePreview
+                      type={type}
+                      data={previewData}
+                      schema={sampleSchema}
+                    />
+                  ) : isObjectComponent ? (
+                    <ObjectComponentPreview type={type} />
                   ) : isPrimitiveField ? (
                     <PrimitiveRenderModePreview
                       type={type}
@@ -150,6 +167,15 @@ function ArrayComponentPreview({
     case 'json':
       Component = JsonFallback
       break
+    case 'gallery':
+      Component = GalleryRenderer
+      break
+    case 'timeline':
+      Component = TimelineRenderer
+      break
+    case 'stats':
+      Component = StatsRenderer
+      break
   }
 
   if (!Component) {
@@ -161,6 +187,67 @@ function ArrayComponentPreview({
       <div
         className="transform origin-top-left pointer-events-none"
         style={{ transform: 'scale(0.25)', width: '400%' }}
+      >
+        <Component data={data} schema={schema} path="$.preview" depth={0} />
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Preview for object component types (detail, hero, tabs, split).
+ * Uses descriptive layout icons since objects vary too much for live previews.
+ */
+function ObjectComponentPreview({ type }: { type: string }) {
+  const descriptions: Record<string, { icon: string; desc: string }> = {
+    'detail': { icon: '☰', desc: 'Key-value list with collapsible sections' },
+    'hero': { icon: '👤', desc: 'Profile layout with image, title & stats' },
+    'tabs': { icon: '⊞', desc: 'Tabbed sections for nested data' },
+    'split': { icon: '◧', desc: 'Two-column: content left, metadata right' },
+    'json': { icon: '{ }', desc: 'Raw JSON data view' },
+  }
+
+  const info = descriptions[type] || { icon: '?', desc: 'Unknown type' }
+
+  return (
+    <div className="flex items-center gap-3 h-12">
+      <span className="text-2xl" aria-hidden>{info.icon}</span>
+      <span className="text-xs text-gray-600">{info.desc}</span>
+    </div>
+  )
+}
+
+/**
+ * Preview for primitive-array component types (primitive-list, chips, inline, grid).
+ * Renders a scaled-down version of the actual component.
+ */
+function ArrayPrimitivePreview({
+  type,
+  data,
+  schema,
+}: {
+  type: string
+  data: unknown
+  schema: TypeSignature
+}) {
+  const componentMap: Record<string, React.ComponentType<any>> = {
+    'primitive-list': PrimitiveListRenderer,
+    'chips': ChipsRenderer,
+    'inline': InlineRenderer,
+    'grid': GridRenderer,
+    'json': JsonFallback,
+  }
+
+  const Component = componentMap[type]
+  if (!Component) {
+    return <div className="text-xs text-gray-500 italic">Preview not available</div>
+  }
+
+  return (
+    <div className="overflow-hidden h-20 border border-gray-200 rounded">
+      <div
+        className="transform origin-top-left pointer-events-none p-2"
+        style={{ transform: 'scale(0.5)', width: '200%' }}
       >
         <Component data={data} schema={schema} path="$.preview" depth={0} />
       </div>
@@ -241,6 +328,40 @@ function PrimitiveRenderModePreview({
       } catch {
         return <div className="text-sm text-gray-600">2 hours ago</div>
       }
+
+    case 'rating':
+      return (
+        <div className="text-sm">
+          <span className="text-yellow-400">&#9733;&#9733;&#9733;&#9733;</span>
+          <span className="text-gray-300">&#9733;</span>
+          <span className="text-xs text-gray-500 ml-1">4.0</span>
+        </div>
+      )
+
+    case 'currency':
+      return <div className="text-sm text-gray-700">$1,234.56</div>
+
+    case 'code':
+      return (
+        <div className="text-sm">
+          <code className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-xs text-gray-800">
+            {stringValue.slice(0, 24)}
+          </code>
+        </div>
+      )
+
+    case 'email':
+      return <div className="text-sm text-blue-600 underline">{stringValue}</div>
+
+    case 'color': {
+      const colorVal = /^#|^rgb|^hsl/i.test(stringValue) ? stringValue : '#6366f1'
+      return (
+        <div className="flex items-center gap-2 text-sm">
+          <span className="w-4 h-4 rounded border border-gray-300" style={{ backgroundColor: colorVal }} />
+          <code className="text-xs font-mono">{stringValue || colorVal}</code>
+        </div>
+      )
+    }
 
     default:
       return <div className="text-xs text-gray-500 italic">Preview not available</div>

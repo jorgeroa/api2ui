@@ -7,6 +7,15 @@ import { DetailRenderer } from '../renderers/DetailRenderer'
 import { PrimitiveRenderer } from '../renderers/PrimitiveRenderer'
 import { PrimitiveListRenderer } from '../renderers/PrimitiveListRenderer'
 import { JsonFallback } from '../renderers/JsonFallback'
+import { ChipsRenderer } from '../renderers/ChipsRenderer'
+import { InlineRenderer } from '../renderers/InlineRenderer'
+import { GridRenderer } from '../renderers/GridRenderer'
+import { GalleryRenderer } from '../renderers/GalleryRenderer'
+import { TimelineRenderer } from '../renderers/TimelineRenderer'
+import { StatsRenderer } from '../renderers/StatsRenderer'
+import { HeroRenderer } from '../renderers/HeroRenderer'
+import { TabsRenderer } from '../renderers/TabsRenderer'
+import { SplitRenderer } from '../renderers/SplitRenderer'
 
 type RendererComponent = React.ComponentType<RendererProps>
 
@@ -54,6 +63,15 @@ export function getComponentByType(type: string): RendererComponent | undefined 
     'detail': DetailRenderer,
     'primitive': PrimitiveRenderer,
     'primitive-list': PrimitiveListRenderer,
+    'chips': ChipsRenderer,
+    'inline': InlineRenderer,
+    'grid': GridRenderer,
+    'gallery': GalleryRenderer,
+    'timeline': TimelineRenderer,
+    'stats': StatsRenderer,
+    'hero': HeroRenderer,
+    'tabs': TabsRenderer,
+    'split': SplitRenderer,
   }
 
   return typeMap[type]

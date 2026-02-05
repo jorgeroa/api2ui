@@ -32,10 +32,13 @@ function getDefaultTypeName(schema: TypeSignature): string {
 /** Get the list of alternative component types for a given schema */
 function getAvailableTypes(schema: TypeSignature): string[] {
   if (schema.kind === 'array' && schema.items.kind === 'object') {
-    return ['table', 'card-list', 'list', 'json']
+    return ['table', 'card-list', 'list', 'gallery', 'timeline', 'stats', 'json']
+  }
+  if (schema.kind === 'array' && schema.items.kind === 'primitive') {
+    return ['primitive-list', 'chips', 'inline', 'grid', 'json']
   }
   if (schema.kind === 'object') {
-    return ['detail', 'json']
+    return ['detail', 'hero', 'tabs', 'split', 'json']
   }
   return [getDefaultTypeName(schema)]
 }

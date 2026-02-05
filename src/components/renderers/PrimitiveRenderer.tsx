@@ -3,6 +3,7 @@ import type { RendererProps } from '../../types/components'
 import type { FieldType } from '../../types/schema'
 import { useConfigStore } from '../../store/configStore'
 import { isImageUrl } from '../../utils/imageDetection'
+import { isEmail, isColorValue, isCurrencyField, isRatingField, detectPrimitiveMode } from '../../utils/primitiveDetection'
 
 /** Time ago helper for relative date rendering */
 function timeAgo(date: Date): string {
@@ -48,6 +49,16 @@ function isDateLike(value: string, fieldName: string): boolean {
  * This is exported for ComponentPicker to determine what options to show.
  */
 export function getAvailableRenderModes(value: unknown, fieldName: string = ''): string[] {
+  if (typeof value === 'number') {
+    const modes: string[] = ['text']
+    if (isRatingField(fieldName, value)) modes.push('rating')
+    if (isCurrencyField(fieldName)) modes.push('currency')
+    // Always offer these as manual options for any number
+    if (!modes.includes('rating')) modes.push('rating')
+    if (!modes.includes('currency')) modes.push('currency')
+    return modes
+  }
+
   if (typeof value !== 'string') {
     return ['text']
   }
@@ -60,7 +71,11 @@ export function getAvailableRenderModes(value: unknown, fieldName: string = ''):
     return ['absolute', 'relative']
   }
 
-  return ['text']
+  const modes: string[] = ['text']
+  if (isEmail(value)) modes.push('email')
+  if (isColorValue(value)) modes.push('color')
+  modes.push('code')
+  return modes
 }
 
 export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
@@ -95,6 +110,28 @@ export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
 
   // Handle number
   if (type === 'number' && typeof data === 'number') {
+    const config = fieldConfigs[path]
+    const renderMode = config?.componentType || detectPrimitiveMode(data, path.split('.').pop() || '')
+
+    if (renderMode === 'rating') {
+      const clamped = Math.min(5, Math.max(0, data))
+      const fullStars = Math.floor(clamped)
+      const hasHalf = (clamped - fullStars) >= 0.25
+      const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0)
+      return (
+        <span className="inline-flex items-center gap-0.5" title={String(data)}>
+          {Array.from({ length: fullStars }, (_, i) => <span key={`f${i}`} className="text-yellow-400">&#9733;</span>)}
+          {hasHalf && <span className="text-yellow-300">&#9733;</span>}
+          {Array.from({ length: emptyStars }, (_, i) => <span key={`e${i}`} className="text-gray-300">&#9733;</span>)}
+          <span className="text-xs text-gray-500 ml-1">{data.toFixed(1)}</span>
+        </span>
+      )
+    }
+
+    if (renderMode === 'currency') {
+      return <span>${data.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+    }
+
     return <span>{data.toLocaleString()}</span>
   }
 
@@ -183,6 +220,41 @@ export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
       } catch {
         // Fall through to default string handling
       }
+    }
+
+    // Apply auto-detection if no explicit override
+    const effectiveMode = renderMode || detectPrimitiveMode(data, fieldName)
+
+    if (effectiveMode === 'email' || (!effectiveMode && isEmail(data))) {
+      return (
+        <a
+          href={`mailto:${data}`}
+          className="text-blue-600 hover:text-blue-800 underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {data}
+        </a>
+      )
+    }
+
+    if (effectiveMode === 'color') {
+      return (
+        <span className="inline-flex items-center gap-2">
+          <span
+            className="w-5 h-5 rounded border border-gray-300 inline-block shrink-0"
+            style={{ backgroundColor: data }}
+          />
+          <code className="text-xs font-mono text-gray-700">{data}</code>
+        </span>
+      )
+    }
+
+    if (effectiveMode === 'code' || renderMode === 'code') {
+      return (
+        <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-xs font-mono">
+          {data}
+        </code>
+      )
     }
 
     // Default string handling with truncation

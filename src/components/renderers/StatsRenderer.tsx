@@ -1,0 +1,131 @@
+import { useState, useEffect } from 'react'
+import type { RendererProps } from '../../types/components'
+import { DetailModal } from '../detail/DetailModal'
+import { FieldConfigPopover } from '../config/FieldConfigPopover'
+import { useNavigation } from '../../contexts/NavigationContext'
+import { getItemLabel } from '../../utils/itemLabel'
+import { formatLabel } from '../../utils/formatLabel'
+
+/** Renders arrays of objects as KPI/metric cards */
+export function StatsRenderer({ data, schema, path }: RendererProps) {
+  const [selectedItem, setSelectedItem] = useState<unknown | null>(null)
+  const [popoverState, setPopoverState] = useState<{
+    fieldPath: string
+    fieldName: string
+    fieldValue: unknown
+    position: { x: number; y: number }
+  } | null>(null)
+  const nav = useNavigation()
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { fieldPath } = (e as CustomEvent).detail
+      if (schema.kind === 'array' && schema.items.kind === 'object') {
+        const columns = Array.from(schema.items.fields.entries())
+        const match = columns.find(([name]) => `$[].${name}` === fieldPath)
+        if (match) {
+          const [fieldName] = match
+          const firstRow = Array.isArray(data) && data.length > 0 ? data[0] as Record<string, unknown> : null
+          const fieldValue = firstRow ? firstRow[fieldName] : undefined
+          const el = document.querySelector(`[data-field-path="${fieldPath}"]`)
+          const rect = el?.getBoundingClientRect()
+          const pos = rect
+            ? { x: rect.right, y: rect.top }
+            : { x: window.innerWidth / 2, y: window.innerHeight / 3 }
+          setPopoverState({ fieldPath, fieldName, fieldValue, position: pos })
+        }
+      }
+    }
+    document.addEventListener('api2ui:configure-field', handler)
+    return () => document.removeEventListener('api2ui:configure-field', handler)
+  }, [schema, data])
+
+  if (schema.kind !== 'array' || schema.items.kind !== 'object') {
+    return <div className="text-red-500">StatsRenderer expects array of objects</div>
+  }
+
+  if (!Array.isArray(data) || data.length === 0) {
+    return <div className="text-gray-500 italic p-4">No data</div>
+  }
+
+  const fields = Array.from(schema.items.fields.entries())
+
+  // Find the first number field for the big metric value
+  const metricField = fields.find(([, def]) =>
+    def.type.kind === 'primitive' && def.type.type === 'number'
+  )
+
+  // Find a secondary field for extra context
+  const secondaryField = fields.find(([name, def]) =>
+    def.type.kind === 'primitive' &&
+    name !== metricField?.[0] &&
+    def.type.type !== 'number'
+  )
+
+  const handleClick = (item: unknown, index: number) => {
+    const title = getItemLabel(item)
+    if (nav && nav.drilldownMode === 'page') {
+      nav.onDrillDown(item, schema.items, title, `${path}[${index}]`)
+    } else {
+      setSelectedItem(item)
+    }
+  }
+
+  return (
+    <div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {data.map((item, index) => {
+          const obj = item as Record<string, unknown>
+          const label = getItemLabel(item)
+          const metricValue = metricField ? obj[metricField[0]] : null
+          const secondaryValue = secondaryField ? obj[secondaryField[0]] : null
+
+          return (
+            <div
+              key={index}
+              onClick={() => handleClick(item, index)}
+              className="border border-border rounded-lg p-6 text-center hover:shadow-md hover:border-blue-300 cursor-pointer transition-all"
+            >
+              <div className="text-3xl font-bold text-text">
+                {typeof metricValue === 'number'
+                  ? metricValue.toLocaleString()
+                  : metricValue != null
+                    ? String(metricValue)
+                    : '--'}
+              </div>
+              <div className="text-sm text-gray-600 mt-2 truncate" title={label}>
+                {label}
+              </div>
+              {secondaryValue != null && (
+                <div className="text-xs text-gray-400 mt-1 truncate">
+                  {metricField && <span className="text-gray-500">{formatLabel(metricField[0])}: </span>}
+                  {secondaryField && (
+                    <span>{formatLabel(secondaryField[0])}: {String(secondaryValue)}</span>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {(!nav || nav.drilldownMode === 'dialog') && (
+        <DetailModal
+          item={selectedItem}
+          schema={schema.items}
+          onClose={() => setSelectedItem(null)}
+        />
+      )}
+
+      {popoverState && (
+        <FieldConfigPopover
+          fieldPath={popoverState.fieldPath}
+          fieldName={popoverState.fieldName}
+          fieldValue={popoverState.fieldValue}
+          position={popoverState.position}
+          onClose={() => setPopoverState(null)}
+        />
+      )}
+    </div>
+  )
+}

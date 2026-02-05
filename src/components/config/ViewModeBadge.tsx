@@ -43,7 +43,25 @@ export function ViewModeBadge({
     return () => document.removeEventListener('keydown', handler)
   }, [open])
 
-  const displayName = currentType.charAt(0).toUpperCase() + currentType.slice(1)
+  const displayNames: Record<string, string> = {
+    'table': 'Table',
+    'card-list': 'Cards',
+    'list': 'List',
+    'gallery': 'Gallery',
+    'timeline': 'Timeline',
+    'stats': 'Stats',
+    'detail': 'Detail',
+    'hero': 'Profile',
+    'tabs': 'Tabs',
+    'split': 'Split',
+    'primitive-list': 'Bullet List',
+    'chips': 'Tags',
+    'inline': 'Inline',
+    'grid': 'Grid',
+    'json': 'JSON',
+  }
+
+  const displayName = displayNames[currentType] || currentType.charAt(0).toUpperCase() + currentType.slice(1)
 
   return (
     <div ref={menuRef} className="relative inline-block">
@@ -69,7 +87,7 @@ export function ViewModeBadge({
       {open && (
         <div className="absolute right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-35">
           {availableTypes.map((type) => {
-            const label = type.charAt(0).toUpperCase() + type.slice(1)
+            const label = displayNames[type] || type.charAt(0).toUpperCase() + type.slice(1)
             const isActive = type === currentType
             return (
               <button
