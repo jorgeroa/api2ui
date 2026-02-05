@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { RendererProps } from '../../types/components'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DetailModal } from '../detail/DetailModal'
+import { DetailPanel } from '../detail/DetailPanel'
 import { useConfigStore } from '../../store/configStore'
 import { FieldControls } from '../config/FieldControls'
 import { FieldConfigPopover } from '../config/FieldConfigPopover'
@@ -349,9 +350,18 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
         />
       )}
 
-      {/* Detail modal — only shown in dialog mode */}
+      {/* Detail modal - dialog mode */}
       {(!nav || nav.drilldownMode === 'dialog') && (
         <DetailModal
+          item={selectedItem}
+          schema={schema.items}
+          onClose={() => setSelectedItem(null)}
+        />
+      )}
+
+      {/* Detail panel - panel mode */}
+      {nav && nav.drilldownMode === 'panel' && (
+        <DetailPanel
           item={selectedItem}
           schema={schema.items}
           onClose={() => setSelectedItem(null)}

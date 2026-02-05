@@ -60,9 +60,9 @@ export function DynamicRenderer({
     if (depth === 0) setNavStack([])
   }, [data, depth])
 
-  // Clear stack when switching to dialog mode
+  // Clear stack when switching to dialog or panel mode
   useEffect(() => {
-    if (depth === 0 && drilldownMode === 'dialog') setNavStack([])
+    if (depth === 0 && (drilldownMode === 'dialog' || drilldownMode === 'panel')) setNavStack([])
   }, [drilldownMode, depth])
 
   // Drill-down handler passed via context
@@ -136,7 +136,7 @@ export function DynamicRenderer({
       {/* Navigation bar: breadcrumb + mode toggle — only at depth=0 when data exists */}
       {depth === 0 && data != null && (
         <div className="flex items-center justify-between mb-2">
-          {isPageMode && navStack.length > 0 ? (
+          {navStack.length > 0 ? (
             <Breadcrumb
               rootLabel="Results"
               stack={navStack}
