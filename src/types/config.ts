@@ -21,7 +21,7 @@ export interface StyleOverrides {
   [key: `--${string}`]: string | undefined  // allow additional CSS vars
 }
 
-export type DrilldownMode = 'page' | 'dialog'
+export type DrilldownMode = 'page' | 'dialog' | 'panel'
 
 export interface PaginationConfig {
   itemsPerPage: number

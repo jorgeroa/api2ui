@@ -8,5 +8,5 @@ export interface NavStackEntry {
   path: string
 }
 
-/** Navigation mode: page replaces view inline, dialog opens modal */
-export type DrilldownMode = 'page' | 'dialog'
+/** Navigation mode: page replaces view inline, dialog opens modal, panel opens side drawer */
+export type DrilldownMode = 'page' | 'dialog' | 'panel'

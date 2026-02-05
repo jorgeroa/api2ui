@@ -27,6 +27,16 @@ export function DrilldownModeToggle() {
         >
           Dialog
         </button>
+        <button
+          onClick={() => setDrilldownMode('panel')}
+          className={`px-2.5 py-1 border-l border-gray-300 transition-colors ${
+            drilldownMode === 'panel'
+              ? 'bg-blue-100 text-blue-800 font-medium'
+              : 'bg-white text-gray-600 hover:bg-gray-50'
+          }`}
+        >
+          Panel
+        </button>
       </div>
     </div>
   )
