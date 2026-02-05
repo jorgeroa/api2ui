@@ -5,25 +5,8 @@ import { DetailModal } from '../detail/DetailModal'
 import { FieldConfigPopover } from '../config/FieldConfigPopover'
 import { isImageUrl } from '../../utils/imageDetection'
 import type { FieldDefinition } from '../../types/schema'
-
-/** Get a title from an item by checking common name fields */
-function getItemTitle(item: unknown): string {
-  if (typeof item !== 'object' || item === null) {
-    return 'Item'
-  }
-
-  const obj = item as Record<string, unknown>
-  const nameFields = ['name', 'title', 'label', 'id']
-
-  for (const field of nameFields) {
-    const value = obj[field]
-    if (typeof value === 'string' && value.length > 0) {
-      return value
-    }
-  }
-
-  return 'Item'
-}
+import { useNavigation } from '../../contexts/NavigationContext'
+import { getItemLabel } from '../../utils/itemLabel'
 
 /** Get the first image URL field from an item for hero image display */
 function getHeroImageField(
@@ -54,6 +37,7 @@ export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
     fieldValue: unknown
     position: { x: number; y: number }
   } | null>(null)
+  const nav = useNavigation()
 
   // Listen for cross-navigation events from ConfigPanel
   useEffect(() => {
@@ -115,7 +99,7 @@ export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {data.map((item, index) => {
           const obj = item as Record<string, unknown>
-          const title = getItemTitle(item)
+          const title = getItemLabel(item)
 
           // Detect hero image from first image-URL field
           const heroImage = getHeroImageField(obj, fields)
@@ -126,7 +110,13 @@ export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
           return (
             <div
               key={index}
-              onClick={() => setSelectedItem(item)}
+              onClick={() => {
+                if (nav && nav.drilldownMode === 'page') {
+                  nav.onDrillDown(item, schema.items, title, `${path}[${index}]`)
+                } else {
+                  setSelectedItem(item)
+                }
+              }}
               className="border border-border rounded-lg overflow-hidden shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer transition-all"
             >
               {/* Hero image - full width at top of card */}
@@ -222,12 +212,14 @@ export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
         })}
       </div>
 
-      {/* Detail modal */}
-      <DetailModal
-        item={selectedItem}
-        schema={schema.items}
-        onClose={() => setSelectedItem(null)}
-      />
+      {/* Detail modal — only shown in dialog mode */}
+      {(!nav || nav.drilldownMode === 'dialog') && (
+        <DetailModal
+          item={selectedItem}
+          schema={schema.items}
+          onClose={() => setSelectedItem(null)}
+        />
+      )}
 
       {/* Field config popover */}
       {popoverState && (

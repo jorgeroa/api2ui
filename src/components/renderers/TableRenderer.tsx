@@ -8,6 +8,8 @@ import { FieldConfigPopover } from '../config/FieldConfigPopover'
 import { SortableFieldList } from '../config/SortableFieldList'
 import { DraggableField } from '../config/DraggableField'
 import { isImageUrl } from '../../utils/imageDetection'
+import { useNavigation } from '../../contexts/NavigationContext'
+import { getItemLabel } from '../../utils/itemLabel'
 
 /** Compact inline display for non-primitive values in table cells */
 function CompactValue({ data }: { data: unknown }) {
@@ -50,6 +52,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
     position: { x: number; y: number }
   } | null>(null)
   const { mode, fieldConfigs, reorderFields } = useConfigStore()
+  const nav = useNavigation()
 
   // Listen for cross-navigation events from ConfigPanel
   useEffect(() => {
@@ -228,7 +231,14 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
           return (
             <div
               key={rowIndex}
-              onClick={() => setSelectedItem(item)}
+              onClick={() => {
+                if (nav && nav.drilldownMode === 'page') {
+                  const label = getItemLabel(item)
+                  nav.onDrillDown(item, schema.items, label, `${path}[${rowIndex}]`)
+                } else {
+                  setSelectedItem(item)
+                }
+              }}
               className={`flex border-b border-border cursor-pointer hover:bg-blue-50 ${
                 isEven ? 'bg-surface' : 'bg-background'
               }`}
@@ -305,12 +315,14 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
         })}
       </div>
 
-      {/* Detail modal */}
-      <DetailModal
-        item={selectedItem}
-        schema={schema.items}
-        onClose={() => setSelectedItem(null)}
-      />
+      {/* Detail modal — only shown in dialog mode */}
+      {(!nav || nav.drilldownMode === 'dialog') && (
+        <DetailModal
+          item={selectedItem}
+          schema={schema.items}
+          onClose={() => setSelectedItem(null)}
+        />
+      )}
 
       {/* Field config popover */}
       {popoverState && (

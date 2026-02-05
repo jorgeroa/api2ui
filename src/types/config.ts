@@ -21,8 +21,11 @@ export interface StyleOverrides {
   [key: `--${string}`]: string | undefined  // allow additional CSS vars
 }
 
+export type DrilldownMode = 'page' | 'dialog'
+
 export interface ConfigState {
   mode: 'configure' | 'view'
+  drilldownMode: DrilldownMode
   fieldConfigs: Record<string, FieldConfig>
   globalTheme: ThemePreset
   styleOverrides: StyleOverrides

@@ -1,30 +1,12 @@
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import type { TypeSignature } from '../../types/schema'
 import { DynamicRenderer } from '../DynamicRenderer'
+import { getItemLabel } from '../../utils/itemLabel'
 
 interface DetailModalProps {
   item: unknown | null
   schema: TypeSignature
   onClose: () => void
-}
-
-/** Get a title from an item by checking common name fields */
-function getItemTitle(item: unknown): string {
-  if (typeof item !== 'object' || item === null) {
-    return 'Item Details'
-  }
-
-  const obj = item as Record<string, unknown>
-  const nameFields = ['name', 'title', 'label', 'id']
-
-  for (const field of nameFields) {
-    const value = obj[field]
-    if (typeof value === 'string' && value.length > 0) {
-      return value
-    }
-  }
-
-  return 'Item Details'
 }
 
 export function DetailModal({ item, schema, onClose }: DetailModalProps) {
@@ -39,7 +21,7 @@ export function DetailModal({ item, schema, onClose }: DetailModalProps) {
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <DialogPanel className="max-w-3xl w-full bg-surface text-text rounded-xl shadow-lg p-6 max-h-[80vh] overflow-y-auto">
           <DialogTitle className="text-xl font-semibold mb-4">
-            {getItemTitle(item)}
+            {getItemLabel(item, 'Item Details')}
           </DialogTitle>
 
           {/* Render the item details */}

@@ -3,25 +3,8 @@ import type { RendererProps } from '../../types/components'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DetailModal } from '../detail/DetailModal'
 import { FieldConfigPopover } from '../config/FieldConfigPopover'
-
-/** Get a title from an item by checking common name fields */
-function getItemTitle(item: unknown): string {
-  if (typeof item !== 'object' || item === null) {
-    return 'Item'
-  }
-
-  const obj = item as Record<string, unknown>
-  const nameFields = ['name', 'title', 'label', 'id']
-
-  for (const field of nameFields) {
-    const value = obj[field]
-    if (typeof value === 'string' && value.length > 0) {
-      return value
-    }
-  }
-
-  return 'Item'
-}
+import { useNavigation } from '../../contexts/NavigationContext'
+import { getItemLabel } from '../../utils/itemLabel'
 
 /**
  * ListRenderer displays arrays of objects as a simple vertical list.
@@ -36,6 +19,7 @@ export function ListRenderer({ data, schema, path, depth }: RendererProps) {
     fieldValue: unknown
     position: { x: number; y: number }
   } | null>(null)
+  const nav = useNavigation()
 
   // Listen for cross-navigation events from ConfigPanel
   useEffect(() => {
@@ -97,7 +81,7 @@ export function ListRenderer({ data, schema, path, depth }: RendererProps) {
       <div className="border border-border rounded-lg overflow-hidden">
         {data.map((item, index) => {
           const obj = item as Record<string, unknown>
-          const title = getItemTitle(item)
+          const title = getItemLabel(item)
 
           // Show first 2-3 non-title fields inline
           const titleField = ['name', 'title', 'label', 'id'].find((name) => {
@@ -112,7 +96,13 @@ export function ListRenderer({ data, schema, path, depth }: RendererProps) {
           return (
             <div
               key={index}
-              onClick={() => setSelectedItem(item)}
+              onClick={() => {
+                if (nav && nav.drilldownMode === 'page') {
+                  nav.onDrillDown(item, schema.items, title, `${path}[${index}]`)
+                } else {
+                  setSelectedItem(item)
+                }
+              }}
               className="border-b border-border last:border-b-0 px-4 py-3 hover:bg-blue-50 cursor-pointer transition-colors"
             >
               <div className="flex items-center gap-4">
@@ -170,12 +160,14 @@ export function ListRenderer({ data, schema, path, depth }: RendererProps) {
         })}
       </div>
 
-      {/* Detail modal */}
-      <DetailModal
-        item={selectedItem}
-        schema={schema.items}
-        onClose={() => setSelectedItem(null)}
-      />
+      {/* Detail modal — only shown in dialog mode */}
+      {(!nav || nav.drilldownMode === 'dialog') && (
+        <DetailModal
+          item={selectedItem}
+          schema={schema.items}
+          onClose={() => setSelectedItem(null)}
+        />
+      )}
 
       {/* Field config popover */}
       {popoverState && (

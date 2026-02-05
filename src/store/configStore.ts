@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { FieldConfig, ThemePreset, StyleOverrides, ConfigState } from '../types/config'
+import type { FieldConfig, ThemePreset, StyleOverrides, ConfigState, DrilldownMode } from '../types/config'
 
 function deepMerge<T extends Record<string, unknown>>(target: T, source: Partial<T>): T {
   const result = { ...target }
@@ -31,6 +31,7 @@ function deepMerge<T extends Record<string, unknown>>(target: T, source: Partial
 interface ConfigStore extends ConfigState {
   // Mode
   setMode: (mode: 'configure' | 'view') => void
+  setDrilldownMode: (mode: DrilldownMode) => void
   togglePanel: () => void
 
   // Field config
@@ -68,6 +69,7 @@ export const useConfigStore = create<ConfigStore>()(
     (set, get) => ({
       // State
       mode: 'view' as const,
+      drilldownMode: 'page' as DrilldownMode,
       fieldConfigs: {},
       globalTheme: 'light' as ThemePreset,
       styleOverrides: {} as StyleOverrides,
@@ -76,6 +78,7 @@ export const useConfigStore = create<ConfigStore>()(
 
       // Mode
       setMode: (mode) => set({ mode }),
+      setDrilldownMode: (mode) => set({ drilldownMode: mode }),
       togglePanel: () => set((state) => ({ panelOpen: !state.panelOpen })),
 
       // Field config
@@ -216,6 +219,7 @@ export const useConfigStore = create<ConfigStore>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         fieldConfigs: state.fieldConfigs,
+        drilldownMode: state.drilldownMode,
         globalTheme: state.globalTheme,
         styleOverrides: state.styleOverrides,
         endpointOverrides: state.endpointOverrides,
