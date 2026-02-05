@@ -7,6 +7,9 @@ import { isImageUrl } from '../../utils/imageDetection'
 import type { FieldDefinition } from '../../types/schema'
 import { useNavigation } from '../../contexts/NavigationContext'
 import { getItemLabel } from '../../utils/itemLabel'
+import { useConfigStore } from '../../store/configStore'
+import { usePagination } from '../../hooks/usePagination'
+import { PaginationControls } from '../pagination/PaginationControls'
 
 /** Get the first image URL field from an item for hero image display */
 function getHeroImageField(
@@ -38,6 +41,7 @@ export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
     position: { x: number; y: number }
   } | null>(null)
   const nav = useNavigation()
+  const { getPaginationConfig, setPaginationConfig } = useConfigStore()
 
   // Listen for cross-navigation events from ConfigPanel
   useEffect(() => {
@@ -92,13 +96,32 @@ export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
     return <div className="text-red-500">CardListRenderer expects array of objects</div>
   }
 
+  // Pagination state
+  const paginationConfig = getPaginationConfig(path, 12)
+  const pagination = usePagination({
+    totalItems: data.length,
+    itemsPerPage: paginationConfig.itemsPerPage,
+    currentPage: paginationConfig.currentPage,
+  })
+
+  const paginatedData = data.slice(pagination.firstIndex, pagination.lastIndex)
+
+  const handlePageChange = (page: number) => {
+    setPaginationConfig(path, { currentPage: page })
+  }
+
+  const handleItemsPerPageChange = (items: number) => {
+    setPaginationConfig(path, { itemsPerPage: items, currentPage: 1 })
+  }
+
   const fields = Array.from(schema.items.fields.entries())
 
   return (
     <div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {data.map((item, index) => {
+        {paginatedData.map((item, paginatedIndex) => {
           const obj = item as Record<string, unknown>
+          const globalIndex = pagination.firstIndex + paginatedIndex
           const title = getItemLabel(item)
 
           // Detect hero image from first image-URL field
@@ -109,10 +132,10 @@ export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
 
           return (
             <div
-              key={index}
+              key={globalIndex}
               onClick={() => {
                 if (nav && nav.drilldownMode === 'page') {
-                  nav.onDrillDown(item, schema.items, title, `${path}[${index}]`)
+                  nav.onDrillDown(item, schema.items, title, `${path}[${globalIndex}]`)
                 } else {
                   setSelectedItem(item)
                 }
@@ -148,7 +171,7 @@ export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
                     if (heroImage && fieldName === heroImage.fieldName) return null
 
                     const value = obj[fieldName]
-                    const fieldPath = `${path}[${index}].${fieldName}`
+                    const fieldPath = `${path}[${globalIndex}].${fieldName}`
 
                     const displayLabel = fieldName
                       .replace(/_/g, ' ')
@@ -211,6 +234,19 @@ export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
           )
         })}
       </div>
+
+      {/* Pagination controls */}
+      {data.length > paginationConfig.itemsPerPage && (
+        <PaginationControls
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={data.length}
+          itemsPerPage={paginationConfig.itemsPerPage}
+          pageNumbers={pagination.pageNumbers}
+          onPageChange={handlePageChange}
+          onItemsPerPageChange={handleItemsPerPageChange}
+        />
+      )}
 
       {/* Detail modal — only shown in dialog mode */}
       {(!nav || nav.drilldownMode === 'dialog') && (

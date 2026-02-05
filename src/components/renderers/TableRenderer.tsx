@@ -10,6 +10,8 @@ import { DraggableField } from '../config/DraggableField'
 import { isImageUrl } from '../../utils/imageDetection'
 import { useNavigation } from '../../contexts/NavigationContext'
 import { getItemLabel } from '../../utils/itemLabel'
+import { usePagination } from '../../hooks/usePagination'
+import { PaginationControls } from '../pagination/PaginationControls'
 
 /** Compact inline display for non-primitive values in table cells */
 function CompactValue({ data }: { data: unknown }) {
@@ -51,7 +53,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
     fieldValue: unknown
     position: { x: number; y: number }
   } | null>(null)
-  const { mode, fieldConfigs, reorderFields } = useConfigStore()
+  const { mode, fieldConfigs, reorderFields, getPaginationConfig, setPaginationConfig } = useConfigStore()
   const nav = useNavigation()
 
   // Listen for cross-navigation events from ConfigPanel
@@ -108,6 +110,24 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
   // Extract columns from the item schema (must be object)
   if (schema.items.kind !== 'object') {
     return <div className="text-red-500">TableRenderer expects array of objects</div>
+  }
+
+  // Pagination state
+  const paginationConfig = getPaginationConfig(path, 20)
+  const pagination = usePagination({
+    totalItems: data.length,
+    itemsPerPage: paginationConfig.itemsPerPage,
+    currentPage: paginationConfig.currentPage,
+  })
+
+  const paginatedData = data.slice(pagination.firstIndex, pagination.lastIndex)
+
+  const handlePageChange = (page: number) => {
+    setPaginationConfig(path, { currentPage: page })
+  }
+
+  const handleItemsPerPageChange = (items: number) => {
+    setPaginationConfig(path, { itemsPerPage: items, currentPage: 1 })
   }
 
   const allColumns = Array.from(schema.items.fields.entries())
@@ -224,17 +244,18 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
       <div className="overflow-auto" style={{ maxHeight: '600px' }}>
         {renderHeader()}
 
-        {data.map((item, rowIndex) => {
+        {paginatedData.map((item, paginatedIndex) => {
           const row = item as Record<string, unknown>
-          const isEven = rowIndex % 2 === 0
+          const globalIndex = pagination.firstIndex + paginatedIndex
+          const isEven = paginatedIndex % 2 === 0
 
           return (
             <div
-              key={rowIndex}
+              key={globalIndex}
               onClick={() => {
                 if (nav && nav.drilldownMode === 'page') {
                   const label = getItemLabel(item)
-                  nav.onDrillDown(item, schema.items, label, `${path}[${rowIndex}]`)
+                  nav.onDrillDown(item, schema.items, label, `${path}[${globalIndex}]`)
                 } else {
                   setSelectedItem(item)
                 }
@@ -246,7 +267,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
             >
               {visibleColumns.map(([fieldName, fieldDef]) => {
                 const value = row[fieldName]
-                const cellPath = `${path}[${rowIndex}].${fieldName}`
+                const cellPath = `${path}[${globalIndex}].${fieldName}`
                 const columnFieldPath = `$[].${fieldName}`
 
                 // Check if this cell contains an image URL
@@ -314,6 +335,19 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
           )
         })}
       </div>
+
+      {/* Pagination controls */}
+      {data.length > paginationConfig.itemsPerPage && (
+        <PaginationControls
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={data.length}
+          itemsPerPage={paginationConfig.itemsPerPage}
+          pageNumbers={pagination.pageNumbers}
+          onPageChange={handlePageChange}
+          onItemsPerPageChange={handleItemsPerPageChange}
+        />
+      )}
 
       {/* Detail modal — only shown in dialog mode */}
       {(!nav || nav.drilldownMode === 'dialog') && (
