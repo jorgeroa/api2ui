@@ -1,3 +1,21 @@
+import type { FieldDefinition } from '../types/schema'
+
+/** Get the first image URL field from an object item for hero/gallery display */
+export function getHeroImageField(
+  item: Record<string, unknown>,
+  fields: Array<[string, FieldDefinition]>
+): { fieldName: string; url: string } | null {
+  for (const [fieldName, fieldDef] of fields) {
+    if (fieldDef.type.kind === 'primitive') {
+      const value = item[fieldName]
+      if (typeof value === 'string' && isImageUrl(value)) {
+        return { fieldName, url: value }
+      }
+    }
+  }
+  return null
+}
+
 /**
  * Detects if a string value is a URL pointing to an image file.
  * Uses pathname-based extension checking to avoid false positives from query params.

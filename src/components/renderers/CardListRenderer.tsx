@@ -3,29 +3,12 @@ import type { RendererProps } from '../../types/components'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DetailModal } from '../detail/DetailModal'
 import { FieldConfigPopover } from '../config/FieldConfigPopover'
-import { isImageUrl } from '../../utils/imageDetection'
-import type { FieldDefinition } from '../../types/schema'
+import { getHeroImageField } from '../../utils/imageDetection'
 import { useNavigation } from '../../contexts/NavigationContext'
 import { getItemLabel } from '../../utils/itemLabel'
 import { useConfigStore } from '../../store/configStore'
 import { usePagination } from '../../hooks/usePagination'
 import { PaginationControls } from '../pagination/PaginationControls'
-
-/** Get the first image URL field from an item for hero image display */
-function getHeroImageField(
-  item: Record<string, unknown>,
-  fields: Array<[string, FieldDefinition]>
-): { fieldName: string; url: string } | null {
-  for (const [fieldName, fieldDef] of fields) {
-    if (fieldDef.type.kind === 'primitive') {
-      const value = item[fieldName]
-      if (typeof value === 'string' && isImageUrl(value)) {
-        return { fieldName, url: value }
-      }
-    }
-  }
-  return null
-}
 
 /**
  * CardListRenderer displays arrays of objects as a responsive grid of cards.
