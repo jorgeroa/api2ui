@@ -1,73 +1,78 @@
-# React + TypeScript + Vite
+# api2ui
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Paste a JSON API URL and instantly see it rendered as a beautiful, interactive UI. Supports direct JSON endpoints and OpenAPI/Swagger specs.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Auto-rendering** -- Fetches JSON data, infers the schema, and picks the best component (table, cards, list, detail view, or raw JSON)
+- **OpenAPI/Swagger support** -- Paste a spec URL to browse tagged endpoints in a sidebar, fill in parameters, and execute operations
+- **Component switching** -- Switch between table, card list, and list views via a dropdown badge or a side-by-side preview picker
+- **Page & dialog navigation** -- Drill into nested data inline with breadcrumb navigation, or use a modal dialog. Toggle between modes at any time
+- **Configure mode** -- Hide/show fields, rename labels, reorder columns via drag-and-drop, and override component types per field
+- **Theming** -- Light, dark, compact, and spacious presets plus fine-grained control over colors, typography, spacing, and border radius. Supports per-endpoint style overrides
+- **Persistent config** -- All settings (field configs, theme, drilldown mode) are saved to localStorage
 
-## React Compiler
+## Quick start
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open http://localhost:5173 and try one of the built-in examples:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Example          | URL                                                  | Type    |
+|------------------|------------------------------------------------------|---------|
+| User Directory   | `https://jsonplaceholder.typicode.com/users`         | Array   |
+| Single User      | `https://jsonplaceholder.typicode.com/users/1`       | Object  |
+| Product Catalog  | `https://dummyjson.com/products`                     | Array   |
+| Pet Store API    | `https://petstore.swagger.io/v2/swagger.json`        | OpenAPI |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Tech stack
+
+- **React 19** + TypeScript
+- **Vite** for dev server and builds
+- **Zustand** for state management with localStorage persistence
+- **Tailwind CSS 4** for styling
+- **Headless UI** for accessible dialogs and disclosures
+- **@dnd-kit** for drag-and-drop column reordering
+- **@apidevtools/swagger-parser** for OpenAPI spec dereferencing
+
+## Project structure
+
 ```
+src/
+  components/
+    config/          Configuration panel, theme, field controls
+    renderers/       Table, CardList, List, Detail, Primitive, JSON
+    navigation/      Sidebar, Breadcrumb, DrilldownModeToggle
+    detail/          Detail modal (dialog mode)
+    openapi/         Operation selector
+    forms/           Parameter input forms
+    error/           Error display with retry
+    loading/         Skeleton loaders
+    registry/        Schema-to-component mapping
+  services/
+    api/             Fetch with CORS detection and typed errors
+    openapi/         OpenAPI 2.0 & 3.x parser
+    schema/          JSON schema inference engine
+  store/             Zustand stores (app state + config)
+  contexts/          React contexts (navigation)
+  hooks/             useAPIFetch orchestrator
+  types/             TypeScript type definitions
+  utils/             Shared utilities (image detection, item labels)
+```
+
+## Scripts
+
+| Command           | Description              |
+|-------------------|--------------------------|
+| `npm run dev`     | Start dev server         |
+| `npm run build`   | Type-check and build     |
+| `npm run preview` | Preview production build |
+| `npm run lint`    | Run ESLint               |
+| `npm test`        | Run tests with Vitest    |
+
+## License
+
+MIT
