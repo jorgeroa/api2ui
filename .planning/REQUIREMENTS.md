@@ -26,11 +26,11 @@ Requirements for UX Polish & Visual Intelligence milestone. Each maps to roadmap
 
 ### Enhanced Detail Views
 
-- [ ] **DTL-01**: Detail views with hero image at top when image field detected
-- [ ] **DTL-02**: Two-column layout for detail fields with visual grouping of related fields
-- [ ] **DTL-03**: Nested arrays render as horizontal card scrollers (alternative to sub-tables)
-- [ ] **DTL-04**: Breadcrumb navigation when drilling into nested detail views
-- [ ] **DTL-05**: Card detail view mode selectable (modal vs panel)
+- [x] **DTL-01**: Detail views with hero image at top when image field detected
+- [x] **DTL-02**: Two-column layout for detail fields with visual grouping of related fields
+- [x] **DTL-03**: Nested arrays render as horizontal card scrollers (alternative to sub-tables)
+- [x] **DTL-04**: Breadcrumb navigation when drilling into nested detail views
+- [x] **DTL-05**: Card detail view mode selectable (modal vs panel)
 
 ## Traceability
 
@@ -49,14 +49,14 @@ Requirements for UX Polish & Visual Intelligence milestone. Each maps to roadmap
 | PAG-02 | Phase 7 | Complete |
 | PAG-03 | Phase 7 | Complete |
 | PAG-04 | Phase 7 | Complete |
-| DTL-01 | Phase 8 | Pending |
-| DTL-02 | Phase 8 | Pending |
-| DTL-03 | Phase 8 | Pending |
-| DTL-04 | Phase 8 | Pending |
-| DTL-05 | Phase 8 | Pending |
+| DTL-01 | Phase 8 | Complete |
+| DTL-02 | Phase 8 | Complete |
+| DTL-03 | Phase 8 | Complete |
+| DTL-04 | Phase 8 | Complete |
+| DTL-05 | Phase 8 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 18 total
-- Completed: 13/18
+- Completed: 18/18
 - Adjusted: 0
 - Dropped: 0

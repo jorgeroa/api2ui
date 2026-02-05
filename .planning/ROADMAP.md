@@ -1,6 +1,6 @@
 # Milestone v1.1: UX Polish & Visual Intelligence
 
-**Status:** In Progress
+**Status:** Complete
 **Phases:** 5-8
 **Total Plans:** TBD (defined during phase planning)
 
@@ -67,8 +67,8 @@ Transform api2ui from a functional data explorer into a visually polished direct
   4. Breadcrumb navigation appears when drilling into nested detail views
   5. Card detail view mode is selectable (modal vs panel)
 **Plans**: 2 plans
-- [ ] 08-01-PLAN.md -- DetailRenderer hero image, two-column layout, horizontal card scroller
-- [ ] 08-02-PLAN.md -- Panel drilldown mode and breadcrumb in all modes
+- [x] 08-01-PLAN.md -- DetailRenderer hero image, two-column layout, horizontal card scroller
+- [x] 08-02-PLAN.md -- Panel drilldown mode and breadcrumb in all modes
 
 ## Progress
 
@@ -77,4 +77,4 @@ Transform api2ui from a functional data explorer into a visually polished direct
 | 5. Smart Visual Defaults | 3/3 | Complete | 2026-02-03 |
 | 6. Discoverable Switching | 3/3 | Complete | 2026-02-03 |
 | 7. Pagination | 2/2 | Complete | 2026-02-05 |
-| 8. Enhanced Details | 0/2 | Not Started | — |
+| 8. Enhanced Details | 2/2 | Complete | 2026-02-05 |
