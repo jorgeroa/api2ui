@@ -82,8 +82,8 @@ export function DynamicRenderer({
   const currentType = override || defaultType
   const availableTypes = getAvailableTypes(schema)
 
-  // Show badge on top-level renderers with alternatives
-  const canShowBadge = depth === 0 && availableTypes.length > 1
+  // Show badge on any renderer with alternatives
+  const canShowBadge = availableTypes.length > 1
 
   return (
     <div>
@@ -113,14 +113,12 @@ export function DynamicRenderer({
           onClose={() => setShowPicker(false)}
         />
       )}
-      <div className="overflow-x-auto">
-        <Component
-          data={data}
-          schema={schema}
-          path={path}
-          depth={depth}
-        />
-      </div>
+      <Component
+        data={data}
+        schema={schema}
+        path={path}
+        depth={depth}
+      />
       {depth === 0 && data != null && <OnboardingTooltip />}
     </div>
   )

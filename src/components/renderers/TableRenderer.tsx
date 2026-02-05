@@ -142,6 +142,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
   }
 
   const columnWidth = Math.max(150, Math.floor(900 / visibleColumns.length))
+  const totalWidth = columnWidth * visibleColumns.length
 
   // Column paths for drag-and-drop ordering
   const columnPaths = visibleColumns.map(([fieldName]) => `$[].${fieldName}`)
@@ -152,7 +153,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
 
   const renderHeader = () => {
     const headerRow = (
-      <div className="flex bg-background border-b-2 border-border font-semibold sticky top-0 z-10">
+      <div className="flex bg-background border-b-2 border-border font-semibold sticky top-0 z-10" style={{ minWidth: totalWidth }}>
         {visibleColumns.map(([fieldName]) => {
           const fieldPath = `$[].${fieldName}`
           const config = fieldConfigs[fieldPath]
@@ -216,11 +217,10 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
 
   return (
     <div className="border border-border rounded-lg overflow-hidden">
-      {/* Header - sticky positioning keeps it visible while scrolling */}
-      {renderHeader()}
+      {/* Single scroll container — header and body scroll horizontally together */}
+      <div className="overflow-auto" style={{ maxHeight: '600px' }}>
+        {renderHeader()}
 
-      {/* Scrollable body */}
-      <div className="overflow-y-auto" style={{ maxHeight: '600px' }}>
         {data.map((item, rowIndex) => {
           const row = item as Record<string, unknown>
           const isEven = rowIndex % 2 === 0
@@ -232,6 +232,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
               className={`flex border-b border-border cursor-pointer hover:bg-blue-50 ${
                 isEven ? 'bg-surface' : 'bg-background'
               }`}
+              style={{ minWidth: totalWidth }}
             >
               {visibleColumns.map(([fieldName, fieldDef]) => {
                 const value = row[fieldName]

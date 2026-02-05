@@ -24,7 +24,7 @@ function App() {
     selectedOperationIndex,
     setSelectedOperation
   } = useAppStore()
-  const { mode, setMode } = useConfigStore()
+  const { mode, setMode, clearFieldConfigs } = useConfigStore()
   const { fetchAndInfer, fetchOperation } = useAPIFetch()
 
   const handleRetry = () => {
@@ -41,6 +41,11 @@ function App() {
     if (parsedSpec && selectedOperation) {
       fetchOperation(parsedSpec.baseUrl, selectedOperation, values)
     }
+  }
+
+  const handleSelectOperation = (index: number) => {
+    clearFieldConfigs()
+    setSelectedOperation(index)
   }
 
   const isConfigureMode = mode === 'configure'
@@ -95,7 +100,7 @@ function App() {
           <Sidebar
             parsedSpec={parsedSpec}
             selectedIndex={selectedOperationIndex}
-            onSelect={setSelectedOperation}
+            onSelect={handleSelectOperation}
           />
           <main
             id="main-content"
@@ -117,14 +122,15 @@ function App() {
 
               {/* Main Content Area */}
               <div className="bg-surface rounded-lg shadow-md p-6 max-w-6xl mx-auto">
-                {loading && <SkeletonTable />}
+                {loading && !parsedSpec && <SkeletonTable />}
 
-                {error && !loading && (
+                {/* Standalone error (non-spec failures only) */}
+                {error && !loading && !parsedSpec && (
                   <ErrorDisplay error={error} onRetry={handleRetry} />
                 )}
 
-                {/* OpenAPI Spec UI */}
-                {parsedSpec && !loading && !error && (
+                {/* OpenAPI Spec UI — stays visible even on operation errors */}
+                {parsedSpec && !loading && (
                   <div className="space-y-6">
                     {/* Spec Info Header */}
                     <div className="border-b border-border pb-4">
@@ -159,6 +165,14 @@ function App() {
                         />
                       </>
                     )}
+
+                    {/* Inline operation error — form stays usable above */}
+                    {error && (
+                      <ErrorDisplay error={error} />
+                    )}
+
+                    {/* Loading indicator for operation fetch */}
+                    {loading && <SkeletonTable />}
 
                     {/* Data Rendering (after fetching operation) */}
                     {schema && data !== null && (
@@ -197,14 +211,15 @@ function App() {
 
             {/* Main Content Area */}
             <div className="bg-surface rounded-lg shadow-md p-6">
-              {loading && <SkeletonTable />}
+              {loading && !parsedSpec && <SkeletonTable />}
 
-              {error && !loading && (
+              {/* Standalone error (non-spec failures only) */}
+              {error && !loading && !parsedSpec && (
                 <ErrorDisplay error={error} onRetry={handleRetry} />
               )}
 
-              {/* OpenAPI Spec UI */}
-              {parsedSpec && !loading && !error && (
+              {/* OpenAPI Spec UI — stays visible even on operation errors */}
+              {parsedSpec && !loading && (
                 <div className="space-y-6">
                   {/* Spec Info Header */}
                   <div className="border-b border-border pb-4">
@@ -247,6 +262,14 @@ function App() {
                       />
                     </>
                   )}
+
+                  {/* Inline operation error — form stays usable above */}
+                  {error && (
+                    <ErrorDisplay error={error} />
+                  )}
+
+                  {/* Loading indicator for operation fetch */}
+                  {loading && <SkeletonTable />}
 
                   {/* Data Rendering (after fetching operation) */}
                   {schema && data !== null && (

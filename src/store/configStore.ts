@@ -52,6 +52,7 @@ interface ConfigStore extends ConfigState {
   getEndpointStyleOverrides: (endpoint: string) => StyleOverrides
 
   // Utility
+  clearFieldConfigs: () => void
   resetConfig: () => void
   getHiddenFieldCount: () => number
   getFieldConfig: (path: string) => FieldConfig
@@ -190,6 +191,7 @@ export const useConfigStore = create<ConfigStore>()(
       },
 
       // Utility
+      clearFieldConfigs: () => set({ fieldConfigs: {} }),
       resetConfig: () =>
         set({
           fieldConfigs: {},

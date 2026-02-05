@@ -1,4 +1,5 @@
 import { useAppStore } from '../store/appStore'
+import { useConfigStore } from '../store/configStore'
 import { fetchAPI } from '../services/api/fetcher'
 import { inferSchema } from '../services/schema/inferrer'
 import { parseOpenAPISpec } from '../services/openapi/parser'
@@ -9,7 +10,8 @@ import type { ParsedOperation } from '../services/openapi/types'
  * The function orchestrates: fetchAPI -> inferSchema -> store update.
  */
 export function useAPIFetch() {
-  const { startFetch, fetchSuccess, fetchError, specSuccess } = useAppStore()
+  const { startFetch, fetchSuccess, fetchError, specSuccess, clearSpec } = useAppStore()
+  const { clearFieldConfigs } = useConfigStore()
 
   /**
    * Heuristic to detect if a URL points to an OpenAPI/Swagger spec
@@ -107,11 +109,17 @@ export function useAPIFetch() {
 
   const fetchAndInfer = async (url: string) => {
     try {
+      // Clear stale field configs from previous schema
+      clearFieldConfigs()
+
       // Detect if this is a spec URL
       if (isSpecUrl(url)) {
         await fetchSpec(url)
         return
       }
+
+      // Clear any previous spec (switching from spec to direct URL)
+      clearSpec()
 
       // Signal start of fetch
       startFetch()

@@ -25,6 +25,7 @@ interface AppState {
   reset: () => void
 
   // OpenAPI actions
+  clearSpec: () => void
   specSuccess: (spec: ParsedSpec) => void
   setSelectedOperation: (index: number) => void
   setParameterValue: (name: string, value: string) => void
@@ -42,7 +43,7 @@ export const useAppStore = create<AppState>()((set) => ({
   parameterValues: {},
 
   setUrl: (url) => set({ url }),
-  startFetch: () => set({ loading: true, error: null, data: null, schema: null, parsedSpec: null }),
+  startFetch: () => set({ loading: true, error: null, data: null, schema: null }),
   fetchSuccess: (data, schema) => set({ loading: false, data, schema, error: null }),
   fetchError: (error) => set({ loading: false, error, data: null, schema: null }),
   reset: () => set({
@@ -57,6 +58,11 @@ export const useAppStore = create<AppState>()((set) => ({
   }),
 
   // OpenAPI actions
+  clearSpec: () => set({
+    parsedSpec: null,
+    selectedOperationIndex: 0,
+    parameterValues: {},
+  }),
   specSuccess: (spec) => set({
     parsedSpec: spec,
     selectedOperationIndex: 0,
