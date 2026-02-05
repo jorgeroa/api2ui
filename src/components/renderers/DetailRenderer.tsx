@@ -8,7 +8,7 @@ import { FieldControls } from '../config/FieldControls'
 import { FieldConfigPopover } from '../config/FieldConfigPopover'
 import { SortableFieldList } from '../config/SortableFieldList'
 import { DraggableField } from '../config/DraggableField'
-import { isImageUrl } from '../../utils/imageDetection'
+import { isImageUrl, getHeroImageField } from '../../utils/imageDetection'
 
 /** Detect primary fields (name, title, label, heading, subject) for typography hierarchy */
 function isPrimaryField(fieldName: string): boolean {
@@ -18,6 +18,11 @@ function isPrimaryField(fieldName: string): boolean {
 
   const primarySuffixes = ['_name', '_title', '_label', '-name', '-title', '-label', 'Name', 'Title']
   return primarySuffixes.some(suffix => fieldName.endsWith(suffix))
+}
+
+/** Detect metadata fields (created, updated, timestamps) */
+function isMetadataField(fieldName: string): boolean {
+  return /created|updated|modified|timestamp|date/i.test(fieldName)
 }
 
 /** Chevron icon that rotates when disclosure is open */
@@ -137,11 +142,178 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
     return <div className="text-gray-500 italic">All fields hidden</div>
   }
 
+  // Detect hero image for view mode
+  const heroImage = !isConfigureMode ? getHeroImageField(obj, allFields) : null
+
+  // Group fields for structured layout in view mode
+  const primaryFields: Array<[string, FieldDefinition]> = []
+  const regularFields: Array<[string, FieldDefinition]> = []
+  const imageFields: Array<[string, FieldDefinition]> = []
+  const metaFields: Array<[string, FieldDefinition]> = []
+  const nestedFields: Array<[string, FieldDefinition]> = []
+
+  if (!isConfigureMode) {
+    for (const field of visibleFields) {
+      const [fieldName, fieldDef] = field
+
+      // Skip hero image field to avoid duplication
+      if (heroImage && fieldName === heroImage.fieldName) continue
+
+      if (fieldDef.type.kind === 'primitive') {
+        const value = obj[fieldName]
+        const isImage = typeof value === 'string' && isImageUrl(value)
+
+        if (isPrimaryField(fieldName)) {
+          primaryFields.push(field)
+        } else if (isMetadataField(fieldName)) {
+          metaFields.push(field)
+        } else if (isImage) {
+          imageFields.push(field)
+        } else {
+          regularFields.push(field)
+        }
+      } else {
+        nestedFields.push(field)
+      }
+    }
+  }
+
   // Field paths for drag-and-drop ordering
   const fieldPaths = visibleFields.map(([fieldName]) => `${path}.${fieldName}`)
 
   const handleReorder = (orderedPaths: string[]) => {
     reorderFields(orderedPaths)
+  }
+
+  // Helper to render a primitive field
+  const renderPrimitiveField = (fieldName: string, fieldDef: FieldDefinition, value: unknown) => {
+    const fieldPath = `${path}.${fieldName}`
+    const config = fieldConfigs[fieldPath]
+    const defaultLabel = fieldName
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (char) => char.toUpperCase())
+    const displayLabel = config?.label || defaultLabel
+    const primary = isPrimaryField(fieldName)
+
+    const contextMenuHandlers = {
+      onContextMenu: (e: React.MouseEvent) => handleFieldContextMenu(e, fieldPath, fieldName, value),
+      onTouchStart: (e: React.TouchEvent) => {
+        const touch = e.touches[0]
+        if (!touch) return
+        const touchX = touch.clientX
+        const touchY = touch.clientY
+        const timer = setTimeout(() => {
+          setPopoverState({ fieldPath, fieldName, fieldValue: value, position: { x: touchX, y: touchY } })
+        }, 800)
+        ;(e.currentTarget as HTMLElement).dataset.longPressTimer = String(timer)
+      },
+      onTouchEnd: (e: React.TouchEvent) => {
+        const timer = (e.currentTarget as HTMLElement).dataset.longPressTimer
+        if (timer) clearTimeout(Number(timer))
+      },
+      onTouchMove: (e: React.TouchEvent) => {
+        const timer = (e.currentTarget as HTMLElement).dataset.longPressTimer
+        if (timer) clearTimeout(Number(timer))
+      },
+    }
+
+    return (
+      <div key={fieldName} className="grid grid-cols-[auto_1fr] gap-x-6" {...contextMenuHandlers}>
+        <div className={primary
+          ? "text-base font-semibold text-gray-700 py-1"
+          : "text-sm font-medium text-gray-600 py-1"
+        }>
+          {displayLabel}:
+        </div>
+        <div className={primary
+          ? "py-1 text-lg font-semibold text-gray-900"
+          : "py-1"
+        }>
+          <PrimitiveRenderer
+            data={value}
+            schema={fieldDef.type}
+            path={fieldPath}
+            depth={depth + 1}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  // Helper to render an image field
+  const renderImageField = (fieldName: string, fieldDef: FieldDefinition, value: unknown) => {
+    const fieldPath = `${path}.${fieldName}`
+    const config = fieldConfigs[fieldPath]
+    const defaultLabel = fieldName
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (char) => char.toUpperCase())
+    const displayLabel = config?.label || defaultLabel
+
+    return (
+      <div
+        key={fieldName}
+        className="space-y-2"
+        onContextMenu={(e) => handleFieldContextMenu(e, fieldPath, fieldName, value)}
+        onTouchStart={(e) => {
+          const touch = e.touches[0]
+          if (!touch) return
+          const touchX = touch.clientX
+          const touchY = touch.clientY
+          const timer = setTimeout(() => {
+            setPopoverState({ fieldPath, fieldName, fieldValue: value, position: { x: touchX, y: touchY } })
+          }, 800)
+          ;(e.currentTarget as HTMLElement).dataset.longPressTimer = String(timer)
+        }}
+        onTouchEnd={(e) => {
+          const timer = (e.currentTarget as HTMLElement).dataset.longPressTimer
+          if (timer) clearTimeout(Number(timer))
+        }}
+        onTouchMove={(e) => {
+          const timer = (e.currentTarget as HTMLElement).dataset.longPressTimer
+          if (timer) clearTimeout(Number(timer))
+        }}
+      >
+        <div className="text-sm font-medium text-gray-600">
+          {displayLabel}
+        </div>
+        <img
+          src={value as string}
+          alt={displayLabel}
+          loading="lazy"
+          className="w-full max-h-96 object-contain rounded-lg border border-gray-200 bg-gray-50"
+          onError={(e) => { e.currentTarget.style.display = 'none' }}
+        />
+      </div>
+    )
+  }
+
+  // Helper to render nested fields
+  const renderNestedField = (fieldName: string, fieldDef: FieldDefinition, value: unknown) => {
+    const fieldPath = `${path}.${fieldName}`
+    const config = fieldConfigs[fieldPath]
+    const defaultLabel = fieldName
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (char) => char.toUpperCase())
+    const displayLabel = config?.label || defaultLabel
+
+    return (
+      <div key={fieldName}>
+        <Disclosure defaultOpen={depth === 0}>
+          <DisclosureButton className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
+            <ChevronIcon />
+            {displayLabel} {getFieldSummary(fieldDef, value)}
+          </DisclosureButton>
+          <DisclosurePanel className="ml-4 mt-2 border-l-2 border-border pl-4">
+            <DynamicRenderer
+              data={value}
+              schema={fieldDef.type}
+              path={fieldPath}
+              depth={depth + 1}
+            />
+          </DisclosurePanel>
+        </Disclosure>
+      </div>
+    )
   }
 
   const renderFields = () => {
@@ -358,9 +530,51 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
     )
   }
 
+  // View mode: enhanced two-column layout with hero image and field grouping
   return (
-    <div className="space-y-3 border border-border rounded-lg p-4">
-      {fieldsContent}
+    <div className="space-y-6 border border-border rounded-lg p-4">
+      {heroImage && (
+        <div className="w-full">
+          <img
+            src={heroImage.url}
+            alt="Detail hero"
+            loading="lazy"
+            className="w-full max-h-96 object-cover rounded-lg border border-gray-200"
+            onError={(e) => { e.currentTarget.style.display = 'none' }}
+          />
+        </div>
+      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+        {primaryFields.map(([fieldName, fieldDef]) =>
+          renderPrimitiveField(fieldName, fieldDef, obj[fieldName])
+        )}
+        {primaryFields.length > 0 && (
+          <div className="md:col-span-2 border-b border-gray-200" />
+        )}
+        {regularFields.map(([fieldName, fieldDef]) =>
+          renderPrimitiveField(fieldName, fieldDef, obj[fieldName])
+        )}
+        {imageFields.map(([fieldName, fieldDef]) => (
+          <div key={fieldName} className="md:col-span-2">
+            {renderImageField(fieldName, fieldDef, obj[fieldName])}
+          </div>
+        ))}
+        {nestedFields.map(([fieldName, fieldDef]) => (
+          <div key={fieldName} className="md:col-span-2">
+            {renderNestedField(fieldName, fieldDef, obj[fieldName])}
+          </div>
+        ))}
+        {metaFields.length > 0 && (
+          <div className="md:col-span-2 border-t border-gray-200 pt-4">
+            <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-3">Metadata</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+              {metaFields.map(([fieldName, fieldDef]) =>
+                renderPrimitiveField(fieldName, fieldDef, obj[fieldName])
+              )}
+            </div>
+          </div>
+        )}
+      </div>
       {popoverElement}
     </div>
   )
