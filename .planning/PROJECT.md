@@ -28,9 +28,6 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 - Live data fetched on each page load — v1.0
 - Local storage for saving view configurations — v1.0
 - Fixed component set: tables, cards, lists, detail views, form inputs — v1.0
-
-### Active
-
 - Image URLs auto-detected and rendered as images by default — v1.1
 - Cards display hero images from detected image-URL fields — v1.1
 - Tables show inline thumbnail previews for image columns — v1.1
@@ -43,20 +40,34 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 - Nested arrays render as horizontal card scrollers in detail views — v1.1
 - Breadcrumb navigation for nested detail drill-down — v1.1
 
+### Active
+
+- Raw URL query param parsing with type inference (not just Swagger) — v1.2
+- Parameter grouping by prefix (e.g., ddcFilter[*] → "Filters" section) — v1.2
+- Progressive param reveal: show breakdown first, then make editable — v1.2
+- Smart type inference for params (dates, coordinates, zip codes, emails) — v1.2
+- Richer input components (date pickers, sliders, tag inputs for multi-value) — v1.2
+- Contextual defaults and placeholder examples for params — v1.2
+- Inline validation feedback before submit — v1.2
+- Smooth inline re-fetch with loading/error states — v1.2
+- Parameter value persistence across sessions — v1.2
+- User-selectable page layouts (sidebar, top bar, split view, drawer) — v1.2
+- Polished UX that feels like a real product — v1.2
+
 ### Out of Scope
 
-- CRUD / write operations (POST/PUT/DELETE) — v1 is read-only
-- API authentication handling — v1 targets public APIs only
-- AI-assisted CSS customization — deferred, not essential for v1
+- CRUD / write operations (POST/PUT/DELETE) — read-only for now
+- API authentication handling — targets public APIs only
+- AI-assisted CSS customization — deferred, not essential
 - Shareable links / hosted views — requires backend, defer
 - Custom/extensible components — start with fixed set
-- Smart param inference by name (e.g., "zip" -> zipcode input) — defer
-- Backend for persistence — v1 uses local storage
+- Backend for persistence — uses local storage
 - Mobile app — web-first
 
 ## Context
 
 - **Shipped v1.0 MVP** with 6,099 lines of TypeScript/TSX/CSS across 207 files
+- **Shipped v1.1 UX Polish** with smart visual defaults, discoverable component switching, pagination, and enhanced detail views
 - **Tech stack:** React 19, TypeScript 5.9, Vite 7, Tailwind CSS 4, Zustand, Headless UI, @dnd-kit, @apidevtools/swagger-parser
 - The rendering engine has two symmetric sides: input (parameters -> form controls) and output (responses -> data components), both following type-based defaults with developer overrides
 - Nesting is handled via master-detail: top-level collection (table/cards) -> click item -> detail view (modal/panel) with nested objects as sub-sections and nested arrays as sub-tables
@@ -91,4 +102,4 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 | @apidevtools/swagger-parser | Full $ref resolution for OpenAPI specs | Good, needs Buffer polyfill |
 
 ---
-*Last updated: 2026-02-02 after v1.0 milestone*
+*Last updated: 2026-02-05 after starting v1.2 milestone*

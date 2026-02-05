@@ -2,19 +2,19 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-02)
+See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Any API becomes instantly usable through a visual interface — paste a URL, see your data rendered as a real UI.
-**Current focus:** v1.1 UX Polish & Visual Intelligence
+**Current focus:** v1.2 Smart Parameters & Layout System
 
 ## Current Position
 
-Phase: 8 of 8 (Enhanced Details) — COMPLETE ✓
-Plan: 2 of 2 completed
-Status: Milestone v1.1 complete, all phases verified
-Last activity: 2026-02-05 — Phase 8 verified (8/8 must-haves passed)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements for v1.2
+Last activity: 2026-02-05 — Milestone v1.2 started
 
-Progress: [██████████████] 100% (10 of 10 plans, 4 of 4 phases)
+Progress: [░░░░░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -38,6 +38,9 @@ Progress: [██████████████] 100% (10 of 10 plans, 4 o
 
 ## Milestone History
 
+- v1.1 UX Polish — Shipped 2026-02-05 (4 phases, 10 plans, 18/18 requirements)
+  - Archive: .planning/milestones/v1.1-ROADMAP.md
+  - Requirements: .planning/milestones/v1.1-REQUIREMENTS.md
 - v1.0 MVP — Shipped 2026-02-02 (4 phases, 13 plans, 20/20 requirements)
   - Archive: .planning/milestones/v1.0-ROADMAP.md
   - Requirements: .planning/milestones/v1.0-REQUIREMENTS.md
@@ -84,7 +87,7 @@ Progress: [██████████████] 100% (10 of 10 plans, 4 o
 ## Session Continuity
 
 Last session: 2026-02-05
-Stopped at: Phase 8 complete and verified, milestone v1.1 ready for audit
+Stopped at: Starting v1.2 milestone, running research
 Resume file: None
 
 ---
