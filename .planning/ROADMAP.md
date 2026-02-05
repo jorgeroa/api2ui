@@ -51,7 +51,9 @@ Transform api2ui from a functional data explorer into a visually polished direct
   2. Page navigation shows prev/next, page numbers, and "Showing X-Y of Z" status
   3. Items-per-page is configurable via selector control
   4. Pagination preferences persist per-endpoint across sessions
-**Plans**: TBD
+**Plans**: 2 plans
+- [x] 07-01-PLAN.md -- Pagination hook, types, and ConfigStore extension
+- [ ] 07-02-PLAN.md -- PaginationControls UI and renderer integration
 
 ### Phase 8: Enhanced Detail Views & Layout Polish
 
@@ -72,5 +74,5 @@ Transform api2ui from a functional data explorer into a visually polished direct
 |-------|----------------|--------|-----------|
 | 5. Smart Visual Defaults | 3/3 | Complete | 2026-02-03 |
 | 6. Discoverable Switching | 3/3 | Complete | 2026-02-03 |
-| 7. Pagination | 0/TBD | Not Started | — |
+| 7. Pagination | 1/2 | In Progress | — |
 | 8. Enhanced Details | 0/TBD | Not Started | — |
