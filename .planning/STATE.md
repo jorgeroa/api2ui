@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 
 ## Current Position
 
-Phase: 7 of 8 (Pagination) — COMPLETE ✓
-Plan: 2 of 2 completed
-Status: Phase verified, ready for Phase 8
-Last activity: 2026-02-05 — Phase 7 verified (4/4 must-haves passed)
+Phase: 8 of 8 (Enhanced Details) — IN PROGRESS
+Plan: 1 of 1 completed
+Status: In progress
+Last activity: 2026-02-05 — Completed 08-01-PLAN.md
 
-Progress: [██████████░░░░] 75% (8 of ~10 plans, 3 of 4 phases)
+Progress: [███████████░░░] 82% (9 of 11 plans, 4 of 4 phases)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 21 (13 v1.0 + 8 v1.1)
-- Average duration: 3.3 min
-- Total execution time: ~77 min
+- Total plans completed: 22 (13 v1.0 + 9 v1.1)
+- Average duration: 3.2 min
+- Total execution time: ~80 min
 
 **By Phase:**
 
@@ -34,6 +34,7 @@ Progress: [██████████░░░░] 75% (8 of ~10 plans, 3 of
 | 5 | 3/3 | 5 min | 1.7 min |
 | 6 | 3/3 | 13 min | 4.3 min |
 | 7 | 2/2 | 3 min | 1.5 min |
+| 8 | 1/1 | 3 min | 3 min |
 
 ## Milestone History
 
@@ -70,11 +71,17 @@ Progress: [██████████░░░░] 75% (8 of ~10 plans, 3 of
 | D-07-02-02 | Pagination shown only when data exceeds threshold | 7 | Avoids UI clutter for small datasets | Active |
 | D-07-02-03 | Global index for paths/keys, paginated index for zebra striping | 7 | Correct drilldown with proper visual alternation | Active |
 | D-07-02-04 | Status text hidden on mobile (hidden sm:block) | 7 | Saves horizontal space on small screens | Active |
+| D-08-01-01 | Hero image uses first detected image-URL field | 8 | Consistent with card renderer behavior | Active |
+| D-08-01-02 | Hero field excluded from field list | 8 | Avoids visual duplication | Active |
+| D-08-01-03 | Two-column layout only in view mode | 8 | Configure mode needs single-column for drag-drop | Active |
+| D-08-01-04 | Metadata fields grouped at bottom with separator | 8 | Visual hierarchy for less important fields | Active |
+| D-08-01-05 | Nested object arrays use horizontal card scroller | 8 | More engaging than disclosure lists | Active |
+| D-08-01-06 | Scroll-snap with proximity mode not mandatory | 8 | Avoids scroll-locking pitfall | Active |
 
 ## Session Continuity
 
 Last session: 2026-02-05
-Stopped at: Phase 7 complete and verified, ready for Phase 8
+Stopped at: Completed 08-01-PLAN.md
 Resume file: None
 
 ---
