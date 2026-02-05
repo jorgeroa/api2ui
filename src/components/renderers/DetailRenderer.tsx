@@ -9,6 +9,7 @@ import { FieldConfigPopover } from '../config/FieldConfigPopover'
 import { SortableFieldList } from '../config/SortableFieldList'
 import { DraggableField } from '../config/DraggableField'
 import { isImageUrl, getHeroImageField } from '../../utils/imageDetection'
+import { HorizontalCardScroller } from './HorizontalCardScroller'
 
 /** Detect primary fields (name, title, label, heading, subject) for typography hierarchy */
 function isPrimaryField(fieldName: string): boolean {
@@ -296,6 +297,28 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
       .replace(/\b\w/g, (char) => char.toUpperCase())
     const displayLabel = config?.label || defaultLabel
 
+    // In view mode, use HorizontalCardScroller for arrays of objects
+    if (
+      !isConfigureMode &&
+      fieldDef.type.kind === 'array' &&
+      fieldDef.type.items.kind === 'object' &&
+      Array.isArray(value) &&
+      value.length > 0
+    ) {
+      return (
+        <div key={fieldName}>
+          <HorizontalCardScroller
+            items={value as unknown[]}
+            schema={fieldDef.type.items}
+            path={fieldPath}
+            depth={depth + 1}
+            label={displayLabel}
+          />
+        </div>
+      )
+    }
+
+    // Default nested rendering (objects, arrays of primitives, empty arrays, configure mode)
     return (
       <div key={fieldName}>
         <Disclosure defaultOpen={depth === 0}>
