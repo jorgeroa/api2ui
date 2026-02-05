@@ -19,10 +19,10 @@ Requirements for UX Polish & Visual Intelligence milestone. Each maps to roadmap
 
 ### Pagination
 
-- [ ] **PAG-01**: Client-side pagination component shared across table and card renderers
-- [ ] **PAG-02**: Configurable items-per-page (default: 20 tables, 12 cards) with selector control
-- [ ] **PAG-03**: Page navigation controls (prev/next, page numbers, status indicator)
-- [ ] **PAG-04**: Pagination preferences persist per-endpoint in ConfigStore
+- [x] **PAG-01**: Client-side pagination component shared across table and card renderers
+- [x] **PAG-02**: Configurable items-per-page (default: 20 tables, 12 cards) with selector control
+- [x] **PAG-03**: Page navigation controls (prev/next, page numbers, status indicator)
+- [x] **PAG-04**: Pagination preferences persist per-endpoint in ConfigStore
 
 ### Enhanced Detail Views
 
@@ -45,10 +45,10 @@ Requirements for UX Polish & Visual Intelligence milestone. Each maps to roadmap
 | DSC-02 | Phase 6 | Complete |
 | DSC-03 | Phase 6 | Complete |
 | DSC-04 | Phase 6 | Complete |
-| PAG-01 | Phase 7 | Pending |
-| PAG-02 | Phase 7 | Pending |
-| PAG-03 | Phase 7 | Pending |
-| PAG-04 | Phase 7 | Pending |
+| PAG-01 | Phase 7 | Complete |
+| PAG-02 | Phase 7 | Complete |
+| PAG-03 | Phase 7 | Complete |
+| PAG-04 | Phase 7 | Complete |
 | DTL-01 | Phase 8 | Pending |
 | DTL-02 | Phase 8 | Pending |
 | DTL-03 | Phase 8 | Pending |
@@ -57,6 +57,6 @@ Requirements for UX Polish & Visual Intelligence milestone. Each maps to roadmap
 
 **Coverage:**
 - v1.1 requirements: 18 total
-- Completed: 9/18
+- Completed: 13/18
 - Adjusted: 0
 - Dropped: 0
