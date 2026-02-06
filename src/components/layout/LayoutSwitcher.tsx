@@ -1,5 +1,5 @@
 import * as ToggleGroup from '@radix-ui/react-toggle-group'
-import { LayoutMode } from '../../store/layoutStore'
+import type { LayoutMode } from '../../store/layoutStore'
 
 interface LayoutSwitcherProps {
   value: LayoutMode
