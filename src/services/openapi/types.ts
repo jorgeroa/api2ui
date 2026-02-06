@@ -18,6 +18,12 @@ export interface ParsedParameter {
     maximum?: number
     maxLength?: number
   }
+  // Type inferred from value (for URL-parsed params)
+  inferredType?: 'string' | 'number' | 'boolean' | 'date' | 'email' | 'url' | 'coordinates' | 'zip'
+  // Array of values for array params (from URL parsing)
+  values?: string[]
+  // Whether this is an array parameter
+  isArray?: boolean
 }
 
 export interface ParsedOperation {
