@@ -1,62 +1,83 @@
-# v1.1 Requirements
+# v1.2 Requirements
 
-Requirements for UX Polish & Visual Intelligence milestone. Each maps to roadmap phases.
+Requirements for Smart Parameters & Layout System milestone. Each maps to roadmap phases.
 
-### Smart Visual Defaults
+### URL Parsing
 
-- [x] **VIZ-01**: Image URLs auto-detected by file extension and CDN patterns, rendered as `<img>` by default
-- [x] **VIZ-02**: Cards display hero image from first detected image-URL field
-- [x] **VIZ-03**: Tables show inline thumbnail previews for image-URL columns
-- [x] **VIZ-04**: Typography hierarchy: primary fields (name/title) visually distinct from secondary data
-- [x] **VIZ-05**: Detail views render image fields as full-width images with section headings for nested objects
+- [ ] **PARSE-01**: Parse query params from any URL (not just Swagger/OpenAPI)
+- [ ] **PARSE-02**: Detect array params in both `tag[]=x` and `tag=x&tag=y` notations
+- [ ] **PARSE-03**: Group params by prefix (e.g., `ddcFilter[*]` → "Filters" section)
+- [ ] **PARSE-04**: Infer basic types from values (string, number, boolean)
+- [ ] **PARSE-05**: Detect date/datetime formats in param values
+- [ ] **PARSE-06**: Detect email and URL formats in param values
+- [ ] **PARSE-07**: Detect coordinate pairs (latitude/longitude)
+- [ ] **PARSE-08**: Detect zip/postal codes
 
-### Discoverable Component Switching
+### Form Components
 
-- [x] **DSC-01**: View-mode badge/chip on renderers allows component type switching without Configure mode
-- [x] **DSC-02**: Enhanced ComponentPicker with live previews accessible from view-mode badge
-- [x] **DSC-03**: Per-element config popover for contextual field configuration (visibility, label, component type)
-- [x] **DSC-04**: ConfigPanel links to per-element config for cross-navigation
+- [ ] **FORM-01**: Date picker component for date/datetime fields
+- [ ] **FORM-02**: Multi-value tag input with chips for array params
+- [ ] **FORM-03**: Inline validation feedback (on blur, not keystroke)
+- [ ] **FORM-04**: Contextual placeholders with example values
+- [ ] **FORM-05**: Slider component for numeric ranges when min/max known
+- [ ] **FORM-06**: Grouped checkbox component for enum arrays
 
-### Pagination
+### Re-fetch Experience
 
-- [x] **PAG-01**: Client-side pagination component shared across table and card renderers
-- [x] **PAG-02**: Configurable items-per-page (default: 20 tables, 12 cards) with selector control
-- [x] **PAG-03**: Page navigation controls (prev/next, page numbers, status indicator)
-- [x] **PAG-04**: Pagination preferences persist per-endpoint in ConfigStore
+- [ ] **FETCH-01**: Smooth inline re-fetch without full page reload
+- [ ] **FETCH-02**: Loading states during fetch operations
+- [ ] **FETCH-03**: Error feedback with clear error messages
+- [ ] **FETCH-04**: Parameter persistence per-endpoint across sessions
+- [ ] **FETCH-05**: Applied filter chips showing active params
+- [ ] **FETCH-06**: "Clear all" button to reset params
+- [ ] **FETCH-07**: URL preview showing what will be fetched
 
-### Enhanced Detail Views
+### Layout System
 
-- [x] **DTL-01**: Detail views with hero image at top when image field detected
-- [x] **DTL-02**: Two-column layout for detail fields with visual grouping of related fields
-- [x] **DTL-03**: Nested arrays render as horizontal card scrollers (alternative to sub-tables)
-- [x] **DTL-04**: Breadcrumb navigation when drilling into nested detail views
-- [x] **DTL-05**: Card detail view mode selectable (modal vs panel)
+- [ ] **LAYOUT-01**: User-selectable layout presets
+- [ ] **LAYOUT-02**: Sidebar filters + main content layout
+- [ ] **LAYOUT-03**: Top filter bar + results below layout
+- [ ] **LAYOUT-04**: Split view layout (equal weight params/results)
+- [ ] **LAYOUT-05**: Collapsible drawer layout (filters on demand)
+- [ ] **LAYOUT-06**: Layout preference persisted per-endpoint
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VIZ-01 | Phase 5 | Complete |
-| VIZ-02 | Phase 5 | Complete |
-| VIZ-03 | Phase 5 | Complete |
-| VIZ-04 | Phase 5 | Complete |
-| VIZ-05 | Phase 5 | Complete |
-| DSC-01 | Phase 6 | Complete |
-| DSC-02 | Phase 6 | Complete |
-| DSC-03 | Phase 6 | Complete |
-| DSC-04 | Phase 6 | Complete |
-| PAG-01 | Phase 7 | Complete |
-| PAG-02 | Phase 7 | Complete |
-| PAG-03 | Phase 7 | Complete |
-| PAG-04 | Phase 7 | Complete |
-| DTL-01 | Phase 8 | Complete |
-| DTL-02 | Phase 8 | Complete |
-| DTL-03 | Phase 8 | Complete |
-| DTL-04 | Phase 8 | Complete |
-| DTL-05 | Phase 8 | Complete |
+| PARSE-01 | TBD | Pending |
+| PARSE-02 | TBD | Pending |
+| PARSE-03 | TBD | Pending |
+| PARSE-04 | TBD | Pending |
+| PARSE-05 | TBD | Pending |
+| PARSE-06 | TBD | Pending |
+| PARSE-07 | TBD | Pending |
+| PARSE-08 | TBD | Pending |
+| FORM-01 | TBD | Pending |
+| FORM-02 | TBD | Pending |
+| FORM-03 | TBD | Pending |
+| FORM-04 | TBD | Pending |
+| FORM-05 | TBD | Pending |
+| FORM-06 | TBD | Pending |
+| FETCH-01 | TBD | Pending |
+| FETCH-02 | TBD | Pending |
+| FETCH-03 | TBD | Pending |
+| FETCH-04 | TBD | Pending |
+| FETCH-05 | TBD | Pending |
+| FETCH-06 | TBD | Pending |
+| FETCH-07 | TBD | Pending |
+| LAYOUT-01 | TBD | Pending |
+| LAYOUT-02 | TBD | Pending |
+| LAYOUT-03 | TBD | Pending |
+| LAYOUT-04 | TBD | Pending |
+| LAYOUT-05 | TBD | Pending |
+| LAYOUT-06 | TBD | Pending |
 
 **Coverage:**
-- v1.1 requirements: 18 total
-- Completed: 18/18
-- Adjusted: 0
-- Dropped: 0
+- v1.2 requirements: 27 total
+- Mapped to phases: 0
+- Unmapped: 27
+
+---
+*Requirements defined: 2026-02-05*
+*Last updated: 2026-02-05 after initial definition*
