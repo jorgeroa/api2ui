@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-05)
 ## Current Position
 
 Phase: 9 of 11 (URL Parsing & Type Inference Foundation)
-Plan: 4 of 6 complete (09-01, 09-02, 09-03, 09-04)
-Status: In progress - wave 2 plan 09-04 complete
-Last activity: 2026-02-06 — Completed 09-04-PLAN.md (Parameter Grouping UI)
+Plan: 5 of 6 complete (09-01, 09-02, 09-03, 09-04, 09-05)
+Status: In progress - wave 2 complete, ready for 09-06
+Last activity: 2026-02-06 — Completed 09-05-PLAN.md (Type Icons & Override Dropdown)
 
-Progress: [█████████░░░░░] 87% (27/31 total plans across all milestones)
+Progress: [█████████░░░░░] 90% (28/31 total plans across all milestones)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 26 (13 v1.0 + 10 v1.1 + 3 v1.2)
-- Average duration: 3.2 min
-- Total execution time: ~90 min
+- Total plans completed: 28 (13 v1.0 + 10 v1.1 + 5 v1.2)
+- Average duration: 3.1 min
+- Total execution time: ~93 min
 
 **By Phase:**
 
@@ -35,7 +35,7 @@ Progress: [█████████░░░░░] 87% (27/31 total plans ac
 | 6 | 3/3 | 13 min | 4.3 min |
 | 7 | 2/2 | 3 min | 1.5 min |
 | 8 | 2/2 | 5 min | 2.5 min |
-| 9 | 4/6 | 9 min | 2.3 min |
+| 9 | 5/6 | 11 min | 2.2 min |
 
 ## Milestone History
 
@@ -84,6 +84,8 @@ Progress: [█████████░░░░░] 87% (27/31 total plans ac
 | Check ZIP before number | Prevent 5-digit ZIP misdetection as number | 09-02 |
 | All parameter groups collapsed by default | Reduces visual clutter, users expand what they need | 09-04 |
 | Strip common suffixes from group names | filter/params/options/config/settings removed for cleaner labels | 09-04 |
+| Inline SVG icons instead of icon library | Smaller bundle, no external dependency | 09-05 |
+| Type icon next to label (not inside input) | Cleaner separation, doesn't interfere with input | 09-05 |
 
 ### Pending Todos
 
@@ -96,8 +98,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed 09-04-PLAN.md (Parameter Grouping UI)
+Stopped at: Completed 09-05-PLAN.md (Type Icons & Override Dropdown)
 Resume file: None
 
 ---
-*Last updated: 2026-02-06 after 09-04 execution*
+*Last updated: 2026-02-06 after 09-05 execution*
