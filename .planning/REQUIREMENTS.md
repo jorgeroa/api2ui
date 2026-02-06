@@ -45,39 +45,44 @@ Requirements for Smart Parameters & Layout System milestone. Each maps to roadma
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PARSE-01 | TBD | Pending |
-| PARSE-02 | TBD | Pending |
-| PARSE-03 | TBD | Pending |
-| PARSE-04 | TBD | Pending |
-| PARSE-05 | TBD | Pending |
-| PARSE-06 | TBD | Pending |
-| PARSE-07 | TBD | Pending |
-| PARSE-08 | TBD | Pending |
-| FORM-01 | TBD | Pending |
-| FORM-02 | TBD | Pending |
-| FORM-03 | TBD | Pending |
-| FORM-04 | TBD | Pending |
-| FORM-05 | TBD | Pending |
-| FORM-06 | TBD | Pending |
-| FETCH-01 | TBD | Pending |
-| FETCH-02 | TBD | Pending |
-| FETCH-03 | TBD | Pending |
-| FETCH-04 | TBD | Pending |
-| FETCH-05 | TBD | Pending |
-| FETCH-06 | TBD | Pending |
-| FETCH-07 | TBD | Pending |
-| LAYOUT-01 | TBD | Pending |
-| LAYOUT-02 | TBD | Pending |
-| LAYOUT-03 | TBD | Pending |
-| LAYOUT-04 | TBD | Pending |
-| LAYOUT-05 | TBD | Pending |
-| LAYOUT-06 | TBD | Pending |
+| PARSE-01 | Phase 9 | Pending |
+| PARSE-02 | Phase 9 | Pending |
+| PARSE-03 | Phase 9 | Pending |
+| PARSE-04 | Phase 9 | Pending |
+| PARSE-05 | Phase 9 | Pending |
+| PARSE-06 | Phase 9 | Pending |
+| PARSE-07 | Phase 9 | Pending |
+| PARSE-08 | Phase 9 | Pending |
+| FORM-01 | Phase 11 | Pending |
+| FORM-02 | Phase 11 | Pending |
+| FORM-03 | Phase 11 | Pending |
+| FORM-04 | Phase 11 | Pending |
+| FORM-05 | Phase 11 | Pending |
+| FORM-06 | Phase 11 | Pending |
+| FETCH-01 | Phase 11 | Pending |
+| FETCH-02 | Phase 11 | Pending |
+| FETCH-03 | Phase 11 | Pending |
+| FETCH-04 | Phase 11 | Pending |
+| FETCH-05 | Phase 11 | Pending |
+| FETCH-06 | Phase 11 | Pending |
+| FETCH-07 | Phase 11 | Pending |
+| LAYOUT-01 | Phase 10 | Pending |
+| LAYOUT-02 | Phase 10 | Pending |
+| LAYOUT-03 | Phase 10 | Pending |
+| LAYOUT-04 | Phase 10 | Pending |
+| LAYOUT-05 | Phase 10 | Pending |
+| LAYOUT-06 | Phase 10 | Pending |
 
 **Coverage:**
 - v1.2 requirements: 27 total
-- Mapped to phases: 0
-- Unmapped: 27
+- Mapped to phases: 27
+- Unmapped: 0
+
+**Phase breakdown:**
+- Phase 9 (URL Parsing & Type Inference): 8 requirements
+- Phase 10 (Layout System): 6 requirements
+- Phase 11 (Rich Input Components & UX Polish): 13 requirements
 
 ---
 *Requirements defined: 2026-02-05*
-*Last updated: 2026-02-05 after initial definition*
+*Last updated: 2026-02-05 after roadmap creation - 100% coverage achieved*

@@ -1,80 +1,142 @@
-# Milestone v1.1: UX Polish & Visual Intelligence
+# Roadmap: api2ui
 
-**Status:** Complete
-**Phases:** 5-8
-**Total Plans:** TBD (defined during phase planning)
+## Milestones
 
-## Overview
-
-Transform api2ui from a functional data explorer into a visually polished directory-like experience. Four phases deliver smart visual defaults (auto-image detection, hero images, typography), discoverable component switching with per-element config, client-side pagination for large datasets, and enhanced detail views with two-column layouts and breadcrumb navigation.
+- ✅ **v1.0 MVP** - Phases 1-4 (shipped 2026-01-XX)
+- ✅ **v1.1 UX Polish** - Phases 5-8 (shipped 2026-02-05)
+- 🚧 **v1.2 Smart Parameters & Layout System** - Phases 9-11 (in progress)
 
 ## Phases
 
-### Phase 5: Smart Visual Defaults
+<details>
+<summary>✅ v1.0 MVP (Phases 1-4) - SHIPPED 2026-01-XX</summary>
 
+### Phase 1: Foundation
+**Goal**: Project scaffolding and core rendering engine
+**Plans**: Completed
+
+### Phase 2: Type-Based Defaults
+**Goal**: Auto-map API data types to UI components
+**Plans**: Completed
+
+### Phase 3: Configuration System
+**Goal**: Developer configuration tools
+**Plans**: Completed
+
+### Phase 4: Landing & Examples
+**Goal**: User-friendly entry point
+**Plans**: Completed
+
+</details>
+
+<details>
+<summary>✅ v1.1 UX Polish (Phases 5-8) - SHIPPED 2026-02-05</summary>
+
+### Phase 5: Smart Visual Defaults
 **Goal**: Data looks good out of the box without any configuration — images auto-rendered, cards have hero images, typography establishes visual hierarchy
-**Depends on**: v1.0 (complete)
 **Requirements**: VIZ-01, VIZ-02, VIZ-03, VIZ-04, VIZ-05
-**Success Criteria** (what must be TRUE):
-  1. URL fields ending in image extensions (.jpg, .png, .gif, .webp, .svg) render as `<img>` by default
-  2. Card view detects first image-URL field and displays it as hero image
-  3. Table view shows thumbnail previews for image-URL columns
-  4. Primary fields (name/title/label) render with larger/bolder typography than secondary fields
-  5. Detail views render image fields as full-width images with section headings for nested objects
 **Plans**: 3 plans
 - [x] 05-01-PLAN.md -- Image detection utility + PrimitiveRenderer auto-image rendering
 - [x] 05-02-PLAN.md -- Card hero images + Table thumbnail previews
 - [x] 05-03-PLAN.md -- Detail view full-width images + Typography hierarchy
 
 ### Phase 6: Discoverable Component Switching & Per-Element Config
-
 **Goal**: Users can discover and switch component types without entering Configure mode, and configure individual elements in context
-**Depends on**: Phase 5
 **Requirements**: DSC-01, DSC-02, DSC-03, DSC-04
-**Success Criteria** (what must be TRUE):
-  1. A subtle badge/chip on each renderer allows switching component type in View mode
-  2. ComponentPicker shows live previews and is accessible from the view-mode badge
-  3. Clicking a field/element opens a contextual config popover (visibility, label, component type)
-  4. ConfigPanel provides cross-navigation links to per-element config
 **Plans**: 3 plans
 - [x] 06-01-PLAN.md -- ViewModeBadge with carousel cycling + DynamicRenderer integration
 - [x] 06-02-PLAN.md -- FieldConfigPopover with right-click/long-press + renderer integration
 - [x] 06-03-PLAN.md -- Cross-navigation + onboarding tooltip
 
 ### Phase 7: Pagination & Large Dataset Handling
-
 **Goal**: Large arrays are paginated with sensible defaults, improving both performance and browsing UX
-**Depends on**: Phase 5 (can run in parallel with Phase 6)
 **Requirements**: PAG-01, PAG-02, PAG-03, PAG-04
-**Success Criteria** (what must be TRUE):
-  1. Arrays with >20 items (tables) or >12 items (cards) are automatically paginated
-  2. Page navigation shows prev/next, page numbers, and "Showing X-Y of Z" status
-  3. Items-per-page is configurable via selector control
-  4. Pagination preferences persist per-endpoint across sessions
 **Plans**: 2 plans
 - [x] 07-01-PLAN.md -- Pagination hook, types, and ConfigStore extension
 - [x] 07-02-PLAN.md -- PaginationControls UI and renderer integration
 
 ### Phase 8: Enhanced Detail Views & Layout Polish
-
 **Goal**: Detail views feel like polished product pages with hero images, two-column layouts, and breadcrumb navigation
-**Depends on**: Phase 5, Phase 6
 **Requirements**: DTL-01, DTL-02, DTL-03, DTL-04, DTL-05
-**Success Criteria** (what must be TRUE):
-  1. Detail views show hero image at top when an image field is detected
-  2. Fields display in two-column layout with visual grouping of related fields
-  3. Nested arrays can render as horizontal card scrollers (alternative to sub-tables)
-  4. Breadcrumb navigation appears when drilling into nested detail views
-  5. Card detail view mode is selectable (modal vs panel)
 **Plans**: 2 plans
 - [x] 08-01-PLAN.md -- DetailRenderer hero image, two-column layout, horizontal card scroller
 - [x] 08-02-PLAN.md -- Panel drilldown mode and breadcrumb in all modes
 
+</details>
+
+### 🚧 v1.2 Smart Parameters & Layout System (In Progress)
+
+**Milestone Goal:** Transform parameter handling with smart URL parsing, type inference, rich input components, and user-switchable layouts.
+
+#### Phase 9: URL Parsing & Type Inference Foundation
+**Goal**: Parse raw URL query strings with smart type inference and parameter persistence
+**Depends on**: Phase 8
+**Requirements**: PARSE-01, PARSE-02, PARSE-03, PARSE-04, PARSE-05, PARSE-06, PARSE-07, PARSE-08
+**Success Criteria** (what must be TRUE):
+  1. User can paste any URL with query params and see them parsed into editable form fields
+  2. Array parameters work in both bracket notation (tag[]=x) and repeated key formats (tag=x&tag=y)
+  3. Parameters with common prefixes auto-group into collapsible sections (e.g., ddcFilter[*] → "Filters")
+  4. Date strings, emails, URLs, coordinates, and zip codes are automatically detected and shown with appropriate input types
+  5. Parameter values persist across browser sessions per endpoint
+**Plans**: TBD
+
+Plans:
+- [ ] 09-01: TBD
+- [ ] 09-02: TBD
+
+#### Phase 10: Layout System & Parameter Grouping
+**Goal**: User-selectable layout presets with responsive behavior
+**Depends on**: Phase 9
+**Requirements**: LAYOUT-01, LAYOUT-02, LAYOUT-03, LAYOUT-04, LAYOUT-05, LAYOUT-06
+**Success Criteria** (what must be TRUE):
+  1. User can switch between sidebar, top bar, split view, and drawer layouts with a visible control
+  2. Layout choice persists per endpoint across sessions
+  3. On mobile (viewport < 768px), layout defaults to collapsible drawer for optimal touch interaction
+  4. Layout transitions are smooth without losing form state or scroll position
+  5. Parameter groups from Phase 9 adapt to each layout mode appropriately
+**Plans**: TBD
+
+Plans:
+- [ ] 10-01: TBD
+- [ ] 10-02: TBD
+
+#### Phase 11: Rich Input Components & UX Polish
+**Goal**: Rich form components with inline re-fetch, validation, and applied filter chips
+**Depends on**: Phase 10
+**Requirements**: FORM-01, FORM-02, FORM-03, FORM-04, FORM-05, FORM-06, FETCH-01, FETCH-02, FETCH-03, FETCH-04, FETCH-05, FETCH-06, FETCH-07
+**Success Criteria** (what must be TRUE):
+  1. Date/datetime fields show calendar picker instead of plain text input
+  2. Array parameters render as tag input with chip UI (add/remove individual values)
+  3. Numeric ranges show slider components when min/max are known or inferred
+  4. User receives inline validation feedback on blur (not on keystroke) before submitting
+  5. Active filters display as removable chips above results with "Clear all" button
+  6. Clicking "Apply" or changing params triggers smooth inline re-fetch with loading state (no full page reload)
+  7. URL preview shows what will be fetched before user clicks Apply
+**Plans**: TBD
+
+Plans:
+- [ ] 11-01: TBD
+- [ ] 11-02: TBD
+- [ ] 11-03: TBD
+
 ## Progress
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 5. Smart Visual Defaults | 3/3 | Complete | 2026-02-03 |
-| 6. Discoverable Switching | 3/3 | Complete | 2026-02-03 |
-| 7. Pagination | 2/2 | Complete | 2026-02-05 |
-| 8. Enhanced Details | 2/2 | Complete | 2026-02-05 |
+**Execution Order:**
+Phases execute in numeric order: 9 → 10 → 11
+
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1. Foundation | v1.0 | 3/3 | Complete | 2026-01-XX |
+| 2. Type-Based Defaults | v1.0 | 2/2 | Complete | 2026-01-XX |
+| 3. Configuration System | v1.0 | 2/2 | Complete | 2026-01-XX |
+| 4. Landing & Examples | v1.0 | 1/1 | Complete | 2026-01-XX |
+| 5. Smart Visual Defaults | v1.1 | 3/3 | Complete | 2026-02-03 |
+| 6. Discoverable Component Switching | v1.1 | 3/3 | Complete | 2026-02-04 |
+| 7. Pagination | v1.1 | 2/2 | Complete | 2026-02-04 |
+| 8. Enhanced Detail Views | v1.1 | 2/2 | Complete | 2026-02-05 |
+| 9. URL Parsing & Type Inference Foundation | v1.2 | 0/TBD | Not started | - |
+| 10. Layout System & Parameter Grouping | v1.2 | 0/TBD | Not started | - |
+| 11. Rich Input Components & UX Polish | v1.2 | 0/TBD | Not started | - |
+
+---
+*Last updated: 2026-02-05 after v1.2 roadmap creation*
