@@ -8,6 +8,7 @@ interface ParameterInputProps {
   inferredType?: string // Type from inference
   typeOverride?: string // User's override (from store)
   onTypeOverride?: (type: string) => void // Callback for override
+  onClear?: () => void // Callback to clear this field
 }
 
 export function ParameterInput({
@@ -17,6 +18,7 @@ export function ParameterInput({
   inferredType,
   typeOverride,
   onTypeOverride,
+  onClear,
 }: ParameterInputProps) {
   const { name, required, description, schema } = parameter
 
@@ -265,6 +267,9 @@ export function ParameterInput({
   const showTypeIcon = Boolean(inferredType || typeOverride)
   const displayType = effectiveType ?? 'string'
 
+  // Show clear button only if we have a value and an onClear handler
+  const showClearButton = Boolean(onClear && value)
+
   return (
     <div className="mb-4">
       <div className="flex items-center gap-2 mb-1">
@@ -283,7 +288,21 @@ export function ParameterInput({
           />
         )}
       </div>
-      {renderInput()}
+      <div className="relative">
+        {renderInput()}
+        {showClearButton && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+            title="Clear value"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
+      </div>
       {hint && <p className="mt-1 text-xs text-gray-500">{hint}</p>}
     </div>
   )
