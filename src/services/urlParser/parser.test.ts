@@ -231,7 +231,7 @@ describe('parseUrlParameters', () => {
       expect(result.parameters[0].values).toEqual(['1', '2'])
       // But warn about ambiguity
       expect(result.warnings.length).toBeGreaterThan(0)
-      expect(result.warnings.some(w => w.includes('foo') && w.includes('duplicate'))).toBe(true)
+      expect(result.warnings.some(w => w.includes('foo') && w.toLowerCase().includes('duplicate'))).toBe(true)
     })
   })
 
