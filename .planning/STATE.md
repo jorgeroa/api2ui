@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-05)
 ## Current Position
 
 Phase: 9 of 11 (URL Parsing & Type Inference Foundation)
-Plan: 2 of 6 complete (09-01, 09-03 done; 09-02 in progress)
+Plan: 3 of 6 complete (09-01, 09-02, 09-03 planning done)
 Status: In progress - wave 1 plans executing in parallel
-Last activity: 2026-02-06 — Completed 09-01-PLAN.md (URL Parameter Parser)
+Last activity: 2026-02-06 — Completed 09-02-PLAN.md (Parameter Type Inferrer)
 
-Progress: [████████░░░░░░] 81% (25/31 total plans across all milestones)
+Progress: [████████░░░░░░] 84% (26/31 total plans across all milestones)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 23 (13 v1.0 + 10 v1.1)
-- Average duration: 3.1 min
-- Total execution time: ~82 min
+- Total plans completed: 26 (13 v1.0 + 10 v1.1 + 3 v1.2)
+- Average duration: 3.2 min
+- Total execution time: ~90 min
 
 **By Phase:**
 
@@ -35,6 +35,7 @@ Progress: [████████░░░░░░] 81% (25/31 total plans ac
 | 6 | 3/3 | 13 min | 4.3 min |
 | 7 | 2/2 | 3 min | 1.5 min |
 | 8 | 2/2 | 5 min | 2.5 min |
+| 9 | 3/6 | 8 min | 2.7 min |
 
 ## Milestone History
 
@@ -74,6 +75,14 @@ Progress: [████████░░░░░░] 81% (25/31 total plans ac
 
 **Layout state principle:** Derive, don't sync. Single source of truth for layout mode, compute dependent values.
 
+### Decisions from Phase 9
+
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| 5-digit integers as string | Too ambiguous - could be ID, ZIP, code | 09-02 |
+| ZIP/coordinates require name hints | Prevent false positives without clear intent | 09-02 |
+| Check ZIP before number | Prevent 5-digit ZIP misdetection as number | 09-02 |
+
 ### Pending Todos
 
 None yet.
@@ -85,8 +94,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed 09-01-PLAN.md (URL Parameter Parser)
+Stopped at: Completed 09-02-PLAN.md (Parameter Type Inferrer)
 Resume file: None
 
 ---
-*Last updated: 2026-02-06 after 09-01 execution*
+*Last updated: 2026-02-06 after 09-02 execution*
