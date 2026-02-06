@@ -11,6 +11,7 @@ import { ConfigToggle } from './components/config/ConfigToggle'
 import { ConfigPanel } from './components/config/ConfigPanel'
 import { ThemeApplier } from './components/config/ThemeApplier'
 import { Sidebar } from './components/navigation/Sidebar'
+import { LayoutContainer } from './components/layout/LayoutContainer'
 import 'react-loading-skeleton/dist/skeleton.css'
 
 function App() {
@@ -155,37 +156,41 @@ function App() {
                       </div>
                     )}
 
-                    {/* Parameter Form (no dropdown selector in sidebar mode) */}
+                    {/* Layout Container with Parameters and Results */}
                     {parsedSpec.operations.length > 0 && selectedOperation && (
-                      <>
-                        <ParameterForm
-                          parameters={selectedOperation.parameters}
-                          onSubmit={handleParameterSubmit}
-                          loading={loading}
-                          endpoint={`${parsedSpec.baseUrl}${selectedOperation.path}`}
-                        />
-                      </>
-                    )}
+                      <LayoutContainer
+                        endpoint={`${parsedSpec.baseUrl}${selectedOperation.path}`}
+                        parameters={
+                          <ParameterForm
+                            parameters={selectedOperation.parameters}
+                            onSubmit={handleParameterSubmit}
+                            loading={loading}
+                            endpoint={`${parsedSpec.baseUrl}${selectedOperation.path}`}
+                          />
+                        }
+                        results={
+                          <>
+                            {/* Inline operation error — form stays usable above */}
+                            {error && <ErrorDisplay error={error} />}
 
-                    {/* Inline operation error — form stays usable above */}
-                    {error && (
-                      <ErrorDisplay error={error} />
-                    )}
+                            {/* Loading indicator for operation fetch */}
+                            {loading && <SkeletonTable />}
 
-                    {/* Loading indicator for operation fetch */}
-                    {loading && <SkeletonTable />}
-
-                    {/* Data Rendering (after fetching operation) */}
-                    {schema && data !== null && (
-                      <div className="border-t border-border pt-6">
-                        <h3 className="text-lg font-semibold text-text mb-4">Response Data</h3>
-                        <DynamicRenderer
-                          data={data}
-                          schema={schema.rootType}
-                          path="$"
-                          depth={0}
-                        />
-                      </div>
+                            {/* Data Rendering (after fetching operation) */}
+                            {schema && data !== null && (
+                              <div className="border-t border-border pt-6">
+                                <h3 className="text-lg font-semibold text-text mb-4">Response Data</h3>
+                                <DynamicRenderer
+                                  data={data}
+                                  schema={schema.rootType}
+                                  path="$"
+                                  depth={0}
+                                />
+                              </div>
+                            )}
+                          </>
+                        }
+                      />
                     )}
                   </div>
                 )}
@@ -245,86 +250,91 @@ function App() {
                     </div>
                   )}
 
-                  {/* Operation Selector + Parameter Form */}
+                  {/* Operation Selector (single-endpoint only) */}
+                  {parsedSpec.operations.length === 1 && (
+                    <OperationSelector
+                      operations={parsedSpec.operations}
+                      selectedIndex={0}
+                      onSelect={() => {}}
+                    />
+                  )}
+
+                  {/* Layout Container with Parameters and Results */}
                   {parsedSpec.operations.length > 0 && selectedOperation && (
-                    <>
-                      {parsedSpec.operations.length === 1 && (
-                        <OperationSelector
-                          operations={parsedSpec.operations}
-                          selectedIndex={0}
-                          onSelect={() => {}}
+                    <LayoutContainer
+                      endpoint={`${parsedSpec.baseUrl}${selectedOperation.path}`}
+                      parameters={
+                        <ParameterForm
+                          parameters={selectedOperation.parameters}
+                          onSubmit={handleParameterSubmit}
+                          loading={loading}
+                          endpoint={`${parsedSpec.baseUrl}${selectedOperation.path}`}
                         />
-                      )}
+                      }
+                      results={
+                        <>
+                          {/* Inline operation error — form stays usable above */}
+                          {error && <ErrorDisplay error={error} />}
 
-                      <ParameterForm
-                        parameters={selectedOperation.parameters}
-                        onSubmit={handleParameterSubmit}
-                        loading={loading}
-                        endpoint={`${parsedSpec.baseUrl}${selectedOperation.path}`}
-                      />
-                    </>
-                  )}
+                          {/* Loading indicator for operation fetch */}
+                          {loading && <SkeletonTable />}
 
-                  {/* Inline operation error — form stays usable above */}
-                  {error && (
-                    <ErrorDisplay error={error} />
-                  )}
-
-                  {/* Loading indicator for operation fetch */}
-                  {loading && <SkeletonTable />}
-
-                  {/* Data Rendering (after fetching operation) */}
-                  {schema && data !== null && (
-                    <div className="border-t border-border pt-6">
-                      <h3 className="text-lg font-semibold text-text mb-4">Response Data</h3>
-                      <DynamicRenderer
-                        data={data}
-                        schema={schema.rootType}
-                        path="$"
-                        depth={0}
-                      />
-                    </div>
+                          {/* Data Rendering (after fetching operation) */}
+                          {schema && data !== null && (
+                            <div className="border-t border-border pt-6">
+                              <h3 className="text-lg font-semibold text-text mb-4">Response Data</h3>
+                              <DynamicRenderer
+                                data={data}
+                                schema={schema.rootType}
+                                path="$"
+                                depth={0}
+                              />
+                            </div>
+                          )}
+                        </>
+                      }
+                    />
                   )}
                 </div>
               )}
 
               {/* Direct API URL flow */}
-              {!parsedSpec && !loading && !error && (
-                <>
-                  {/* Show parsed URL parameters when URL has query string */}
-                  {url && url.includes('?') && (() => {
-                    const currentUrl = url!  // Already checked url exists above
-                    return (
-                      <div className="mb-6">
-                        <h3 className="text-lg font-semibold text-text mb-4">URL Parameters</h3>
-                        <ParameterForm
-                          parameters={[]}
-                          rawUrl={currentUrl}
-                          onSubmit={(values) => {
-                            // Reconstruct URL with modified params and re-fetch
-                            const baseUrl = currentUrl.split('?')[0]!
-                            const params = new URLSearchParams(values).toString()
-                            const newUrl = params ? `${baseUrl}?${params}` : baseUrl
-                            fetchAndInfer(newUrl)
-                          }}
-                          loading={loading}
-                          endpoint={currentUrl.split('?')[0]!}
-                        />
-                      </div>
-                    )
-                  })()}
-
-                  {/* Data rendering - show when data is present */}
-                  {schema && data !== null && (
-                    <DynamicRenderer
-                      data={data}
-                      schema={schema.rootType}
-                      path="$"
-                      depth={0}
-                    />
-                  )}
-                </>
-              )}
+              {!parsedSpec && !loading && !error && url && url.includes('?') && (() => {
+                const currentUrl = url
+                const baseUrl = currentUrl.split('?')[0]!
+                return (
+                  <LayoutContainer
+                    endpoint={baseUrl}
+                    parameters={
+                      <ParameterForm
+                        parameters={[]}
+                        rawUrl={currentUrl}
+                        onSubmit={(values) => {
+                          // Reconstruct URL with modified params and re-fetch
+                          const params = new URLSearchParams(values).toString()
+                          const newUrl = params ? `${baseUrl}?${params}` : baseUrl
+                          fetchAndInfer(newUrl)
+                        }}
+                        loading={loading}
+                        endpoint={baseUrl}
+                      />
+                    }
+                    results={
+                      <>
+                        {/* Data rendering - show when data is present */}
+                        {schema && data !== null && (
+                          <DynamicRenderer
+                            data={data}
+                            schema={schema.rootType}
+                            path="$"
+                            depth={0}
+                          />
+                        )}
+                      </>
+                    }
+                  />
+                )
+              })()}
 
               {/* Welcome Message */}
               {!loading && !error && !schema && !parsedSpec && (
