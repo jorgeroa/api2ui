@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-05)
 ## Current Position
 
 Phase: 9 of 11 (URL Parsing & Type Inference Foundation) - COMPLETE
-Plan: 6 of 6 complete (09-01, 09-02, 09-03, 09-04, 09-05, 09-06)
+Plan: 7 of 7 complete (09-01, 09-02, 09-03, 09-04, 09-05, 09-06, 09-07)
 Status: Phase 9 complete, ready for Phase 10
-Last activity: 2026-02-06 - Completed 09-06-PLAN.md (ParameterForm Integration)
+Last activity: 2026-02-06 - Completed 09-07-PLAN.md (App.tsx Integration)
 
-Progress: [██████████░░░░] 94% (29/31 total plans across all milestones)
+Progress: [██████████░░░░] 97% (30/31 total plans across all milestones)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 29 (13 v1.0 + 10 v1.1 + 6 v1.2)
-- Average duration: 3.2 min
-- Total execution time: ~99 min
+- Total plans completed: 30 (13 v1.0 + 10 v1.1 + 7 v1.2)
+- Average duration: 3.5 min
+- Total execution time: ~105 min
 
 **By Phase:**
 
@@ -35,7 +35,7 @@ Progress: [██████████░░░░] 94% (29/31 total plans ac
 | 6 | 3/3 | 13 min | 4.3 min |
 | 7 | 2/2 | 3 min | 1.5 min |
 | 8 | 2/2 | 5 min | 2.5 min |
-| 9 | 6/6 | 17 min | 2.8 min |
+| 9 | 7/7 | 23 min | 3.3 min |
 
 ## Milestone History
 
@@ -88,6 +88,9 @@ Progress: [██████████░░░░] 94% (29/31 total plans ac
 | Type icon next to label (not inside input) | Cleaner separation, doesn't interfere with input | 09-05 |
 | ParsedParameter extended with optional fields | inferredType, values, isArray optional for backward compatibility | 09-06 |
 | Clear button visibility conditional | Shows only when value exists and onClear handler provided | 09-06 |
+| IIFE for TypeScript type narrowing in JSX | TypeScript doesn't narrow types through closures, IIFE creates new scope | 09-07 |
+| Show parameter form before and after data loads | Better UX - users can edit params before fetch and modify after seeing results | 09-07 |
+| Base URL as persistence key for direct API | Same base URL restores params regardless of query string | 09-07 |
 
 ### Pending Todos
 
@@ -100,8 +103,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed 09-06-PLAN.md (ParameterForm Integration)
+Stopped at: Completed 09-07-PLAN.md (App.tsx Integration) - Phase 9 Complete
 Resume file: None
 
 ---
-*Last updated: 2026-02-06 after 09-06 execution*
+*Last updated: 2026-02-06 after 09-07 execution*
