@@ -13,8 +13,10 @@ import type { ParsedParameter } from '../openapi/types'
 export interface ParsedUrlParameter extends Omit<ParsedParameter, 'in' | 'required'> {
   in: 'query'
   required: false
-  /** Original key from URL (before normalization, e.g., "tag[]") */
+  /** Original key from URL (decoded, e.g., "tag[]" or "ddcFilter[name]") */
   originalKey: string
+  /** Raw URL-encoded key (preserves original encoding, e.g., "ddcFilter%5Bname%5D") */
+  rawKey: string
   /** True if parameter appeared multiple times or used bracket notation */
   isArray: boolean
   /** All values for array parameters */

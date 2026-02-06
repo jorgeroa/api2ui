@@ -97,7 +97,8 @@ function extractQueryString(input: string, warnings: string[]): string {
 }
 
 interface RawEntry {
-  key: string
+  rawKey: string   // Original URL-encoded key
+  key: string      // Decoded key for display/matching
   value: string
 }
 
@@ -133,7 +134,7 @@ function collectRawEntries(queryString: string, warnings: string[]): RawEntry[] 
     const key = safeDecodeURIComponent(rawKey, warnings)
     const value = safeDecodeURIComponent(rawValue.replace(/\+/g, ' '), warnings)
 
-    entries.push({ key, value })
+    entries.push({ rawKey, key, value })
   }
 
   return entries
@@ -154,7 +155,8 @@ function safeDecodeURIComponent(str: string, warnings: string[]): string {
 }
 
 interface KeyEntry {
-  originalKey: string
+  rawKey: string        // Original URL-encoded key
+  originalKey: string   // Decoded key
   value: string
   isBracketArray: boolean
 }
@@ -168,13 +170,13 @@ function groupByNormalizedKey(
 ): Map<string, KeyEntry[]> {
   const groups = new Map<string, KeyEntry[]>()
 
-  for (const { key, value } of entries) {
+  for (const { rawKey, key, value } of entries) {
     const bracketMatch = key.match(BRACKET_ARRAY_REGEX)
     const normalizedKey = bracketMatch ? bracketMatch[1]! : key
     const isBracketArray = !!bracketMatch
 
     const group = groups.get(normalizedKey) ?? []
-    group.push({ originalKey: key, value, isBracketArray })
+    group.push({ rawKey, originalKey: key, value, isBracketArray })
     groups.set(normalizedKey, group)
   }
 
@@ -221,6 +223,7 @@ function buildParameter(
   return {
     name: paramName,
     originalKey: firstEntry.originalKey,
+    rawKey: firstEntry.rawKey,
     in: 'query',
     required: false,
     description: '',
@@ -235,22 +238,25 @@ function buildParameter(
 }
 
 /**
- * Reconstruct query string preserving original parameter key format.
- * Uses originalKey from parsed params to preserve bracket notation.
+ * Reconstruct query string preserving original URL encoding.
+ * Uses rawKey from parsed params to preserve exact original encoding
+ * (e.g., ddcFilter%5Bzipcode%5D stays encoded, not decoded to ddcFilter[zipcode]).
  */
 export function reconstructQueryString(
   values: Record<string, string>,
   originalParams: ParsedUrlParameter[]
 ): string {
   const parts: string[] = []
-  const originalKeyMap = new Map(
-    originalParams.map(p => [p.name, p.originalKey])
+  // Map from param name to rawKey (URL-encoded key)
+  const rawKeyMap = new Map(
+    originalParams.map(p => [p.name, p.rawKey])
   )
 
   for (const [name, value] of Object.entries(values)) {
     if (!value) continue // Skip empty values
-    const key = originalKeyMap.get(name) ?? name
-    // Encode value but preserve key format
+    // Use rawKey which preserves original URL encoding
+    const key = rawKeyMap.get(name) ?? encodeURIComponent(name)
+    // Encode value, key is already in original URL-encoded format
     parts.push(`${key}=${encodeURIComponent(value)}`)
   }
 
