@@ -162,6 +162,7 @@ function App() {
                           parameters={selectedOperation.parameters}
                           onSubmit={handleParameterSubmit}
                           loading={loading}
+                          endpoint={`${parsedSpec.baseUrl}${selectedOperation.path}`}
                         />
                       </>
                     )}
@@ -259,6 +260,7 @@ function App() {
                         parameters={selectedOperation.parameters}
                         onSubmit={handleParameterSubmit}
                         loading={loading}
+                        endpoint={`${parsedSpec.baseUrl}${selectedOperation.path}`}
                       />
                     </>
                   )}
