@@ -1,23 +1,38 @@
 import type { ParsedParameter } from '../../services/openapi/types'
+import { TypeIcon } from './TypeIcon'
 
 interface ParameterInputProps {
   parameter: ParsedParameter
   value: string
   onChange: (value: string) => void
+  inferredType?: string // Type from inference
+  typeOverride?: string // User's override (from store)
+  onTypeOverride?: (type: string) => void // Callback for override
 }
 
-export function ParameterInput({ parameter, value, onChange }: ParameterInputProps) {
+export function ParameterInput({
+  parameter,
+  value,
+  onChange,
+  inferredType,
+  typeOverride,
+  onTypeOverride,
+}: ParameterInputProps) {
   const { name, required, description, schema } = parameter
 
-  // Determine input type based on parameter schema
+  // Determine effective type: override > inferred > schema > string
+  const effectiveType = typeOverride ?? inferredType ?? undefined
+
+  // Determine input type based on effective type or parameter schema
   const renderInput = () => {
-    const baseClasses = 'w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+    const baseClasses =
+      'w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
     // Build placeholder: prefer example, then default
     const exampleHint = schema.example !== undefined ? `e.g. ${schema.example}` : undefined
     const defaultHint = schema.default !== undefined ? String(schema.default) : undefined
     const placeholder = exampleHint ?? defaultHint
 
-    // Enum → select dropdown
+    // Enum → select dropdown (schema takes precedence)
     if (schema.enum && schema.enum.length > 0) {
       return (
         <select
@@ -35,6 +50,112 @@ export function ParameterInput({ parameter, value, onChange }: ParameterInputPro
         </select>
       )
     }
+
+    // If we have an effective type from inference/override, use it
+    if (effectiveType) {
+      switch (effectiveType) {
+        case 'boolean':
+          return (
+            <input
+              type="checkbox"
+              checked={value === 'true'}
+              onChange={(e) => onChange(e.target.checked ? 'true' : 'false')}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+          )
+
+        case 'number':
+          return (
+            <input
+              type="number"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              min={schema.minimum}
+              max={schema.maximum}
+              placeholder={placeholder}
+              className={baseClasses}
+              required={required}
+            />
+          )
+
+        case 'date':
+          return (
+            <input
+              type="date"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={placeholder}
+              className={baseClasses}
+              required={required}
+            />
+          )
+
+        case 'email':
+          return (
+            <input
+              type="email"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={placeholder}
+              className={baseClasses}
+              required={required}
+            />
+          )
+
+        case 'url':
+          return (
+            <input
+              type="url"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={placeholder}
+              className={baseClasses}
+              required={required}
+            />
+          )
+
+        case 'coordinates':
+          return (
+            <input
+              type="text"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={placeholder ?? 'lat, lng'}
+              className={baseClasses}
+              required={required}
+            />
+          )
+
+        case 'zip':
+          return (
+            <input
+              type="text"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={placeholder ?? '12345 or 12345-6789'}
+              pattern="^\d{5}(-\d{4})?$"
+              className={baseClasses}
+              required={required}
+            />
+          )
+
+        case 'string':
+        default:
+          return (
+            <input
+              type="text"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={placeholder}
+              maxLength={schema.maxLength}
+              className={baseClasses}
+              required={required}
+            />
+          )
+      }
+    }
+
+    // Fall back to schema-based type detection (backward compatibility)
 
     // Boolean → checkbox
     if (schema.type === 'boolean') {
@@ -140,19 +261,30 @@ export function ParameterInput({ parameter, value, onChange }: ParameterInputPro
   }
   const hint = hintParts.join(' — ')
 
+  // Show type icon if we have an inferred or overridden type
+  const showTypeIcon = Boolean(inferredType || typeOverride)
+  const displayType = effectiveType ?? 'string'
+
   return (
     <div className="mb-4">
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {name}
-        {required && <span className="text-red-500 ml-1">*</span>}
-        {parameter.in === 'path' && (
-          <span className="text-gray-400 ml-1 font-normal text-xs">(path)</span>
+      <div className="flex items-center gap-2 mb-1">
+        <label className="block text-sm font-medium text-gray-700">
+          {name}
+          {required && <span className="text-red-500 ml-1">*</span>}
+          {parameter.in === 'path' && (
+            <span className="text-gray-400 ml-1 font-normal text-xs">(path)</span>
+          )}
+        </label>
+        {showTypeIcon && (
+          <TypeIcon
+            type={displayType}
+            onTypeChange={onTypeOverride ?? (() => {})}
+            disabled={!onTypeOverride}
+          />
         )}
-      </label>
+      </div>
       {renderInput()}
-      {hint && (
-        <p className="mt-1 text-xs text-gray-500">{hint}</p>
-      )}
+      {hint && <p className="mt-1 text-xs text-gray-500">{hint}</p>}
     </div>
   )
 }
