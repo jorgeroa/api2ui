@@ -35,10 +35,9 @@ export function parseUrlParameters(url: string): UrlParseResult {
     return { parameters: [], groups, warnings }
   }
 
-  // Parse using URLSearchParams (handles decoding)
-  let searchParams: URLSearchParams
+  // Validate query string can be parsed
   try {
-    searchParams = new URLSearchParams(queryString)
+    new URLSearchParams(queryString)
   } catch {
     warnings.push('Failed to parse query string')
     return { parameters: [], groups, warnings }
@@ -171,7 +170,7 @@ function groupByNormalizedKey(
 
   for (const { key, value } of entries) {
     const bracketMatch = key.match(BRACKET_ARRAY_REGEX)
-    const normalizedKey = bracketMatch ? bracketMatch[1] : key
+    const normalizedKey = bracketMatch ? bracketMatch[1]! : key
     const isBracketArray = !!bracketMatch
 
     const group = groups.get(normalizedKey) ?? []
@@ -208,13 +207,13 @@ function buildParameter(
   }
 
   // Check for group notation (only for non-array bracket params)
-  const firstEntry = entries[0]
+  const firstEntry = entries[0]!
   const groupMatch = firstEntry.originalKey.match(GROUP_PREFIX_REGEX)
 
   // If it's a group param (like filter[name]), keep the full name
   // If it's an array param (like tag[]), use the normalized name
   const paramName = groupMatch ? firstEntry.originalKey : normalizedKey
-  const group = groupMatch ? groupMatch[1] : undefined
+  const group = groupMatch ? groupMatch[1]! : undefined
 
   const values = entries.map(e => e.value)
   const singleValue = isArray ? undefined : values[0]

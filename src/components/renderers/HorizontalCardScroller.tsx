@@ -1,4 +1,4 @@
-import type { TypeSignature, FieldDefinition } from '../../types/schema'
+import type { TypeSignature } from '../../types/schema'
 import { getHeroImageField } from '../../utils/imageDetection'
 import { getItemLabel } from '../../utils/itemLabel'
 
@@ -17,7 +17,7 @@ function formatLabel(fieldName: string): string {
     .replace(/\b\w/g, (char) => char.toUpperCase())
 }
 
-export function HorizontalCardScroller({ items, schema, path, depth, label }: HorizontalCardScrollerProps) {
+export function HorizontalCardScroller({ items, schema, path: _path, depth: _depth, label }: HorizontalCardScrollerProps) {
   // Guard: only handle object schemas
   if (schema.kind !== 'object') {
     return null
@@ -72,7 +72,7 @@ export function HorizontalCardScroller({ items, schema, path, depth, label }: Ho
                     <div className="font-medium text-sm mb-1 truncate">
                       {itemLabel}
                     </div>
-                    {displayFields.map(([fieldName, fieldDef]) => {
+                    {displayFields.map(([fieldName, _fieldDef]) => {
                       const value = obj[fieldName]
                       if (value === null || value === undefined) return null
                       return (

@@ -50,7 +50,7 @@ export function humanizeGroupName(name: string): string {
 
   // Step 3: Remove common suffixes (case-insensitive, word boundary)
   const words = result.split(/\s+/)
-  const filteredWords = words.filter((word, index) => {
+  const filteredWords = words.filter((word, _index) => {
     // Only remove suffix if it's not the only word
     if (words.length === 1) return true
     // Check if this word is a common suffix (case-insensitive)

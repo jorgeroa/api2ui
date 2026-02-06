@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react'
 import type { RendererProps } from '../../types/components'
+import type { FieldDefinition } from '../../types/schema'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DynamicRenderer } from '../DynamicRenderer'
 import { useConfigStore } from '../../store/configStore'
@@ -242,7 +243,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
   }
 
   // Helper to render an image field
-  const renderImageField = (fieldName: string, fieldDef: FieldDefinition, value: unknown) => {
+  const renderImageField = (fieldName: string, _fieldDef: FieldDefinition, value: unknown) => {
     const fieldPath = `${path}.${fieldName}`
     const config = fieldConfigs[fieldPath]
     const defaultLabel = fieldName

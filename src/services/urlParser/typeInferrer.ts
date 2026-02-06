@@ -122,7 +122,7 @@ function tryDate(name: string, value: string): TypeInferenceResult | null {
 
   // Validate the date is actually valid (catches things like 2024-13-01)
   const date = new Date(value)
-  const [yearPart, monthPart, dayPart] = value.split('T')[0].split('-').map(Number)
+  const [yearPart, monthPart, dayPart] = value.split('T')[0]!.split('-').map(Number)
   if (
     date.getUTCFullYear() !== yearPart ||
     date.getUTCMonth() + 1 !== monthPart ||
@@ -191,7 +191,7 @@ function tryCoordinates(name: string, value: string): TypeInferenceResult | null
   }
 
   const [lat, lng] = parts
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+  if (lat! < -90 || lat! > 90 || lng! < -180 || lng! > 180) {
     return null
   }
 
