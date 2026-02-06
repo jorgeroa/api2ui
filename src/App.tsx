@@ -12,6 +12,7 @@ import { ConfigPanel } from './components/config/ConfigPanel'
 import { ThemeApplier } from './components/config/ThemeApplier'
 import { Sidebar } from './components/navigation/Sidebar'
 import { LayoutContainer } from './components/layout/LayoutContainer'
+import { parseUrlParameters, reconstructQueryString } from './services/urlParser/parser'
 import 'react-loading-skeleton/dist/skeleton.css'
 
 function App() {
@@ -310,9 +311,11 @@ function App() {
                         parameters={[]}
                         rawUrl={currentUrl}
                         onSubmit={(values) => {
-                          // Reconstruct URL with modified params and re-fetch
-                          const params = new URLSearchParams(values).toString()
-                          const newUrl = params ? `${baseUrl}?${params}` : baseUrl
+                          // Parse original URL to get original param keys
+                          const { parameters: originalParams } = parseUrlParameters(currentUrl)
+                          // Reconstruct preserving original key format (brackets etc)
+                          const queryString = reconstructQueryString(values, originalParams)
+                          const newUrl = queryString ? `${baseUrl}?${queryString}` : baseUrl
                           fetchAndInfer(newUrl)
                         }}
                         loading={loading}
