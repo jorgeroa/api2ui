@@ -1,625 +1,1136 @@
-# Architecture Patterns
+# Architecture Research: v1.2 Smart Parameters & Layout System
 
-**Domain:** API-to-UI Runtime Rendering Engine
-**Researched:** 2026-02-01
-**Confidence:** MEDIUM-LOW (based on training data and architectural first principles; web research tools unavailable)
+**Researched:** 2026-02-05
+**Confidence:** HIGH
+**Context:** Subsequent milestone — extending existing api2ui architecture
 
-## Executive Summary
+## Summary
 
-An API-to-UI rendering engine requires clean separation between data acquisition, schema interpretation, configuration management, and presentation. The architecture must support two critical paths: (1) API URL → inferred schema → rendered UI, and (2) OpenAPI spec → parsed schema → rendered UI. Both paths converge at a unified schema representation that drives type-to-component mapping.
+The Smart Parameters & Layout System milestone adds four key capabilities to api2ui: (1) parsing raw URL query strings into the same `ParsedParameter[]` format used by OpenAPI, (2) smart type inference to automatically detect parameter types from query string values, (3) parameter value persistence per-endpoint for better UX, and (4) layout preset switching between sidebar and centered layouts. All features integrate cleanly with the existing architecture by extending existing components rather than introducing parallel systems.
 
-The recommended architecture follows a **pipeline pattern** with clear component boundaries and unidirectional data flow. This enables incremental development, testability, and future extensibility.
+**Key integration principle:** New features extend the existing pipeline rather than creating parallel code paths. Query string parsing produces the same `ParsedParameter[]` format that OpenAPI parsing uses, smart type inference extends the existing `ParameterInput` component type mapping, parameter persistence leverages the existing `configStore` pattern, and layout switching builds on the existing two-layout structure in `App.tsx`.
 
-## Recommended Architecture
+## Integration Points
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         Application Shell                        │
-│  (Router, Mode Toggle, Landing Page)                            │
-└────────────────┬────────────────────────────────────────────────┘
-                 │
-    ┌────────────┴────────────┐
-    │                         │
-┌───▼────────────┐    ┌──────▼──────────┐
-│  Configure     │    │   View Mode     │
-│  Mode          │    │                 │
-│  (Settings UI) │    │   (Clean UI)    │
-└───┬────────────┘    └──────┬──────────┘
-    │                         │
-    └────────────┬────────────┘
-                 │
-    ┌────────────▼────────────────────────────────────────┐
-    │           Core Rendering Pipeline                   │
-    │                                                      │
-    │  ┌──────────┐  ┌──────────┐  ┌──────────┐         │
-    │  │  Schema  │→ │ Type-to- │→ │ Component│         │
-    │  │ Provider │  │Component │  │ Renderer │         │
-    │  │          │  │  Mapper  │  │          │         │
-    │  └────┬─────┘  └────┬─────┘  └────┬─────┘         │
-    │       │             │              │               │
-    └───────┼─────────────┼──────────────┼───────────────┘
-            │             │              │
-    ┌───────┴─────┐  ┌────▼──────┐  ┌───▼──────────┐
-    │   Schema    │  │  Config   │  │  Component   │
-    │   Layer     │  │  Store    │  │  Registry    │
-    └─────────────┘  └───────────┘  └──────────────┘
-         │
-    ┌────┴──────────────────┐
-    │                       │
-┌───▼────────┐    ┌────────▼─────┐
-│ API Fetcher│    │ OpenAPI      │
-│ + Inferrer │    │ Parser       │
-└────────────┘    └──────────────┘
-```
+### Query String Parsing → Unified Parameter Model
 
-## Component Boundaries
+**Current state:**
+- `parser.ts` has `parseParameter()` function that converts OpenAPI parameter definitions to `ParsedParameter[]`
+- `ParameterForm.tsx` consumes `ParsedParameter[]` and renders form inputs
+- `ParameterInput.tsx` maps parameter types to input components
 
-### 1. Application Shell
-**Responsibility:** Top-level routing, mode management, landing page
-**Communicates With:** Configure Mode, View Mode
-**State:** Current mode (configure/view), current route
-**Build Priority:** Phase 1 (Foundation)
+**Integration approach:**
+Create a new parser that converts URL query strings to the **same** `ParsedParameter[]` format:
 
-This is the entry point that renders either the landing page or the main application. It manages:
-- Route detection (landing page vs. API URL)
-- Mode toggle state (configure/view)
-- Global layout structure
-
-### 2. Schema Provider
-**Responsibility:** Unified schema representation from any source
-**Communicates With:** API Fetcher, OpenAPI Parser, Type-to-Component Mapper
-**State:** Current schema object (endpoints, types, relationships)
-**Build Priority:** Phase 1 (Foundation)
-
-**Core interface:**
 ```typescript
-interface SchemaProvider {
-  schema: UnifiedSchema | null
-  loading: boolean
-  error: Error | null
+// NEW: services/querystring/parser.ts
+function parseQueryString(url: string): ParsedParameter[] {
+  const urlObj = new URL(url)
+  const params: ParsedParameter[] = []
 
-  // Two input paths converge here
-  fromAPIUrl(url: string): Promise<void>
-  fromOpenAPISpec(spec: OpenAPISpec): Promise<void>
+  urlObj.searchParams.forEach((value, name) => {
+    params.push({
+      name,
+      in: 'query',
+      required: false,  // All query params default to optional
+      description: '',
+      schema: inferTypeFromValue(value)  // Smart type inference
+    })
+  })
+
+  return params
 }
+```
 
-interface UnifiedSchema {
-  endpoints: Endpoint[]
-  types: TypeDefinition[]
-  metadata: {
-    title?: string
-    baseUrl: string
-    version?: string
+**Data flow:**
+```
+Raw URL with query string
+    ↓
+parseQueryString() → ParsedParameter[]
+    ↓
+ParameterForm.tsx (EXISTING, no changes)
+    ↓
+ParameterInput.tsx (EXISTING, renders correctly)
+```
+
+**Why this works:**
+`ParsedParameter[]` is already the unified format. Both OpenAPI parameters and query string parameters produce the same structure, so downstream components (ParameterForm, ParameterInput) need **zero** changes to support query string parameters.
+
+**Build order:**
+1. Create `services/querystring/parser.ts` with `parseQueryString()` function
+2. Create `services/querystring/inferrer.ts` with `inferTypeFromValue()` utility
+3. Modify `useAPIFetch.ts` to detect query strings and call `parseQueryString()`
+4. Store parsed parameters in `appStore.parsedSpec.operations[0].parameters`
+
+**Architectural benefit:**
+- No duplicate form rendering code
+- Type inference is isolated in one utility
+- Existing parameter validation/submission logic reused
+
+### Smart Type Inference Layer
+
+**Current state:**
+- `ParameterInput.tsx` has type-to-component mapping based on `schema.type` and `schema.format`
+- Supports: string, number, integer, boolean, date, date-time, email, uri, enum
+- Always uses schema from OpenAPI spec (explicit types)
+
+**Integration approach:**
+Add type inference **before** the parameter reaches ParameterInput:
+
+```typescript
+// NEW: services/querystring/inferrer.ts
+function inferTypeFromValue(value: string): ParsedParameter['schema'] {
+  // Boolean inference
+  if (value === 'true' || value === 'false') {
+    return { type: 'boolean', example: value }
   }
-}
-```
 
-This is the **critical convergence point**. Both inference and OpenAPI parsing produce the same schema format, enabling the rest of the pipeline to be source-agnostic.
-
-### 3. API Fetcher + Schema Inferrer
-**Responsibility:** HTTP requests and type inference from responses
-**Communicates With:** Schema Provider
-**State:** Fetch status, raw responses
-**Build Priority:** Phase 2 (Schema Inference)
-
-Handles the "no spec" path:
-1. Fetch API URL
-2. Parse JSON response
-3. Infer types from structure
-4. Detect patterns (arrays, objects, primitives)
-5. Generate UnifiedSchema
-
-**Key decisions:**
-- Use fetch API (built-in, simple)
-- Infer types recursively from response structure
-- Detect common patterns (pagination, nesting)
-- Handle CORS issues gracefully
-
-### 4. OpenAPI Parser
-**Responsibility:** Parse OpenAPI/Swagger specs into UnifiedSchema
-**Communicates With:** Schema Provider
-**State:** Parse status
-**Build Priority:** Phase 3 (OpenAPI Support) - Can be deferred
-
-Handles the "with spec" path:
-1. Receive OpenAPI spec (URL or pasted JSON)
-2. Parse paths, parameters, schemas
-3. Map to UnifiedSchema format
-4. Extract metadata
-
-**Recommendation:** Use `@apidevtools/swagger-parser` or `openapi-typescript` for validation and parsing rather than implementing from scratch.
-
-### 5. Type-to-Component Mapper
-**Responsibility:** Map schema types to UI component choices
-**Communicates With:** Schema Provider, Config Store, Component Renderer
-**State:** Current mapping rules (defaults + overrides)
-**Build Priority:** Phase 2 (Schema Inference)
-
-**Core logic:**
-```typescript
-interface TypeMapping {
-  // Input side: parameter type → form control
-  parameterMappings: Map<TypeSignature, ComponentType>
-
-  // Output side: response type → display component
-  responseMappings: Map<TypeSignature, ComponentType>
-
-  // User overrides
-  overrides: Map<string, ComponentOverride>
-}
-
-type TypeSignature =
-  | { kind: 'primitive', type: 'string' | 'number' | 'boolean' }
-  | { kind: 'array', itemType: TypeSignature }
-  | { kind: 'object', fields: Record<string, TypeSignature> }
-```
-
-**Default mapping examples:**
-- `string` → `<input type="text">`
-- `number` → `<input type="number">`
-- `boolean` → `<input type="checkbox">`
-- `array<object>` → Table or Card List
-- `object` → Key-value display or detail view
-
-### 6. Config Store
-**Responsibility:** Persist and retrieve user configuration
-**Communicates With:** Type-to-Component Mapper, Configure Mode UI
-**State:** Configuration object
-**Build Priority:** Phase 4 (Configuration System)
-
-**Storage strategy:**
-- Use localStorage for client-side persistence
-- Key by API URL or spec identifier
-- Store: component overrides, CSS customization, layout preferences
-
-**Structure:**
-```typescript
-interface AppConfig {
-  apiUrl: string
-  componentOverrides: Record<string, ComponentChoice>
-  cssCustomization: string
-  layoutPreferences: {
-    sidebarCollapsed: boolean
-    defaultView: 'table' | 'cards' | 'detail'
+  // Number inference
+  if (/^-?\d+$/.test(value)) {
+    return { type: 'integer', example: value }
   }
+  if (/^-?\d+\.\d+$/.test(value)) {
+    return { type: 'number', example: value }
+  }
+
+  // Date inference
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return { type: 'string', format: 'date', example: value }
+  }
+
+  // Email inference
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+    return { type: 'string', format: 'email', example: value }
+  }
+
+  // URL inference
+  if (/^https?:\/\//.test(value)) {
+    return { type: 'string', format: 'uri', example: value }
+  }
+
+  // Default: string
+  return { type: 'string', example: value }
 }
 ```
 
-### 7. Component Registry
-**Responsibility:** Available UI components for rendering
-**Communicates With:** Component Renderer
-**State:** Static registry of components
-**Build Priority:** Phase 2 (Schema Inference)
+**Why this approach:**
+- Inference happens during parsing, producing a complete `schema` object
+- ParameterInput receives the same schema structure it already expects
+- No "if query string, do X; if OpenAPI, do Y" logic in rendering layer
+- Type inference is **pure function** — easy to test
 
-**Fixed set for v1:**
-- **Inputs:** TextInput, NumberInput, Checkbox, Select, DatePicker
-- **Outputs:** Table, CardList, DetailView, KeyValue, JSONViewer
-- **Navigation:** Sidebar, EndpointNav
+**Extended ParameterInput (optional enhancement):**
+For query strings with multiple values of the same type, we could detect arrays:
 
-Each component has:
-- Type signature it handles
-- Props interface
-- Render function
+```typescript
+// Enhanced: services/querystring/parser.ts
+function parseQueryString(url: string): ParsedParameter[] {
+  const urlObj = new URL(url)
+  const paramMap = new Map<string, string[]>()
 
-### 8. Component Renderer
-**Responsibility:** Render the actual UI based on schema + mapping
-**Communicates With:** Type-to-Component Mapper, Component Registry
-**State:** Rendered component tree
-**Build Priority:** Phase 2 (Schema Inference)
+  // Group values by param name
+  urlObj.searchParams.forEach((value, name) => {
+    const existing = paramMap.get(name) || []
+    paramMap.set(name, [...existing, value])
+  })
 
-**Rendering logic:**
-1. Receive schema + type mappings
-2. For each endpoint, render input controls based on parameters
-3. Fetch data when user submits
-4. Render response data based on type mappings
-5. Handle loading/error states
+  const params: ParsedParameter[] = []
+  paramMap.forEach((values, name) => {
+    if (values.length > 1) {
+      // Multiple values → detect as enum
+      params.push({
+        name,
+        in: 'query',
+        required: false,
+        description: `Detected ${values.length} possible values`,
+        schema: {
+          type: 'string',
+          enum: values,
+          example: values[0]
+        }
+      })
+    } else {
+      // Single value → infer type
+      params.push({
+        name,
+        in: 'query',
+        required: false,
+        description: '',
+        schema: inferTypeFromValue(values[0])
+      })
+    }
+  })
 
-### 9. Configure Mode UI
-**Responsibility:** Settings panel and inline editing for configuration
-**Communicates With:** Config Store, Type-to-Component Mapper
-**State:** Current editing state
-**Build Priority:** Phase 4 (Configuration System)
+  return params
+}
+```
 
-**Features:**
-- Component override selector ("use Table instead of Cards")
-- CSS editor (with preview)
-- Layout toggles
-- Export/import config
+**Build order:**
+1. Implement basic `inferTypeFromValue()` with primitives (boolean, number, string)
+2. Add format detection (date, email, uri)
+3. Add enum detection for multi-value params (optional)
+4. Test with diverse query strings
 
-### 10. View Mode UI
-**Responsibility:** Clean, consumer-facing interface
-**Communicates With:** Component Renderer
-**State:** None (just displays)
-**Build Priority:** Phase 1 (Foundation)
+**Architectural benefit:**
+- Type inference is **centralized** in one utility
+- Easy to extend with new patterns (e.g., UUID detection)
+- No special-casing in ParameterInput component
 
-Simply renders the output of Component Renderer without configuration controls.
+### Parameter Persistence → Extend configStore
+
+**Current state:**
+- `appStore.ts`: Session-only state (loading, data, schema, parameterValues)
+- `configStore.ts`: Persisted preferences (fieldConfigs, styleOverrides, theme, paginationConfigs)
+- `configStore` uses Zustand persist middleware with localStorage
+
+**Decision: Use configStore, not appStore**
+
+**Rationale:**
+- **User expectation:** Parameter values should persist across sessions (like other preferences)
+- **Existing pattern:** configStore already persists per-endpoint data (endpointOverrides, paginationConfigs)
+- **Key structure:** configStore already uses path-based keys (e.g., `paginationConfigs[path]`)
+
+**Integration approach:**
+Extend configStore with a new `parameterDefaults` object:
+
+```typescript
+// MODIFIED: store/configStore.ts
+interface ConfigStore extends ConfigState {
+  // ... existing methods
+
+  // NEW: Parameter defaults
+  setParameterDefault: (endpoint: string, paramName: string, value: string) => void
+  getParameterDefaults: (endpoint: string) => Record<string, string>
+  clearParameterDefaults: (endpoint: string) => void
+}
+
+interface ConfigState {
+  // ... existing state
+
+  // NEW: Persisted parameter defaults keyed by endpoint
+  parameterDefaults: Record<string, Record<string, string>>
+  // Example: { "/users": { "limit": "20", "sort": "name" } }
+}
+```
+
+**Key structure:**
+- **Outer key:** Endpoint path (e.g., `/users`, `/posts/{id}`)
+- **Inner object:** Parameter name → default value
+- **Persistence:** Included in Zustand persist middleware
+
+**Modified ParameterForm initialization:**
+
+```typescript
+// MODIFIED: components/forms/ParameterForm.tsx
+export function ParameterForm({ parameters, endpoint, onSubmit }: ParameterFormProps) {
+  const { getParameterDefaults } = useConfigStore()
+
+  const [values, setValues] = useState<Record<string, string>>(() => {
+    const persisted = getParameterDefaults(endpoint)  // NEW: Load from configStore
+    const initial: Record<string, string> = {}
+
+    for (const param of parameters) {
+      // Priority: persisted > schema.default > schema.example > empty
+      initial[param.name] =
+        persisted[param.name] ??
+        (param.schema.default !== undefined ? String(param.schema.default) : '') ||
+        (param.schema.example !== undefined ? String(param.schema.example) : '') ||
+        ''
+    }
+    return initial
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    // NEW: Persist parameter values on submit
+    const { setParameterDefault } = useConfigStore.getState()
+    Object.entries(values).forEach(([name, value]) => {
+      if (value) {  // Only persist non-empty values
+        setParameterDefault(endpoint, name, value)
+      }
+    })
+
+    onSubmit(values)
+  }
+
+  // ... rest of component unchanged
+}
+```
+
+**Why this storage strategy:**
+- **Per-endpoint isolation:** Different endpoints can have different defaults for same parameter name (e.g., `limit`)
+- **Selective persistence:** Empty values not persisted (avoids clutter)
+- **Backwards compatible:** Existing configStore persist logic handles new field automatically
+- **Clear separation:** appStore = runtime data, configStore = user preferences
+
+**Build order:**
+1. Add `parameterDefaults` to ConfigState interface
+2. Implement `setParameterDefault`, `getParameterDefaults`, `clearParameterDefaults` in configStore
+3. Update `partialize` in persist middleware to include `parameterDefaults`
+4. Modify ParameterForm to load from configStore on mount
+5. Modify ParameterForm to save to configStore on submit
+
+**Architectural benefit:**
+- Consistent with existing persistence patterns
+- No new storage mechanism needed
+- Zustand persist middleware handles serialization/hydration
+- Easy to add UI for clearing parameter history later
+
+### Layout System → Modify App.tsx
+
+**Current state:**
+- `App.tsx` has two layout branches:
+  - **Sidebar layout:** When `parsedSpec` has 2+ operations (line 97-194)
+  - **Centered layout:** Single operation or direct URL (line 196-317)
+- Layout choice is **derived** from data, not user preference
+- No state management for layout preferences
+
+**Integration approach:**
+Add layout preset selection to configStore and conditional rendering in App.tsx:
+
+```typescript
+// MODIFIED: types/config.ts
+export type LayoutPreset = 'auto' | 'sidebar' | 'centered'
+
+export interface ConfigState {
+  // ... existing state
+
+  // NEW: Layout preference
+  layoutPreset: LayoutPreset  // Default: 'auto'
+}
+```
+
+```typescript
+// MODIFIED: store/configStore.ts
+export const useConfigStore = create<ConfigStore>()(
+  persist(
+    (set, get) => ({
+      // ... existing state
+      layoutPreset: 'auto' as LayoutPreset,
+
+      // NEW: Layout methods
+      setLayoutPreset: (preset) => set({ layoutPreset: preset }),
+
+      // ... existing methods
+    }),
+    {
+      name: 'api2ui-config',
+      version: 3,  // Increment version for migration
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        // ... existing partialize fields
+        layoutPreset: state.layoutPreset,  // NEW: Persist layout
+      }),
+      // ... existing merge
+    }
+  )
+)
+```
+
+```typescript
+// MODIFIED: App.tsx
+function App() {
+  const { layoutPreset } = useConfigStore()
+  const { parsedSpec } = useAppStore()
+
+  // Derive layout choice from preference + data
+  const hasMultipleOperations = parsedSpec !== null && parsedSpec.operations.length >= 2
+
+  const shouldShowSidebar =
+    layoutPreset === 'sidebar' ? true :
+    layoutPreset === 'centered' ? false :
+    hasMultipleOperations  // 'auto' mode: use existing logic
+
+  return (
+    <>
+      {/* Existing ThemeApplier, ConfigToggle, etc. */}
+
+      {shouldShowSidebar ? (
+        // Existing sidebar layout (unchanged)
+        <div className="flex min-h-screen bg-background text-text">
+          <Sidebar ... />
+          <main ...>
+            {/* Existing content */}
+          </main>
+        </div>
+      ) : (
+        // Existing centered layout (unchanged)
+        <div className="min-h-screen bg-background text-text py-8 px-4">
+          {/* Existing content */}
+        </div>
+      )}
+
+      {/* NEW: Layout preset selector (in ConfigPanel or header) */}
+      <ConfigPanel />
+    </>
+  )
+}
+```
+
+**Layout preset selector UI:**
+
+```typescript
+// NEW: components/config/LayoutPresetSelector.tsx
+export function LayoutPresetSelector() {
+  const { layoutPreset, setLayoutPreset } = useConfigStore()
+
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-medium">Layout</label>
+      <div className="flex gap-2">
+        <button
+          onClick={() => setLayoutPreset('auto')}
+          className={`px-3 py-2 rounded ${layoutPreset === 'auto' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+        >
+          Auto
+        </button>
+        <button
+          onClick={() => setLayoutPreset('sidebar')}
+          className={`px-3 py-2 rounded ${layoutPreset === 'sidebar' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+        >
+          Sidebar
+        </button>
+        <button
+          onClick={() => setLayoutPreset('centered')}
+          className={`px-3 py-2 rounded ${layoutPreset === 'centered' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+        >
+          Centered
+        </button>
+      </div>
+      <p className="text-xs text-gray-500">
+        Auto: Sidebar for 2+ endpoints, centered otherwise
+      </p>
+    </div>
+  )
+}
+```
+
+**Why this approach:**
+- **Preserves existing logic:** Auto mode maintains current behavior (no breaking change)
+- **User override capability:** Sidebar/Centered modes let user force a layout
+- **Minimal modification:** App.tsx only changes layout selection logic, not layout structure
+- **Persistent preference:** Layout choice saved in configStore
+
+**Build order:**
+1. Add `LayoutPreset` type and `layoutPreset` state to configStore
+2. Add `setLayoutPreset` method to configStore
+3. Update configStore persist config to include `layoutPreset`
+4. Modify App.tsx layout selection logic
+5. Create `LayoutPresetSelector` component
+6. Add selector to ConfigPanel
+
+**Architectural benefit:**
+- Existing layout code unchanged (no risk of breaking existing functionality)
+- Layout preference treated as configuration (consistent with other settings)
+- Easy to extend with additional layouts later (e.g., 'compact', 'wide')
+
+## New Components/Services
+
+### Services (Data Layer)
+
+| File | Purpose | Exports |
+|------|---------|---------|
+| `services/querystring/parser.ts` | Parse URL query strings to ParsedParameter[] | `parseQueryString(url: string): ParsedParameter[]` |
+| `services/querystring/inferrer.ts` | Infer parameter types from values | `inferTypeFromValue(value: string): ParameterSchema` |
+| `services/querystring/__tests__/parser.test.ts` | Unit tests for query string parsing | Test suite |
+| `services/querystring/__tests__/inferrer.test.ts` | Unit tests for type inference | Test suite |
+
+### Components (UI Layer)
+
+| File | Purpose | Props |
+|------|---------|-------|
+| `components/config/LayoutPresetSelector.tsx` | UI for switching layout presets | None (uses configStore) |
+| `components/config/ParameterHistory.tsx` | (Optional) UI for viewing/clearing persisted params | `endpoint: string` |
+
+### Types
+
+| File | Purpose | Exports |
+|------|---------|---------|
+| `types/querystring.ts` | (Optional) Type definitions if needed | Query string-specific types |
+
+## Modified Components
+
+### Critical Path (Must Modify)
+
+| File | Modification | Rationale |
+|------|-------------|-----------|
+| `store/configStore.ts` | Add `parameterDefaults` and `layoutPreset` state + methods | Persistence for parameter values and layout preference |
+| `hooks/useAPIFetch.ts` | Detect query strings, call `parseQueryString()` | Entry point for query string parsing |
+| `App.tsx` | Update layout selection logic to use `layoutPreset` | Enable layout switching |
+| `components/forms/ParameterForm.tsx` | Load initial values from configStore, persist on submit | Parameter persistence |
+| `types/config.ts` | Add `LayoutPreset` type and extend `ConfigState` | Type safety for new features |
+
+### Optional Enhancements
+
+| File | Modification | Rationale |
+|------|-------------|-----------|
+| `components/config/ConfigPanel.tsx` | Add LayoutPresetSelector and ParameterHistory sections | UI for new features |
+| `components/forms/ParameterInput.tsx` | Add visual indicator for persisted values | User feedback |
 
 ## Data Flow
 
-### Primary Flow: API URL → Rendered UI
+### Query String Parsing Flow
 
 ```
-User enters API URL
-    │
-    ▼
-Application Shell
-    │
-    ▼
-Schema Provider.fromAPIUrl()
-    │
-    ├──▶ API Fetcher
-    │       │
-    │       ├─ Fetch URL
-    │       ├─ Parse response
-    │       └─ Infer schema
-    │           │
-    │           ▼
-    │       Return UnifiedSchema
-    │
-    ▼
-Schema Provider (has schema)
-    │
-    ▼
-Type-to-Component Mapper
-    │
-    ├──▶ Config Store (get overrides)
-    │
-    └──▶ Apply mapping rules
-            │
-            ▼
-        Mapping object
-            │
-            ▼
-Component Renderer
-    │
-    ├──▶ Component Registry (get components)
-    │
-    └──▶ Render inputs + outputs
-            │
-            ▼
-        View Mode UI / Configure Mode UI
-            │
-            ▼
-        User sees rendered interface
+User enters URL with query string
+  ↓
+URLInput component → setUrl() → appStore.url
+  ↓
+useAPIFetch.fetchAndInfer(url)
+  ↓
+  ├─ Detect query string: parseQueryString(url)
+  │    ↓
+  │    ├─ Parse URLSearchParams
+  │    ├─ inferTypeFromValue() for each param
+  │    └─ Return ParsedParameter[]
+  │
+  ├─ Create mock ParsedSpec with parsed parameters
+  │    spec = {
+  │      title: 'Query String Parameters',
+  │      operations: [{
+  │        path: pathname,
+  │        parameters: parsedParams  ← ParsedParameter[]
+  │      }]
+  │    }
+  │
+  └─ appStore.specSuccess(spec)
+       ↓
+App.tsx renders ParameterForm
+  ↓
+ParameterForm loads defaults from configStore.parameterDefaults[endpoint]
+  ↓
+User modifies values, submits
+  ↓
+ParameterForm.handleSubmit()
+  ├─ Persist values: configStore.setParameterDefault()
+  └─ Fetch API: fetchOperation()
 ```
 
-### Secondary Flow: OpenAPI Spec → Rendered UI
+### Layout Switching Flow
 
 ```
-User provides OpenAPI spec
-    │
-    ▼
-Schema Provider.fromOpenAPISpec()
-    │
-    ├──▶ OpenAPI Parser
-    │       │
-    │       ├─ Parse spec
-    │       ├─ Extract endpoints
-    │       └─ Map to UnifiedSchema
-    │           │
-    │           ▼
-    │       Return UnifiedSchema
-    │
-    [Continues same as primary flow from Schema Provider]
+User opens ConfigPanel
+  ↓
+LayoutPresetSelector displays current layoutPreset
+  ↓
+User clicks "Sidebar" button
+  ↓
+configStore.setLayoutPreset('sidebar')
+  ↓
+  ├─ Update state: layoutPreset = 'sidebar'
+  ├─ Persist to localStorage (Zustand persist middleware)
+  └─ Trigger React re-render
+       ↓
+App.tsx re-renders
+  ↓
+shouldShowSidebar = layoutPreset === 'sidebar' ? true : ...
+  ↓
+Render sidebar layout (even if only 1 operation)
 ```
 
-### Configuration Flow
+### Parameter Persistence Flow
 
 ```
-User changes component mapping in Configure Mode
-    │
-    ▼
-Configure Mode UI
-    │
-    ▼
-Config Store.save()
-    │
-    ├──▶ localStorage.setItem()
-    │
-    └──▶ Trigger re-render
-            │
-            ▼
-Type-to-Component Mapper (picks up new override)
-    │
-    ▼
-Component Renderer (re-renders with new component)
-    │
-    ▼
-UI updates
+First visit to endpoint
+  ↓
+ParameterForm initializes
+  ↓
+configStore.getParameterDefaults(endpoint) → {}
+  ↓
+Use schema.default or schema.example
+  ↓
+User fills form, submits
+  ↓
+configStore.setParameterDefault(endpoint, paramName, value)
+  ↓
+Values saved to localStorage
+
+Second visit to same endpoint
+  ↓
+ParameterForm initializes
+  ↓
+configStore.getParameterDefaults(endpoint) → { "limit": "20", "sort": "name" }
+  ↓
+Form pre-filled with previous values
 ```
 
-## Patterns to Follow
+## Build Order
 
-### Pattern 1: Unidirectional Data Flow
-**What:** Data flows in one direction through the pipeline
-**When:** Always
-**Why:** Predictable state changes, easier debugging, testable components
+Suggested implementation sequence that respects dependencies:
+
+### Phase 1: Query String Parsing (Foundation)
+
+**Goal:** Parse query strings into ParsedParameter[] format
+
+1. Create `services/querystring/inferrer.ts`
+   - Implement `inferTypeFromValue()` with basic types (string, number, boolean)
+   - Add format detection (date, email, uri)
+   - Write unit tests
+
+2. Create `services/querystring/parser.ts`
+   - Implement `parseQueryString()` using URLSearchParams
+   - Call inferrer for each parameter
+   - Handle multi-value params (enum detection)
+   - Write unit tests
+
+3. Modify `hooks/useAPIFetch.ts`
+   - Add query string detection heuristic
+   - Call `parseQueryString()` when query string detected
+   - Create mock ParsedSpec with parsed parameters
+   - Store in appStore
+
+**Validation:** Enter URL with query string → See parameter form with inferred types
+
+### Phase 2: Parameter Persistence
+
+**Goal:** Remember parameter values across sessions
+
+4. Extend `types/config.ts`
+   - Add `parameterDefaults: Record<string, Record<string, string>>` to ConfigState
+
+5. Modify `store/configStore.ts`
+   - Add `parameterDefaults` state
+   - Implement `setParameterDefault()`, `getParameterDefaults()`, `clearParameterDefaults()`
+   - Update `partialize` to include `parameterDefaults`
+   - Increment version to 3 for migration
+
+6. Modify `components/forms/ParameterForm.tsx`
+   - Add `endpoint: string` prop
+   - Load initial values from `configStore.getParameterDefaults(endpoint)`
+   - Persist values on submit via `setParameterDefault()`
+
+**Validation:** Submit parameters → Reload page → Form pre-filled with previous values
+
+### Phase 3: Layout System
+
+**Goal:** Allow user to switch between sidebar and centered layouts
+
+7. Extend `types/config.ts`
+   - Add `LayoutPreset` type
+   - Add `layoutPreset: LayoutPreset` to ConfigState
+
+8. Modify `store/configStore.ts`
+   - Add `layoutPreset` state (default: 'auto')
+   - Implement `setLayoutPreset()`
+   - Update `partialize` to include `layoutPreset`
+
+9. Modify `App.tsx`
+   - Calculate `shouldShowSidebar` based on `layoutPreset` + data
+   - Keep existing layout structures unchanged
+
+10. Create `components/config/LayoutPresetSelector.tsx`
+    - Radio buttons for auto/sidebar/centered
+    - Visual preview icons
+    - Help text explaining each mode
+
+11. Modify `components/config/ConfigPanel.tsx`
+    - Add LayoutPresetSelector section
+
+**Validation:** Change layout preset → Layout switches immediately and persists across reload
+
+### Phase 4: Polish & Optional Enhancements
+
+12. (Optional) Create `components/config/ParameterHistory.tsx`
+    - Show saved parameter values for current endpoint
+    - Allow clearing individual parameters or all defaults
+
+13. (Optional) Enhance `components/forms/ParameterInput.tsx`
+    - Visual indicator (badge/icon) for parameters with persisted values
+    - Tooltip showing last submitted value
+
+14. (Optional) Add enum detection for repeated query params
+    - Extend parser to detect `?tag=foo&tag=bar` → enum schema
+
+## Architectural Patterns
+
+### Pattern 1: Format Convergence
+
+**What:** Convert diverse input formats to unified internal representation early in the pipeline
+
+**Where:** Query string parsing produces ParsedParameter[], same as OpenAPI parsing
+
+**Why:**
+- Downstream components don't need to know data source
+- Eliminates conditional rendering logic
+- Makes adding new parameter sources trivial (GraphQL introspection, gRPC reflection, etc.)
 
 **Example:**
 ```typescript
-// Good: Data flows down
-<SchemaProvider>
-  <TypeMapper schema={schema}>
-    <Renderer mappings={mappings} />
-  </TypeMapper>
-</SchemaProvider>
+// Good: Unified format
+const params = isQueryString(url)
+  ? parseQueryString(url)  // → ParsedParameter[]
+  : parseOpenAPIParams(spec)  // → ParsedParameter[]
 
-// Bad: Circular dependencies
-// Component Renderer reaches back to Schema Provider directly
-```
+renderForm(params)  // Same rendering code
 
-### Pattern 2: Schema-First Architecture
-**What:** All rendering decisions based on schema representation
-**When:** Any rendering logic
-**Why:** Source-agnostic (works for inference OR OpenAPI), consistent behavior
-
-**Example:**
-```typescript
-// Good: Unified schema drives everything
-const schema = await schemaProvider.fromAPIUrl(url)
-const mappings = typeMapper.map(schema)
-const ui = renderer.render(schema, mappings)
-
-// Bad: Different code paths for inference vs OpenAPI
-if (isOpenAPI) {
-  renderFromSpec(spec)
+// Bad: Source-specific rendering
+if (isQueryString(url)) {
+  renderQueryStringForm(url)
 } else {
-  renderFromInference(data)
+  renderOpenAPIForm(spec)
 }
 ```
 
-### Pattern 3: Configuration as Override Layer
-**What:** Defaults work out-of-box, config only overrides
-**When:** Component selection, styling, layout
-**Why:** Zero-config experience, progressive enhancement
+### Pattern 2: Store Separation by Volatility
+
+**What:** Session-only data in appStore, persistent preferences in configStore
+
+**Where:**
+- appStore: loading, error, data, schema (runtime state)
+- configStore: parameterDefaults, layoutPreset, fieldConfigs (user preferences)
+
+**Why:**
+- Clear mental model: "What should survive a refresh?"
+- Prevents accidental persistence of sensitive data (API responses)
+- Makes state serialization predictable
 
 **Example:**
 ```typescript
-// Good: Defaults + overrides
-const componentType =
-  config.overrides[fieldPath] ??
-  defaultMapping.get(typeSignature)
+// Good: Volatile data in appStore
+const { data, loading, error } = useAppStore()
 
-// Bad: Requiring full configuration
-const componentType = config.componentMap[fieldPath] // undefined if not set
+// Good: Persistent preferences in configStore
+const { layoutPreset, parameterDefaults } = useConfigStore()
+
+// Bad: Mixing persistence models
+const { data, layoutPreset } = useMixedStore()  // Confusing!
 ```
 
-### Pattern 4: Component as Pure Function
-**What:** Components receive props, return UI, no side effects
-**When:** All UI components in registry
-**Why:** Testable, reusable, predictable
+### Pattern 3: Derived Layout State
+
+**What:** Layout choice is computed from preference + data, not stored independently
+
+**Where:** App.tsx calculates `shouldShowSidebar` from `layoutPreset` and `parsedSpec`
+
+**Why:**
+- Single source of truth (layoutPreset in configStore)
+- Auto mode can intelligently choose layout based on data
+- No sync issues between stored layout and actual layout
 
 **Example:**
 ```typescript
-// Good: Pure component
-function TableComponent({ data, columns }) {
-  return <table>...</table>
+// Good: Derived state
+const shouldShowSidebar =
+  layoutPreset === 'sidebar' ? true :
+  layoutPreset === 'centered' ? false :
+  hasMultipleOperations  // Auto mode
+
+// Bad: Independent state
+const [layoutPreset, setLayoutPreset] = useState('auto')
+const [actualLayout, setActualLayout] = useState('sidebar')  // Can desync!
+```
+
+### Pattern 4: Progressive Type Inference
+
+**What:** Start with basic type detection, refine with additional patterns over time
+
+**Where:** `inferTypeFromValue()` has clear extension points for new patterns
+
+**Why:**
+- Delivers value quickly (basic inference works day 1)
+- Easy to add specialized detection (UUID, ISO timestamps, etc.)
+- Testable incrementally (each pattern is independent)
+
+**Example:**
+```typescript
+// Good: Extensible inference
+function inferTypeFromValue(value: string): ParameterSchema {
+  if (isBooleanPattern(value)) return { type: 'boolean' }
+  if (isNumberPattern(value)) return { type: 'number' }
+  if (isDatePattern(value)) return { type: 'string', format: 'date' }
+  if (isEmailPattern(value)) return { type: 'string', format: 'email' }
+  // Easy to add:
+  // if (isUUIDPattern(value)) return { type: 'string', format: 'uuid' }
+  return { type: 'string' }
 }
 
-// Bad: Component with side effects
-function TableComponent({ apiUrl }) {
-  const [data, setData] = useState()
-  useEffect(() => { fetch(apiUrl).then(setData) }, [])
-  return <table>...</table>
+// Bad: Monolithic inference
+function inferType(value) {
+  // 500 lines of regex spaghetti
 }
 ```
 
-### Pattern 5: Lazy Schema Resolution
-**What:** Don't fetch/parse until needed
-**When:** Multi-endpoint APIs, nested data
-**Why:** Performance, handles large APIs
+### Pattern 5: Persistence Granularity
+
+**What:** Persist at endpoint granularity, not globally
+
+**Where:** `parameterDefaults` keyed by endpoint path
+
+**Why:**
+- Different endpoints often have same parameter name but different semantics (limit, offset)
+- Prevents wrong defaults being applied to unrelated endpoints
+- Allows per-endpoint clearing of history
 
 **Example:**
 ```typescript
-// Good: Fetch endpoint details on demand
-const endpoints = parseEndpointList(spec) // Just names/paths
-// Later, when user clicks:
-const endpointSchema = await resolveEndpoint(endpoint.path)
+// Good: Per-endpoint persistence
+parameterDefaults: {
+  "/users": { "limit": "20", "sort": "name" },
+  "/posts": { "limit": "10", "sort": "date" }
+}
 
-// Bad: Fetch everything upfront
-const fullSchema = await parseEntireAPI(spec) // Could be huge
+// Bad: Global persistence
+parameterDefaults: {
+  "limit": "20",  // Which endpoint is this for?
+  "sort": "name"  // Could be wrong for /posts
+}
 ```
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Mixing Schema Sources in Rendering Logic
-**What:** Different render paths for inferred vs. OpenAPI schemas
-**Why bad:** Code duplication, inconsistent behavior, harder testing
-**Instead:** Always convert to UnifiedSchema first, render from that
+### Anti-Pattern 1: Parallel Rendering Paths
 
-**Detection:** If you see `if (source === 'openapi')` in rendering code, you've violated this.
+**What:** Separate rendering logic for query string vs. OpenAPI parameters
 
-### Anti-Pattern 2: Premature Component Abstraction
-**What:** Building configurable "universal" components before understanding patterns
-**Why bad:** Over-engineering, unused flexibility, complexity
-**Instead:** Start with 5-7 concrete components, extract commonality later
+**Why bad:**
+- Code duplication
+- Behavior divergence over time
+- Testing burden doubles
 
-**Example:**
-```typescript
-// Bad: Premature abstraction
-<UniversalComponent
-  type={type}
-  renderer={renderer}
-  transformer={transformer}
-  validator={validator} />
+**Instead:** Use format convergence pattern — parse both sources to ParsedParameter[]
 
-// Good: Concrete components first
-<TableComponent data={data} columns={columns} />
-```
+**Detection:** If you see `if (isQueryString) { renderQueryStringForm() }` you've violated this
 
-### Anti-Pattern 3: Config Schema Sprawl
-**What:** Exposing every internal detail as configurable
-**Why bad:** Overwhelming UX, maintenance burden, migration hell
-**Instead:** Start with minimal config surface (component type, CSS), expand based on user need
+### Anti-Pattern 2: Premature Type Detection
 
-### Anti-Pattern 4: Blocking on OpenAPI Parser
-**What:** Starting with OpenAPI parsing before proving inference works
-**Why bad:** Complex dependency, delays core value delivery
-**Instead:** Build inference-based flow first (Phases 1-2), add OpenAPI in Phase 3
+**What:** Complex heuristics trying to detect every possible type on day 1
 
-### Anti-Pattern 5: Tight Coupling to Fetch Implementation
-**What:** HTTP logic embedded in rendering components
-**Why bad:** Hard to test, can't mock, blocks SSR/preview features
-**Instead:** Separate fetch layer (API Fetcher component), pass data to renderer
+**Why bad:**
+- Over-engineering
+- High false positive rate (e.g., "123" could be string ID, not number)
+- Complexity blocks shipping
 
-## Build Order Implications
+**Instead:** Start with conservative inference (boolean, number, string), add patterns incrementally based on real usage
 
-### Phase 1: Foundation (Week 1)
-**Goal:** Skeleton that renders something
+**Detection:** If your inferrer has >10 type patterns before shipping v1, you're over-engineering
 
-**Components to build:**
-1. Application Shell (routing, mode toggle skeleton)
-2. Schema Provider (interface only, hardcoded mock schema)
-3. Component Registry (2-3 basic components: TextInput, Table, JSONViewer)
-4. Component Renderer (basic rendering from mock schema)
-5. View Mode UI (shell that displays renderer output)
+### Anti-Pattern 3: Layout State Duplication
 
-**Validation:** Can render a hardcoded schema as UI
+**What:** Storing both `layoutPreset` and `currentLayout` separately
 
-**Why this order:** Proves the rendering pipeline works before adding complexity
+**Why bad:**
+- Sync issues (what if they disagree?)
+- Unclear source of truth
+- Extra state to manage
 
-### Phase 2: Schema Inference (Week 2)
-**Goal:** Real API URL → Working UI
+**Instead:** Store preference only, derive actual layout from preference + data
 
-**Components to build:**
-1. API Fetcher (fetch + JSON parse)
-2. Schema Inferrer (type detection from JSON)
-3. Schema Provider implementation (fromAPIUrl)
-4. Type-to-Component Mapper (default mappings)
-5. Expand Component Registry (add 5-7 components total)
+**Detection:** If you have two pieces of state that both influence layout, you've duplicated
 
-**Dependencies:**
-- API Fetcher → Schema Inferrer (needs raw data)
-- Schema Inferrer → Schema Provider (produces schema)
-- Schema Provider → Type Mapper (consumes schema)
-- Type Mapper → Renderer (consumes mappings)
+### Anti-Pattern 4: Mixing Parameter Sources in Store
 
-**Validation:** Paste real API URL, see inferred UI
+**What:** Storing query string parameters differently from OpenAPI parameters
 
-**Critical path:** API Fetcher → Inferrer → Provider → Mapper → Renderer
+**Why bad:**
+- Components need to know source to render correctly
+- Can't switch between sources without data migration
+- Violates format convergence pattern
 
-### Phase 3: OpenAPI Support (Week 3)
-**Goal:** OpenAPI spec → Same rendered UI
+**Instead:** Store all parameters as ParsedParameter[] regardless of source
 
-**Components to build:**
-1. OpenAPI Parser (spec → UnifiedSchema)
-2. Schema Provider.fromOpenAPISpec implementation
-3. Spec input UI (URL or paste JSON)
+**Detection:** If appStore has separate fields for queryParams and openapiParams, you've violated this
 
-**Dependencies:**
-- Parser → Schema Provider (produces same schema format)
-- Everything else reuses Phase 2 components
+### Anti-Pattern 5: Global Parameter Persistence
 
-**Validation:** Provide OpenAPI spec, see same quality UI as inference
+**What:** Persisting parameter values globally, not per-endpoint
 
-**Why after inference:** Proves UnifiedSchema abstraction works, defers complex dependency
+**Why bad:**
+- Same parameter name means different things on different endpoints
+- Wrong defaults applied when switching endpoints
+- No way to clear per-endpoint history
 
-### Phase 4: Configuration System (Week 4)
-**Goal:** User can customize component choices and CSS
+**Instead:** Key persistence by endpoint path
 
-**Components to build:**
-1. Config Store (localStorage persistence)
-2. Configure Mode UI (settings panel, component selectors)
-3. Type-to-Component Mapper override logic
-4. CSS customization editor
-
-**Dependencies:**
-- Config Store must integrate with Type Mapper
-- Configure Mode UI reads/writes Config Store
-- Renderer must react to config changes
-
-**Validation:** User overrides Table→Cards, sees change, reloads page, preference persists
-
-### Phase 5: Navigation & Multi-Endpoint (Week 5)
-**Goal:** Handle APIs with multiple endpoints
-
-**Components to build:**
-1. Endpoint Navigator (sidebar)
-2. Multi-endpoint schema support (extend UnifiedSchema)
-3. Master-detail pattern components
-4. Endpoint switching logic
-
-**Dependencies:**
-- Needs Phase 2 inference to detect multiple endpoints
-- Needs Phase 3 OpenAPI to parse full API surface
-- Needs Phase 4 config to store per-endpoint preferences
-
-**Validation:** Load multi-endpoint API, navigate between endpoints
-
-### Phase 6: Polish & Landing (Week 6)
-**Goal:** Production-ready UX
-
-**Components to build:**
-1. Landing page with examples
-2. Error handling UI
-3. Loading states
-4. Example API gallery
-
-**Dependencies:** All previous phases complete
-
-## Scalability Considerations
-
-| Concern | v1 (MVP) | v2 (Growth) | v3 (Scale) |
-|---------|----------|-------------|------------|
-| **Schema size** | Infer from single response | Sample multiple responses | Intelligent sampling, schema caching |
-| **API latency** | Direct fetch, show loading | Request caching, optimistic UI | Service worker, background sync |
-| **Component count** | 5-7 fixed components | 10-15 components, plugin system design | Plugin architecture, lazy loading |
-| **Config complexity** | localStorage per-API | Export/import, sharing | Cloud sync, templates |
-| **OpenAPI spec size** | Parse in-memory | Stream parsing | Web Worker for parsing |
-
-## Technology Recommendations
-
-Based on the architecture, recommended stack:
-
-- **Framework:** React (component model matches architecture perfectly)
-- **State:** Context API for SchemaProvider, useState for local component state
-- **Routing:** React Router (for landing page vs. app routes)
-- **Storage:** localStorage (simple, no backend)
-- **HTTP:** fetch API (built-in, sufficient for v1)
-- **OpenAPI Parsing:** `@apidevtools/swagger-parser` (battle-tested)
-- **Type Inference:** Custom (domain-specific, lightweight)
-
-See STACK.md for detailed justification.
+**Detection:** If clearing parameter history affects all endpoints, you've gone global incorrectly
 
 ## Testing Strategy
 
 ### Unit Tests
-- Schema Inferrer: JSON → schema conversion
-- Type Mapper: type → component selection
-- Each component in registry
+
+**Query String Parser:**
+```typescript
+describe('parseQueryString', () => {
+  it('parses simple query string', () => {
+    const params = parseQueryString('https://api.example.com/users?limit=10')
+    expect(params).toMatchObject([
+      { name: 'limit', schema: { type: 'integer', example: '10' } }
+    ])
+  })
+
+  it('detects boolean values', () => {
+    const params = parseQueryString('https://api.example.com/users?active=true')
+    expect(params[0].schema.type).toBe('boolean')
+  })
+
+  it('handles multi-value params as enum', () => {
+    const params = parseQueryString('https://api.example.com/users?tag=foo&tag=bar')
+    expect(params[0].schema.enum).toEqual(['foo', 'bar'])
+  })
+})
+```
+
+**Type Inferrer:**
+```typescript
+describe('inferTypeFromValue', () => {
+  it('infers boolean from true/false', () => {
+    expect(inferTypeFromValue('true')).toMatchObject({ type: 'boolean' })
+  })
+
+  it('infers integer from digits', () => {
+    expect(inferTypeFromValue('123')).toMatchObject({ type: 'integer' })
+  })
+
+  it('infers date format from ISO date', () => {
+    expect(inferTypeFromValue('2026-02-05')).toMatchObject({
+      type: 'string',
+      format: 'date'
+    })
+  })
+})
+```
+
+**ConfigStore:**
+```typescript
+describe('configStore parameter persistence', () => {
+  it('persists parameter defaults', () => {
+    const { setParameterDefault, getParameterDefaults } = useConfigStore.getState()
+
+    setParameterDefault('/users', 'limit', '20')
+    const defaults = getParameterDefaults('/users')
+
+    expect(defaults).toEqual({ limit: '20' })
+  })
+
+  it('isolates defaults by endpoint', () => {
+    const { setParameterDefault, getParameterDefaults } = useConfigStore.getState()
+
+    setParameterDefault('/users', 'limit', '20')
+    setParameterDefault('/posts', 'limit', '10')
+
+    expect(getParameterDefaults('/users').limit).toBe('20')
+    expect(getParameterDefaults('/posts').limit).toBe('10')
+  })
+})
+```
 
 ### Integration Tests
-- API Fetcher + Inferrer: real API → schema
-- OpenAPI Parser: real spec → schema
-- Full pipeline: schema → rendered output
+
+**Query String to Form Rendering:**
+```typescript
+describe('Query string to parameter form', () => {
+  it('renders parameter form from query string', async () => {
+    const { fetchAndInfer } = useAPIFetch()
+
+    await fetchAndInfer('https://api.example.com/users?limit=10&sort=name')
+
+    const { parsedSpec } = useAppStore.getState()
+    expect(parsedSpec.operations[0].parameters).toHaveLength(2)
+    expect(parsedSpec.operations[0].parameters[0].name).toBe('limit')
+  })
+})
+```
+
+**Parameter Persistence:**
+```typescript
+describe('Parameter persistence across sessions', () => {
+  it('pre-fills form with previous values', () => {
+    const { setParameterDefault } = useConfigStore.getState()
+    setParameterDefault('/users', 'limit', '50')
+
+    render(<ParameterForm endpoint="/users" parameters={mockParams} onSubmit={jest.fn()} />)
+
+    expect(screen.getByDisplayValue('50')).toBeInTheDocument()
+  })
+})
+```
+
+**Layout Switching:**
+```typescript
+describe('Layout preset switching', () => {
+  it('forces sidebar layout when preset is sidebar', () => {
+    const { setLayoutPreset } = useConfigStore.getState()
+    setLayoutPreset('sidebar')
+
+    render(<App />)
+
+    expect(screen.getByRole('navigation')).toBeInTheDocument()  // Sidebar present
+  })
+})
+```
 
 ### E2E Tests
-- Paste API URL → see UI
-- Paste OpenAPI spec → see UI
-- Configure component → see change → reload → persisted
+
+**Full Query String Flow:**
+```typescript
+test('User enters URL with query string, sees form, submits, values persist', async () => {
+  // Enter URL with query string
+  await userEvent.type(screen.getByRole('textbox'), 'https://api.example.com/users?limit=10')
+  await userEvent.click(screen.getByText('Fetch'))
+
+  // Verify form rendered with inferred types
+  expect(screen.getByLabelText('limit')).toHaveAttribute('type', 'number')
+
+  // Change value and submit
+  await userEvent.clear(screen.getByLabelText('limit'))
+  await userEvent.type(screen.getByLabelText('limit'), '20')
+  await userEvent.click(screen.getByText('Fetch Data'))
+
+  // Reload page
+  window.location.reload()
+
+  // Verify value persisted
+  expect(screen.getByDisplayValue('20')).toBeInTheDocument()
+})
+```
+
+## Migration Strategy
+
+### ConfigStore Version Migration
+
+Since we're adding new fields to configStore, increment the version and handle migration:
+
+```typescript
+// store/configStore.ts
+{
+  name: 'api2ui-config',
+  version: 3,  // Increment from 2 to 3
+  storage: createJSONStorage(() => localStorage),
+  partialize: (state) => ({
+    fieldConfigs: state.fieldConfigs,
+    drilldownMode: state.drilldownMode,
+    globalTheme: state.globalTheme,
+    styleOverrides: state.styleOverrides,
+    endpointOverrides: state.endpointOverrides,
+    paginationConfigs: state.paginationConfigs,
+    parameterDefaults: state.parameterDefaults,  // NEW
+    layoutPreset: state.layoutPreset,  // NEW
+  }),
+  migrate: (persistedState: unknown, version: number) => {
+    if (version < 3) {
+      // Add default values for new fields
+      return {
+        ...persistedState,
+        parameterDefaults: {},
+        layoutPreset: 'auto',
+      }
+    }
+    return persistedState
+  },
+}
+```
+
+### Backwards Compatibility
+
+**ParameterForm signature:**
+Current signature: `ParameterForm({ parameters, onSubmit, loading })`
+New signature: `ParameterForm({ parameters, endpoint, onSubmit, loading })`
+
+Make `endpoint` optional to maintain backwards compatibility:
+
+```typescript
+interface ParameterFormProps {
+  parameters: ParsedParameter[]
+  endpoint?: string  // Optional — defaults to pathname if not provided
+  onSubmit: (values: Record<string, string>) => void
+  loading?: boolean
+}
+```
+
+If `endpoint` not provided, derive from URL:
+```typescript
+const endpoint = props.endpoint ?? window.location.pathname
+```
 
 ## Open Questions
 
-These require implementation experience to answer:
+Questions to resolve during implementation:
 
-1. **Schema inference accuracy:** How many response samples needed for confidence?
-2. **Component granularity:** Are 7 components enough, or will we quickly need 15?
-3. **Config scope:** Per-API, per-endpoint, or per-field configuration?
-4. **Error handling:** How to handle partial schemas, failed inferences?
+1. **Type inference accuracy:** Should we infer types conservatively (fewer false positives) or aggressively (more convenience)?
+   - **Recommendation:** Start conservative, add patterns based on user feedback
+
+2. **Parameter history UI:** Should we expose parameter history in ConfigPanel, or keep it implicit (just pre-fill)?
+   - **Recommendation:** Start implicit, add UI if users request it
+
+3. **Layout preset icons:** What visual metaphor for layout presets (icons, previews, labels)?
+   - **Recommendation:** Icons + labels (clearest for all users)
+
+4. **Enum detection threshold:** How many values before treating repeated param as enum vs. array?
+   - **Recommendation:** 2+ distinct values = enum (simple rule)
+
+5. **Parameter clearing:** Should users be able to clear persisted values individually or only all at once?
+   - **Recommendation:** Start with all-at-once (simpler), add per-param clearing if requested
+
+## Performance Considerations
+
+### Query String Parsing
+
+- **URLSearchParams:** Native API, zero dependencies, fast
+- **Type inference:** Regex matching, O(n) where n = parameter count (not a concern for typical query strings)
+- **Caching:** Not needed — parsing is fast enough to run on every URL change
+
+### Parameter Persistence
+
+- **localStorage writes:** Only on form submit (not on every keystroke)
+- **localStorage reads:** Only on component mount (not on every render)
+- **Zustand persist:** Uses batched writes, efficient for multiple parameter updates
+
+### Layout Switching
+
+- **No re-mounting:** Layout switch is CSS-only (flex direction, padding), components don't re-mount
+- **No network:** Layout preference is client-side only, no API calls
+
+## Security Considerations
+
+### Query String Injection
+
+**Risk:** Malicious query strings could inject unexpected parameter types or values
+
+**Mitigation:**
+- Type inference is read-only (doesn't execute user input)
+- ParameterInput renders values as text/number inputs (HTML escaping by React)
+- API fetch uses URLSearchParams for serialization (prevents injection)
+
+### Persisted Parameter XSS
+
+**Risk:** Persisted parameter values could contain malicious scripts
+
+**Mitigation:**
+- React escapes all text content by default
+- ParameterInput uses controlled inputs (value prop)
+- No `dangerouslySetInnerHTML` in parameter rendering
+
+### localStorage Overflow
+
+**Risk:** Unlimited parameter persistence could fill localStorage
+
+**Mitigation:**
+- Only persist non-empty values (reduces storage)
+- Per-endpoint isolation (prevents one endpoint from dominating)
+- Future: Add UI for clearing old parameter defaults
 
 ## Sources
 
-**Confidence: MEDIUM-LOW**
+**URL Query String Parsing (HIGH confidence):**
+- [A Comprehensive Guide to URLSearchParams in TypeScript](https://dev.to/bugudiramu/a-comprehensive-guide-to-urlsearchparams-in-typescript-51f7)
+- [How to Manage Query Params in TypeScript - Upmostly](https://upmostly.com/typescript/how-to-manage-query-params-in-typescript)
+- [query-string - npm](https://www.npmjs.com/package/query-string)
+- [How to Parse URL in JavaScript - Dmitri Pavlutin](https://dmitripavlutin.com/parse-url-javascript/)
 
-This architecture is based on:
-- First principles of pipeline architectures
-- Common patterns in schema-driven rendering systems (Swagger UI, Redoc, PostMan)
-- React architectural best practices
-- Project requirements analysis
+**Type Inference (MEDIUM confidence):**
+- [Decode URL search params at the type level - Total TypeScript](https://www.totaltypescript.com/tips/decode-url-search-params-at-the-type-level-with-ts-toolbelt)
+- [Extreme TypeScript Challenge: ParseQueryString - Medium](https://medium.com/@taitasciore/extreme-typescript-challenge-parsequerystring-c7bc64d73af2)
 
-**Unable to verify:** WebSearch and WebFetch were unavailable during research. Recommendations are based on training data (January 2025 cutoff) and architectural reasoning, not current ecosystem verification.
+**React Layout Patterns (HIGH confidence):**
+- [Modern Layout Design Techniques in ReactJS (2025 Guide) - DEV](https://dev.to/er-raj-aryan/modern-layout-design-techniques-in-reactjs-2025-guide-3868)
+- [Sidebar: Architecting a Scalable Sidebar System in React - Medium](https://medium.com/@rivainasution/shadcn-ui-react-series-part-11-sidebar-architecting-a-scalable-sidebar-system-in-react-f45274043863)
+- [React-admin - The Layout Component](https://marmelab.com/react-admin/Layout.html)
 
-**Validation needed:** Confirm current best practices for:
-- OpenAPI parsing libraries (versions, maintenance status)
-- Schema inference approaches in production tools
-- Component registry patterns in modern React apps
+**Zustand Persistence (HIGH confidence):**
+- [Persisting store data - Zustand](https://zustand.docs.pmnd.rs/integrations/persisting-store-data)
+- [persist - Zustand](https://zustand.docs.pmnd.rs/middlewares/persist)
+- [How to Use Zustand in React (With Local Storage Persistence) - Medium](https://medium.com/@jalish.dev/how-to-use-zustand-in-react-with-local-storage-persistence-fd67ab0cc5a0)
+
+**OpenAPI Parameter Best Practices (MEDIUM confidence):**
+- [Query Parameters in OpenAPI best practices - Speakeasy](https://www.speakeasy.com/openapi/requests/parameters/query-parameters)
+- [Request Parameters in OpenAPI best practices - Speakeasy](https://www.speakeasy.com/openapi/requests/parameters)

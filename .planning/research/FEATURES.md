@@ -1,405 +1,439 @@
-# Feature Landscape
+# Features Research: v1.2 Smart Parameters & Layout System
 
-**Domain:** API-to-UI Rendering Engine / API Explorer
-**Researched:** 2026-02-01
-**Confidence:** MEDIUM (based on training data from established tools; WebSearch/WebFetch unavailable for verification)
+**Domain:** Filter UIs, Parameter Forms, and Layout Systems for API Testing/Explorer Tools
+**Researched:** 2026-02-05
+**Focus:** Smart parameter handling, URL-to-form workflows, layout presets
+**Confidence:** MEDIUM-HIGH (WebSearch-verified patterns, awaiting Context7 verification on specific libraries)
 
-## Research Context
+## Summary
 
-This research draws from established API tooling patterns in:
-- API Documentation Tools (Swagger UI, Redoc, Stoplight)
-- API Testing/Exploration Tools (Postman, Insomnia, RapidAPI)
-- Low-Code API-to-UI Tools (Retool, Appsmith, Budibase)
-- Interactive API Playgrounds
+This research examines how production filter UIs, smart parameter forms, and layout systems work in e-commerce, dashboards, and API testing tools. The v1.2 milestone adds smart parameter handling and layout flexibility to api2ui's existing basic parameter forms. Key findings: (1) Filter UIs must provide instant feedback with debouncing, clear visual state of applied filters via chips, and prevent zero-result frustration, (2) URL query param parsing requires handling array notation and bidirectional URL-state synchronization, (3) Smart type inference should cover dates, emails, coordinates, and use contextual placeholders not inline placeholders, (4) Progressive disclosure via expandable sections prevents overwhelming users with 10+ params, (5) Layout systems need 3-4 presets (sidebar, top bar, drawer, split) with user-switchable controls, (6) UX polish comes from real-time updates, clear "Clear All" actions, and count badges showing filter impact.
 
-**Note:** Unable to verify with current official sources (WebSearch/WebFetch unavailable). Confidence levels reflect reliance on training data. Recommendations based on well-established patterns in API tooling ecosystem as of early 2025.
+## Filter UI Patterns
 
----
+### Table Stakes
 
-## Table Stakes
-
-Features users expect. Missing = product feels incomplete.
+Features users expect from any filter UI — missing these = product feels broken.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| **API Request Execution** | Core purpose of any API tool | Low | Make actual HTTP requests, display responses |
-| **JSON/XML Response Formatting** | Raw responses are unreadable | Low | Syntax highlighting, collapsible trees, pretty-print |
-| **Parameter Input Forms** | Users expect UI over manual JSON | Medium | Map API params to form controls (text, number, select, etc.) |
-| **Error Display** | Users need to know when things fail | Low | HTTP errors, network errors, validation errors with clear messaging |
-| **Response Status Indicators** | Visual feedback for success/failure | Low | 200=green, 400=yellow, 500=red, etc. |
-| **Loading States** | Feedback during async operations | Low | Spinners, skeletons, or progress indicators during API calls |
-| **Copy to Clipboard** | Quick way to extract data | Low | Copy request, response, code snippets |
-| **Request History** | Users re-test frequently | Medium | Recent requests accessible, at least session-based |
-| **Dark Mode** | Developer tools standard | Low | Many API tools default to dark themes |
-| **Responsive Layout** | Used on various screen sizes | Medium | Mobile/tablet/desktop support |
+| Multi-select filters | Users need to combine criteria (e.g., color=red OR blue) | Medium | Use checkboxes, not single-select radios |
+| Applied filter chips/badges | Users forget what filters are active without visual reminder | Low | Show chips above results with individual X to remove |
+| Clear all filters | Users need escape hatch when stuck in filtered state | Low | "Clear All" or "Reset Filters" button, always visible |
+| Real-time/instant feedback | Users expect to see results update as they filter | Medium | Requires debouncing (300-500ms) for text inputs |
+| Prevent zero results | Showing "0 results" frustrates users, hide unavailable options | High | Dynamically update filter counts or disable options with 0 matches |
+| Filter count indicators | Users want to know impact before selecting (e.g., "Size: M (143)") | Medium | Show count next to each filter option |
+| Collapsible filter groups | With 5+ filter categories, users need to collapse unused sections | Low | Accordion pattern for filter groups |
+| Preserve selections on error | If API call fails, don't clear user's filter state | Low | Maintain filter state in URL or React state |
+| Mobile-friendly filters | 70%+ traffic is mobile, filters must work on small screens | Medium | Bottom drawer or sticky filter bar for mobile |
+| Visible feedback on apply | When filter changes, show loading state during fetch | Low | Skeleton screens or spinner overlay |
 
-### Table Stakes Analysis
+**Dependencies on existing features:**
+- Builds on v1.0 parameter forms (enum→dropdown, bool→checkbox)
+- Extends required/optional separation to show optional params in expandable sections
 
-**What happens if missing:**
-- No request execution = not an API tool
-- No formatted responses = users leave for tools that have it
-- No parameter forms = too much friction, users prefer Postman
-- No error handling = frustration, looks broken
-- No loading states = feels unresponsive, users click multiple times
+### Differentiators
 
-**MVP Priority:** ALL table stakes should be in v1. These define the category.
-
----
-
-## Differentiators
-
-Features that set product apart. Not expected, but valued.
+Features that would make api2ui stand out from generic API tools.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| **Runtime UI Rendering** | No code generation, instant changes | High | Core differentiator for api2ui vs low-code tools |
-| **Automatic Component Selection** | Zero configuration to get started | Medium | Infer table/card/detail views from response shape |
-| **Master-Detail Navigation** | Handle nested data elegantly | Medium | Click array item → detail view (common in APIs) |
-| **Configure Mode vs View Mode** | Customize without breaking UX | Medium | Toggle between "using the UI" and "editing the UI" |
-| **Schema Inference** | Works without OpenAPI spec | Medium | Parse responses to build UI (vs requiring pre-defined schema) |
-| **Shareable Links** | Collaboration without accounts | Medium-High | Share configured UI with team (deferred to post-MVP) |
-| **Live Preview Updates** | See changes immediately | Medium | Update UI as you configure without reload |
-| **CSS Customization** | Brand/style the UI | Low-Medium | Custom styles without rebuilding components |
-| **Response Data Transformations** | Filter, sort, search results | Medium | Client-side data manipulation before rendering |
-| **Multiple Visualization Options** | User chooses table vs cards vs list | Medium | Same data, different views (like Notion database views) |
-| **API Response Caching** | Faster re-renders, less API load | Low-Medium | Cache responses, option to refresh |
-| **Export Generated UI** | Take the UI elsewhere | High | Export config or HTML/JS bundle (future feature) |
-| **Automatic Pagination Handling** | Detect and handle paginated APIs | High | Parse Link headers, cursor-based pagination |
-| **Webhook/Polling Support** | Real-time data updates | High | Subscribe to changes, auto-refresh UI |
-| **Embedded Mode** | Embed in other apps | Medium | iframe-able, embeddable widget |
+| Auto-group by prefix | Parameters like `ddcFilter[status]`, `ddcFilter[date]` auto-group into "Filters" section | Medium | Parse bracket notation, create logical sections |
+| Smart defaults from URL | Parse existing query params and pre-populate form | Low | Already have URL state, just need to parse on load |
+| Type inference with examples | Show "e.g., 2026-02-05" placeholder for date fields | Medium | Pattern matching on param names/values |
+| Progressive disclosure | Show param breakdown first (read-only chips), then "Edit" to open form | Medium | Two-step: display → edit vs always-editable |
+| Query builder mode | Advanced users can build AND/OR filter logic visually | High | Complex, defer to post-v1.2 |
+| Filter history/presets | Save common filter combinations ("Last week's orders") | Medium | LocalStorage + preset management UI |
+| Shareable filter state | Copy URL with all active filters to share with team | Low | Already URL-based, just need "Copy Link" button |
+| Contextual help tooltips | Show API docs for each param inline (if OpenAPI spec available) | Low | Use `description` field from OpenAPI |
+| Auto-detect related params | Group `startDate`/`endDate` into single date range picker | High | Pattern matching on param names |
+| Filter impact preview | "Applying this will show ~142 results" before submit | High | Requires extra API call or server support |
 
-### Differentiator Analysis
+**Recommendation for v1.2:**
+- Auto-group by prefix (MUST HAVE for ddcFilter use case)
+- Smart defaults from URL (MUST HAVE)
+- Type inference with examples (MUST HAVE)
+- Progressive disclosure (NICE TO HAVE)
+- Shareable filter state (EASY WIN)
+- Contextual help tooltips (EASY WIN if OpenAPI)
 
-**What makes api2ui unique:**
-1. **Runtime rendering** - Most low-code tools generate code. api2ui renders at runtime.
-2. **Zero-config start** - Works with any API URL without schema. Others need OpenAPI/Swagger.
-3. **Master-detail for nested data** - Built-in pattern for hierarchical APIs.
-4. **Configure/View split** - Toggle between builder and end-user modes.
+### Anti-Features
 
-**Competitive advantages:**
-- Faster than low-code tools (no code gen, no deploy)
-- Easier than API explorers (actual UI, not just JSON viewer)
-- More flexible than API docs (interactive, configurable)
-
-**What to build when:**
-- v1: Runtime rendering, auto component selection, master-detail, configure/view toggle
-- v2: Shareable links, transformations, visualizations
-- v3+: Export, pagination, real-time, embedded mode
-
----
-
-## Anti-Features
-
-Features to explicitly NOT build. Common mistakes in this domain.
+Things to deliberately NOT build — common mistakes in filter UI design.
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| **Code Generation** | Creates deploy friction, diverges from source | Runtime rendering only. UI updates instantly. |
-| **Visual Drag-Drop Builder** | Complexity explosion, hard to maintain | Simple configure forms. Power users can edit JSON config directly. |
-| **Custom Component Language** | Learning curve, vendor lock-in | Use standard React components. CSS for customization. |
-| **Built-in Authentication UI** | Security risk, too many auth patterns | Pass auth headers, don't manage auth. User provides tokens. |
-| **API Schema Editor** | Scope creep, Stoplight already does this | Infer from responses. If schema needed, import OpenAPI (don't edit). |
-| **Backend/Database** | Increases complexity, hosting costs | Client-side only for v1. Optional backend for shareable links later. |
-| **Request Builder Like Postman** | Already solved well, hard to compete | Focus on response rendering. Keep request inputs simple. |
-| **Workflow/Automation Engine** | Different product category | One API call → one UI. No chaining, no conditionals. |
-| **GraphQL Query Builder** | REST-first, GraphQL is different paradigm | REST only for v1. GraphQL is v2+ if validated by users. |
-| **AI-Generated Components** | Unpredictable, unreliable for v1 | AI styling (later). Component selection is rule-based. |
-| **Multi-API Dashboards** | Complexity, state management nightmare | Single API per UI for v1. Multi-API is post-MVP. |
-| **Historical Data / Time-series** | Requires persistence, complex UI | Show latest response only. External tools for history. |
+| Inline placeholder text | Nielsen Norman Group study: placeholders hurt usability, users confuse them with pre-filled values | Use label above field + helper text below or contextual examples outside input |
+| Auto-submit on every keystroke | Causes excessive API calls, poor UX for slow typers | Debounce 300-500ms or require explicit "Apply" button |
+| Hidden filters behind menu | Users overlook filters buried in hamburger menus | Use visible sidebar or top bar, reserve drawer for mobile only |
+| Complex nested filter UI | More than 2 disclosure levels = users get lost | Limit to 2 levels: Category → Options, not Category → Subcategory → Options → Sub-options |
+| Required filters first | Forcing users to fill required params before showing optional ones feels like a form, not exploration | Show all params, use visual distinction (bold label, asterisk) for required |
+| Auto-clear on navigation | Clearing filters when user switches endpoints is frustrating | Persist filters per endpoint in localStorage |
+| Filter modal overlays | Full-screen modals force context switch, user can't see results while filtering | Use sidebar or drawer that shows results alongside filters |
+| Overly smart grouping | Auto-grouping unrelated params confuses users | Only group when clear semantic relationship (shared prefix, OpenAPI tags) |
+| Disable filter options | Disabled checkboxes frustrate users ("Why can't I select this?") | Hide options with 0 results or show with "(0)" count |
+| Single-select filters | Forcing "pick one" when users want "any of these" | Use checkboxes for multi-select, radio only for mutually exclusive options |
 
-### Anti-Feature Rationale
+## Smart Type Inference
 
-**Code Generation:**
-- Retool, Appsmith, Budibase all generate code → requires deploy step
-- api2ui differentiator is instant runtime rendering
-- NEVER generate code as primary path
+### Table Stakes
 
-**Visual Drag-Drop:**
-- Webflow, Wix pattern → complex, hard to version control
-- Developer users prefer config files
-- End users don't need to drag (auto-layout handles it)
-- Keep it simple: forms for configuration, not canvas manipulation
+Basic inference users expect from any smart form.
 
-**Custom Component DSL:**
-- Creates vendor lock-in
-- Use standard React components so power users can extend
-- Configuration should be JSON, not a new language
+| Feature | Expected Behavior | Complexity | Implementation Notes |
+|---------|-------------------|------------|---------------------|
+| Date detection | Params named `date`, `createdAt`, `start`, `end` → date picker | Low | Regex match on param name + value pattern (ISO 8601) |
+| Number detection | Params with numeric values → number input with step | Low | Already have from v1.0, verify it works for query params |
+| Boolean detection | Params with `true/false`, `yes/no`, `0/1` → toggle/checkbox | Low | Already have from v1.0 |
+| Enum detection | Params with OpenAPI enum definition → dropdown | Low | Already have from v1.0, verify for non-OpenAPI URLs |
+| Array detection | Params with bracket notation `tag[]=x&tag[]=y` → multi-select or tag input | Medium | Parse repeated keys or bracket notation |
+| Email detection | Params named `email`, `userEmail` → email input with validation | Low | Pattern match on name + basic validation |
+| URL detection | Params named `url`, `website`, `callback` → URL input with validation | Low | Pattern match on name + URL validation |
+| Coordinate detection | Params named `lat`, `lng`, `latitude`, `longitude` → paired number inputs | Medium | Pattern match on name + optional map picker later |
 
-**Built-in Auth:**
-- Too many auth patterns (OAuth, API keys, JWT, etc.)
-- Security liability if done wrong
-- api2ui doesn't need to authenticate users, just pass credentials to API
-- User provides auth headers, we pass them through
+**Confidence:** HIGH — These patterns are standard across form libraries and API tools like Postman, Insomnia.
 
-**Backend for v1:**
-- Shareable links need backend
-- But v1 uses localStorage only
-- Don't build infrastructure until validated
-- Client-side keeps it simple, deployable as static site
+### Differentiators
 
-**Postman-Style Request Builder:**
-- Postman won a 15-year head start
-- api2ui value is RESPONSE rendering, not request building
-- Keep request inputs minimal: URL + params + headers form
-- Don't compete where they're strongest
+Advanced inference that adds value beyond basic type detection.
 
----
+| Feature | Value Add | Complexity | Notes |
+|---------|-----------|------------|-------|
+| Zip code detection | Params named `zip`, `zipCode`, `postalCode` → formatted input (US: 12345 or 12345-6789) | Low | Pattern + input mask |
+| Phone number detection | Params named `phone`, `mobile` → formatted input with country code | Medium | Requires formatting library |
+| Date range inference | Params `startDate` + `endDate` → single date range picker | High | Group related params, render as unified component |
+| Multi-value CSV parsing | Param `tags=apple,orange,banana` → tag input with chips | Medium | Split on comma, render as editable chips |
+| Keyword search detection | Params named `q`, `query`, `search`, `keyword` → search input with icon | Low | Just styling + icon, maybe autocomplete later |
+| Currency detection | Params named `price`, `amount`, `cost` with numeric values → currency input | Medium | Format with $ prefix, 2 decimals |
+| Color detection | Params named `color`, `backgroundColor` with hex values → color picker | Low | Pattern match hex, render color input |
+| File path detection | Params with `/path/to/file` structure → read-only code display | Low | Pattern match, render in monospace |
+| JSON detection | Params with stringified JSON → expandable JSON editor | High | Detect `{` or `[` start, use CodeMirror or similar |
+| Relative date inference | Values like `7d`, `1w`, `30d` → dropdown with presets + custom picker | Medium | Parse shorthand, provide common presets |
+
+**Recommendation for v1.2:**
+- Date range inference (HIGH VALUE for filter UIs)
+- Multi-value CSV parsing (COMMON PATTERN)
+- Keyword search detection (EASY WIN)
+- Zip code detection (NICE TO HAVE)
+- Defer: phone, currency, color, JSON (complex, less common in filters)
+
+### Anti-Features
+
+Inference behaviors that frustrate users.
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Overly aggressive inference | Inferring `name` param as "person name" and applying title case auto-formatting | Only infer when high confidence (90%+), never auto-format user input |
+| Inference without escape hatch | Forcing date picker when user wants to manually type `2026-02-05` | Always allow text input fallback, picker is enhancement |
+| Hidden raw value | Showing formatted value but hiding actual param value sent to API | Show both: formatted in UI, raw in tooltip or "View as URL" mode |
+| Inference breaking paste | Date picker rejecting pasted text like "tomorrow" or "last week" | Accept text input, attempt to parse, show error inline if invalid |
+| Required format validation | Forcing specific format (MM/DD/YYYY vs DD/MM/YYYY) when API accepts ISO 8601 | Accept multiple formats, normalize to API format on submit |
+
+## URL Query Param Parsing
+
+### Table Stakes
+
+| Feature | Expected Behavior | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| Parse standard params | `?key=value&key2=value2` → form fields | Low | URLSearchParams API (built into browsers) |
+| Parse array notation | `?tag[]=x&tag[]=y` or `?tag=x&tag=y` → multi-value field | Medium | No universal standard, support both repeated keys and brackets |
+| Parse nested objects | `?filter[status]=active&filter[date]=2026` → grouped fields | Medium | Parse bracket notation into nested structure |
+| URL → form sync | On page load, populate form from URL query params | Low | Parse on mount, set form state |
+| Form → URL sync | When user edits form, update URL without reload | Low | Use React Router's `useSearchParams` or similar |
+| Preserve param order | Maintain order of params when rendering form | Low | Use array/map instead of plain object |
+| Handle special characters | URL-encoded values like `%20`, `%2C` decode correctly | Low | Built into URLSearchParams |
+| Handle empty values | `?foo=&bar=` → empty string, not `null` or omitted | Low | Distinguish empty from missing |
+
+**Confidence:** HIGH — Standard browser APIs and React libraries (nuqs, use-query-params) handle this.
+
+### Differentiators
+
+| Feature | Value Add | Complexity | Notes |
+|---------|-----------|------------|-------|
+| Auto-detect array format | Guess if API uses `tag[]=x` vs `tag=x` vs `tag=x,y` from existing URL | Medium | Parse first, remember format, maintain on edit |
+| URL history | Show recently used URLs for quick re-filter | Low | LocalStorage + dropdown |
+| Diff view | Show "what changed" when user edits URL params | Medium | Compare before/after, highlight diffs |
+| Copy as cURL | Generate cURL command from current filter state | Low | Useful for developers |
+| Import from URL | Paste full URL from browser address bar, extract params | Low | Strip base URL, parse query string |
+
+### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Lossy parsing | Converting `tag[0]=x` to just `tag=x`, losing array index info | Preserve exact format, even if not used by form |
+| Auto-clean URL | Removing "empty" params like `?foo=` from URL (some APIs treat `foo=` differently from omitting `foo`) | Preserve all params as-is unless user explicitly removes |
+| Force canonical format | Rewriting user's URL from `tag=x&tag=y` to `tag[]=x&tag[]=y` without asking | Preserve original format, only normalize when needed for API |
+
+## Progressive Disclosure for Complex Params
+
+### Table Stakes
+
+| Feature | Expected Behavior | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| Collapsible sections | Group related params (Filters, Pagination, Sorting) into expandable sections | Low | Headless UI Disclosure component |
+| Required params always visible | Show required params first, optional in "Advanced" or "More Filters" section | Low | Filter by `required` flag from OpenAPI |
+| Show count of hidden params | "Show 12 more filters" or "Advanced (8)" to indicate what's collapsed | Low | Count optional params |
+| Remember disclosure state | If user expands "Advanced", keep it open on next visit | Low | Persist in localStorage |
+| Default to collapsed | Start with optional params hidden to reduce overwhelm | Low | Expand only required or previously used |
+
+**Confidence:** HIGH — Nielsen Norman Group research on progressive disclosure, widely adopted pattern.
+
+### Differentiators
+
+| Feature | Value Add | Complexity | Notes |
+|---------|-----------|------------|-------|
+| Smart defaults visible | Show params with values (even optional) in collapsed state as read-only chips | Medium | "Filters: status=active, date=2026-02 [Edit]" |
+| Two-step flow | (1) Show current filter state as chips, (2) Click "Edit" to open form | Medium | Reduces visual noise, makes clear what's active |
+| Contextual expansion | Auto-expand section if param has error or was just edited | Low | UX polish, focus management |
+| Progressive form | Ask for basic params first (keyword search), then suggest refinements | High | Requires multi-step wizard, complex for v1.2 |
+
+### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| More than 2 nesting levels | Users get lost with Category → Subcategory → Sub-sub-category | Limit to 2 levels: Section → Fields |
+| Hide all params by default | If everything is collapsed, users don't know what's available | Always show required params or most-used params |
+| Bury important filters | Hiding high-impact filters (date range, status) in "Advanced" frustrates power users | Put common filters in main view, truly rare ones in "Advanced" |
+
+## Layout System
+
+### Table Stakes
+
+Core layout expectations for any UI with switchable layouts.
+
+| Feature | Expected Behavior | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| 3-4 layout presets | Sidebar (left), Top bar (horizontal), Drawer (slide-out), Split view (left/right columns) | Medium | Each layout needs separate CSS + component arrangement |
+| User-switchable control | Icon/dropdown in header to switch layouts | Low | Store preference in localStorage |
+| Persist preference | Remember user's layout choice per endpoint | Low | Key by endpoint URL in localStorage |
+| Responsive behavior | Mobile defaults to drawer, desktop defaults to sidebar | Medium | Media queries + auto-switch logic |
+| Smooth transitions | Layout change animates (slide, fade) not instant snap | Low | CSS transitions |
+| Clear visual affordance | Icon for layout switcher is recognizable (grid icon, layout icon) | Low | Use standard icons (Heroicons layout variants) |
+
+**Confidence:** MEDIUM — Common in dashboards (Grafana, Datadog) but less standardized than filter patterns.
+
+### Differentiators
+
+Layout features that add value beyond basic switching.
+
+| Feature | Value Add | Complexity | Notes |
+|---------|-----------|------------|-------|
+| Layout preview | Hover over layout option shows thumbnail preview | Medium | Render mini preview or use static images |
+| Keyboard shortcuts | `L` key cycles through layouts, `Cmd+1/2/3` for specific layouts | Low | Add global keyboard handler |
+| Per-endpoint defaults | Different endpoints default to different layouts (e.g., filters in sidebar, single-op in top bar) | Low | Heuristic based on param count |
+| Collapsible sidebar | In sidebar layout, allow collapsing to icons-only | Medium | Adds complexity to sidebar component |
+| Split view ratio adjustment | Drag divider to resize left/right panels in split view | Medium | Requires resize handler, persist ratio |
+| Layout templates | "Gallery view" (top bar + cards), "Data table view" (sidebar + table) — named presets that combine layout + component choice | High | Complex, couples layout to component type |
+
+**Recommendation for v1.2:**
+- 3-4 layout presets (MUST HAVE)
+- User-switchable control (MUST HAVE)
+- Persist preference (MUST HAVE)
+- Responsive behavior (MUST HAVE)
+- Smooth transitions (NICE TO HAVE)
+- Defer: preview, keyboard shortcuts, split ratio (polish for v1.3)
+
+### Anti-Features
+
+Layout complexity to avoid.
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Freeform drag-and-drop layout | Letting users drag param form anywhere on screen is overwhelming | Provide 3-4 curated layouts, not infinite customization |
+| Layout builder UI | Modal with "design your layout" tools is too complex for a simple filter form | Preset layouts only |
+| Per-field layout control | Letting users position each field individually creates chaos | Layout applies to whole param form, not individual fields |
+| Layout affects data view | Coupling param layout to data component layout (e.g., sidebar forces table) confuses users | Param layout is independent of data component type |
+| Auto-switch without consent | Automatically changing layout based on screen size without user action is disorienting | Suggest layout on first mobile visit, don't force switch |
+
+## UX Polish Expectations
+
+What makes a filter UI feel like a "real product" not a dev tool — the intangibles.
+
+### Instant Feedback & Loading States
+
+| Pattern | Why It Matters | Implementation |
+|---------|----------------|----------------|
+| Debounced real-time search | Users expect search-as-you-type, but 100ms per keystroke is excessive | Debounce 300-500ms on text inputs, instant on checkboxes/dropdowns |
+| Skeleton screens during fetch | Blank screen after clicking "Apply" feels broken | Show skeleton loader or fade existing results |
+| Optimistic UI updates | Showing filter chip immediately (before API response) feels faster | Add chip to UI, remove if fetch fails |
+| Error recovery | If fetch fails, show error but keep form state intact | Don't clear params, show retry button |
+| Loading progress | For slow APIs, show "Loading... 3s" to indicate it's working | Use timeout to show duration if >2s |
+
+### Clear Visual State
+
+| Pattern | Why It Matters | Implementation |
+|---------|----------------|----------------|
+| Applied filter chips/badges | Users forget what filters are active without visual reminder | Chips above results with individual X icons |
+| Count badges | Show "Filters (3)" or "Active: 3" to indicate how many applied | Count non-empty params |
+| Clear visual hierarchy | Primary params (search) bigger/bolder than secondary (advanced filters) | Typography scale: text-lg for search, text-sm for advanced |
+| Highlight active filters | Active filter options have blue background, inactive are gray | Use `data-active` state in CSS |
+| "Showing X of Y results" | Users want to know if filters are working | Display count above results |
+
+### Discoverability
+
+| Pattern | Why It Matters | Implementation |
+|---------|----------------|----------------|
+| Onboarding tooltip | First-time users need hint: "Click here to change layout" | Show once, dismiss forever (localStorage flag) |
+| Empty state guidance | When no params provided, show "Start by entering a keyword" | Helpful empty state, not blank form |
+| Contextual help | Question mark icon next to params shows API docs | Pull from OpenAPI `description` field |
+| Keyboard hints | Show "Press Enter to apply" in search input | Subtle text-xs hint below input |
+| Undo support | After clearing all filters, show "Undo" toast | Store previous state, restore on undo |
+
+### Performance & Responsiveness
+
+| Pattern | Why It Matters | Implementation |
+|---------|----------------|----------------|
+| Fast initial load | Form renders in <500ms even with 20+ params | Progressive rendering, virtualize long lists |
+| No layout shift | Expanding "Advanced" section doesn't jump page | Reserve space or smooth slide transition |
+| Smooth animations | Layout switch, chip removal, section expand all animate at 200-300ms | CSS transitions, not JavaScript animation |
+| Mobile-first interactions | Touch targets 44x44px minimum, swipe to dismiss chips | Mobile UX best practices |
+
+## Comparison to API Testing Tools
+
+How do Postman, Insomnia, and similar tools handle parameters?
+
+| Tool | Param UI Pattern | Strengths | Gaps for api2ui |
+|------|------------------|-----------|-----------------|
+| **Postman** | Table with Key/Value/Description columns, checkbox to enable/disable each param | Clean, familiar spreadsheet metaphor, bulk editing easy | No smart grouping, no type inference beyond text/number, not beginner-friendly |
+| **Insomnia** | Simple key-value pairs in sidebar, environment variables for reuse | Minimalist, fast, supports autocomplete from environment | No progressive disclosure, assumes user knows all params upfront |
+| **Swagger UI** | Auto-generated form from OpenAPI spec with type-appropriate inputs | Automatic, no manual config, shows descriptions from spec | Ugly default styling, no grouping, all params always visible |
+| **Hoppscotch** | Key-value editor with type dropdown (text, file, etc.), import from URL | Modern UI, supports GraphQL, REST, WebSocket | Still dev-focused, no smart defaults for non-technical users |
+| **api2ui (current v1.0)** | Basic parameter form from OpenAPI spec, enum→dropdown, bool→checkbox | Already type-aware, already has required/optional separation | No URL parsing, no grouping, no progressive disclosure, no layout switching |
+
+**Key insight:** API testing tools focus on developer power users who know what params they need. api2ui's opportunity is making parameter forms accessible to non-technical users through smart defaults, progressive disclosure, and polished UX.
+
+## MVP Feature Prioritization for v1.2
+
+Based on research, recommended priority for v1.2 milestone:
+
+### Must Have (Table Stakes)
+
+1. **URL query param parsing** — Parse `?key=value` into form, sync form edits back to URL
+2. **Parameter grouping by prefix** — Auto-group `ddcFilter[*]` into sections
+3. **Smart type inference** — Date detection, email detection, array detection beyond OpenAPI
+4. **Applied filter chips** — Show active params as chips with individual remove
+5. **Clear all filters** — One-click reset to empty state
+6. **Layout presets** — Sidebar, Top bar, Drawer (mobile) with user switcher
+7. **Persist preferences** — Remember layout choice per endpoint
+8. **Real-time feedback** — Debounced auto-fetch or clear "Apply" button with loading state
+
+### Nice to Have (Differentiators)
+
+9. **Progressive disclosure** — Collapse optional params into "Advanced" section
+10. **Smart defaults from URL** — Pre-populate form on page load
+11. **Contextual placeholders** — "e.g., 2026-02-05" for date fields (NOT inline placeholders)
+12. **Shareable filter state** — "Copy URL" button
+13. **Contextual help** — Show OpenAPI `description` in tooltip
+
+### Defer to v1.3 (Complex)
+
+- Query builder (AND/OR logic)
+- Filter presets/history
+- Date range unified component
+- Layout preview thumbnails
+- Split view with adjustable ratio
+- Filter impact preview ("~142 results")
 
 ## Feature Dependencies
 
 ```
-Core Foundation:
-  API Request Execution
+v1.0 Foundation (Shipped):
+  Parameter Forms (enum→dropdown, bool→checkbox)
     ↓
-  Response Parsing
+  Required/Optional Separation
     ↓
-  Schema Inference
+v1.2 Smart Parameters:
+  URL Query Param Parsing
     ↓
-  ┌─────────────┴─────────────┐
-  ↓                           ↓
-Component Selection       Parameter Forms
-  ↓                           ↓
-  ┌─────────────┬─────────────┐
-  ↓             ↓             ↓
-Table View   Card View   Detail View
-  ↓             ↓             ↓
-Master-Detail Navigation (requires all views)
-  ↓
-Configure vs View Mode Toggle
-  ↓
-CSS Customization
-  ↓
-Local Storage Persistence
-  ↓
-[v2+] Shareable Links (requires backend)
+    ├─→ Smart Type Inference (dates, emails, arrays)
+    ├─→ Parameter Grouping by Prefix
+    └─→ Smart Defaults from URL
+    ↓
+  Applied Filter Chips + Clear All
+    ↓
+  Progressive Disclosure (collapsible sections)
+    ↓
+  Layout System (sidebar, top bar, drawer)
+    ↓
+  Debounced Real-time Feedback
 ```
 
-**Critical Path for MVP:**
-1. API execution + response parsing (can't skip)
-2. Schema inference (needed for auto-component selection)
-3. Component selection logic (array→table, object→detail)
-4. At least 2 views (table + detail for master-detail)
-5. Configure/View toggle (core UX differentiator)
+**Critical path for v1.2:**
+1. URL parsing (can't skip — core feature)
+2. Type inference (needed for smart inputs)
+3. Grouping by prefix (key UX improvement)
+4. Filter chips (makes active state visible)
+5. Layout presets (key differentiator)
 
-**What can be deferred:**
-- Advanced visualizations (charts, graphs) - post-MVP
-- Data transformations (filter, sort) - nice to have, not critical
-- Shareable links - v2 feature (requires backend)
-- Multiple APIs - v1 is single API only
-- Real-time updates - v3+ feature
+**Can be done in parallel:**
+- Progressive disclosure (independent of parsing)
+- Layout system (independent of params)
+- UX polish (chips, loading states)
 
----
+## Success Criteria for v1.2 Research
 
-## MVP Recommendation
+Research is complete when these questions are answered:
 
-### Must Have (v1 / MVP)
-
-**Core Functionality:**
-1. API request execution (GET only for v1)
-2. Parameter input forms (query params, path params)
-3. JSON response formatting with syntax highlighting
-4. Error display (network, HTTP, validation errors)
-5. Loading states during requests
-
-**UI Rendering:**
-6. Schema inference from responses
-7. Automatic component selection (array→table, object→detail, primitive→text)
-8. Table view for arrays
-9. Detail view for objects
-10. Master-detail navigation (click row → detail)
-
-**Configuration:**
-11. Configure mode vs View mode toggle
-12. Basic CSS customization (colors, fonts, spacing)
-13. Local storage for configurations
-14. Configuration export/import (JSON file)
-
-**Polish:**
-15. Responsive layout
-16. Dark mode
-17. Copy to clipboard (response data)
-
-### Should Have (v1.5 / Polish)
-
-18. Request history (session-based)
-19. Multiple visualization options (table vs cards vs list)
-20. Response data search/filter (client-side)
-21. Headers/auth token support
-22. Multiple parameter types (string, number, boolean, enum)
-
-### Could Have (v2 / Expansion)
-
-23. Shareable links (requires backend)
-24. CRUD operations (POST, PUT, DELETE)
-25. Response caching
-26. Pagination handling
-27. Multi-API support (multiple endpoints in one UI)
-
-### Won't Have (Out of Scope)
-
-28. Code generation
-29. Visual drag-drop builder
-30. Custom component language
-31. Built-in authentication
-32. GraphQL support (REST only for now)
-33. Workflow automation
-34. Real-time webhooks
-
----
-
-## Feature Complexity Assessment
-
-| Complexity | Features | Estimated Effort |
-|------------|----------|------------------|
-| **Low** | Error display, loading states, copy to clipboard, dark mode, CSS customization, local storage | 1-3 days total |
-| **Medium** | Parameter forms, schema inference, component selection, table view, detail view, master-detail, configure/view toggle, responsive layout | 2-3 weeks total |
-| **High** | Runtime rendering engine, shareable links, pagination, real-time updates, multi-API | 4-8 weeks each |
-
-**MVP Effort Estimate:** 3-4 weeks for core functionality with basic polish.
-
----
-
-## Competitive Positioning
-
-### vs API Documentation Tools (Swagger UI, Redoc)
-
-**They have:**
-- OpenAPI spec rendering
-- Comprehensive API reference docs
-- Try-it-out with basic forms
-
-**We have:**
-- Works without schema (infer from responses)
-- Actual UI, not just docs
-- Configurable, shareable UIs
-
-**Our advantage:** Documentation shows what's possible. We show what's actual.
-
-### vs API Testing Tools (Postman, Insomnia)
-
-**They have:**
-- Powerful request builders
-- Collections, environments, variables
-- Team collaboration features
-
-**We have:**
-- Focused on response rendering
-- UI for end users, not just developers
-- Zero config to get started
-
-**Our advantage:** They test APIs. We render UIs from APIs.
-
-### vs Low-Code Tools (Retool, Appsmith, Budibase)
-
-**They have:**
-- Full app builders
-- Multiple data sources
-- Workflows and automation
-
-**We have:**
-- Instant runtime rendering (no deploy)
-- Simpler, faster for single-API UIs
-- Zero learning curve (paste URL → get UI)
-
-**Our advantage:** They build apps. We render UIs. Faster for simple cases.
-
-### vs API-to-Frontend Generators
-
-**They have:**
-- Generate React/Vue components
-- Full code output
-
-**We have:**
-- Runtime rendering (instant updates)
-- No build step
-- No code to maintain
-
-**Our advantage:** They generate once. We render continuously.
-
----
-
-## User Scenarios & Feature Mapping
-
-### Scenario 1: Developer Testing Internal API
-
-**Needs:**
-- Quick request execution
-- Parameter forms
-- Formatted responses
-- Error messages
-
-**Features:** Table stakes only. MVP covers this.
-
-### Scenario 2: Product Manager Demoing API to Stakeholders
-
-**Needs:**
-- Clean UI (not JSON)
-- Master-detail for browsing data
-- Configure/view toggle to show polished view
-- CSS customization for branding
-
-**Features:** MVP differentiators. Shareable links (v2) would help.
-
-### Scenario 3: Frontend Dev Building UI for API
-
-**Needs:**
-- See what data looks like
-- Try different parameter combinations
-- Understand nested structures
-- Export configuration to replicate in real app
-
-**Features:** MVP + configuration export. Real app still needs custom code.
-
-### Scenario 4: Support Team Accessing Customer Data
-
-**Needs:**
-- Simple UI (non-technical users)
-- Search/filter
-- View details
-- No code required
-
-**Features:** MVP + search/filter (v1.5). Auth pass-through critical.
-
-### Scenario 5: API Provider Showcasing API
-
-**Needs:**
-- Beautiful UI
-- Shareable links
-- Branding/customization
-- Works for anyone (no install)
-
-**Features:** MVP + shareable links (v2) + advanced CSS (v2).
-
----
+- [x] What are table stakes for filter UIs? — Multi-select, chips, clear all, instant feedback, prevent zero results, collapse groups
+- [x] How do you parse URL query params into forms? — URLSearchParams API, handle array notation (brackets or repeated keys), sync bidirectionally
+- [x] What types should smart inference detect? — Dates, emails, coords, arrays, booleans, numbers — pattern match on name + value
+- [x] How does progressive disclosure work? — Collapse optional params, show count, remember state, max 2 nesting levels
+- [x] What layout presets are expected? — Sidebar (desktop default), top bar (horizontal), drawer (mobile), split view (advanced)
+- [x] What makes filter UX feel polished? — Debounced real-time, skeleton loaders, applied filter chips, count badges, clear hierarchy, undo support
 
 ## Sources
 
-**Confidence: MEDIUM**
+### Filter UI Patterns
+- [Filter UX Design Patterns & Best Practices - Pencil & Paper](https://www.pencilandpaper.io/articles/ux-pattern-analysis-enterprise-filtering)
+- [20 Filter UI Examples for SaaS - Arounda](https://arounda.agency/blog/filter-ui-examples)
+- [Filter UI and UX 101 - UXPin](https://www.uxpin.com/studio/blog/filter-ui-and-ux/)
+- [Algolia Search Filters Best Practices](https://www.algolia.com/blog/ux/search-filter-ux-best-practices)
+- [Filter Groups Best Practice - DEV Community](https://dev.to/jurooravec/filter-groups-the-best-practice-of-filtering-just-about-anything-18ei)
+- [Complex Filters UX - Smart Interface Design Patterns](https://smart-interface-design-patterns.com/articles/complex-filtering/)
 
-Research based on training data knowledge of:
-- Swagger UI (OpenAPI documentation tool)
-- Redoc (OpenAPI documentation rendering)
-- Stoplight (API design and documentation platform)
-- Postman (API testing and collaboration)
-- Insomnia (API client)
-- RapidAPI (API marketplace and testing)
-- Retool (low-code internal tool builder)
-- Appsmith (open-source low-code platform)
-- Budibase (low-code app builder)
+### Progressive Disclosure
+- [Progressive Disclosure - Nielsen Norman Group](https://www.nngroup.com/articles/progressive-disclosure/)
+- [Progressive Disclosure UX - Interaction Design Foundation](https://www.interaction-design.org/literature/topics/progressive-disclosure)
+- [Progressive Disclosure for SaaS - UserPilot](https://userpilot.com/blog/progressive-disclosure-examples/)
+- [Progressive Disclosure in UX Design - LogRocket](https://blog.logrocket.com/ux-design/progressive-disclosure-ux-types-use-cases/)
 
-**Limitations:**
-- Unable to verify current feature sets (WebSearch/WebFetch unavailable)
-- Feature lists based on tools as of early 2025 training data
-- Competitive landscape may have shifted
-- New tools may have emerged
+### URL Query Parameters & State Management
+- [URLSearchParams - MDN](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams)
+- [URL State Management in React - LogRocket](https://blog.logrocket.com/url-state-usesearchparams/)
+- [nuqs - Type-safe URL search params state management](https://nuqs.dev)
+- [Array Parameters in Query Strings - REST API Best Practices](https://www.moesif.com/blog/technical/api-design/REST-API-Design-Best-Practices-for-Parameters-and-Query-String-Usage/)
+- [Arrays in Query Params - RAML by Example](https://medium.com/raml-api/arrays-in-query-params-33189628fa68)
 
-**Verification needed:**
-- Current feature sets of competitors
-- Emerging patterns in API tooling (2026)
-- New differentiators in market
-- User expectations in API exploration tools
+### Layout Systems & UI Patterns
+- [Filter Drawer vs Sidebar vs Top Bar - UX for the Masses](https://www.uxforthemasses.com/filter-bars/)
+- [Horizontal Filtering Toolbars - Baymard](https://baymard.com/blog/horizontal-filtering-sorting-design)
+- [Drawer UI Design Best Practices - Mobbin](https://mobbin.com/glossary/drawer)
+- [Dashboard Layout Systems - SaaS Frame](https://www.saasframe.io/categories/dashboard)
 
-**Recommended validation:**
-- User interviews with API tool users
-- Competitor feature audit (when web access available)
-- Review recent API tooling trends (2025-2026)
+### Smart Defaults & Type Inference
+- [Smart Defaults in Form UX - Zuko](https://www.zuko.io/blog/how-to-use-defaults-to-optimize-your-form-ux)
+- [Cognitive Load and Smart Defaults - Shopify](https://www.shopify.com/partners/blog/cognitive-load)
+- [Form Design Guidelines - UW UX Design](https://uxdesign.uw.edu/interaction/forms.html)
+- [Placeholders Are Harmful - Nielsen Norman Group](https://www.nngroup.com/articles/form-design-placeholders/)
+
+### Zero Results & Empty States
+- [Empty State UX Best Practices - Pencil & Paper](https://www.pencilandpaper.io/articles/empty-states)
+- [No Results Pages Strategies - Baymard](https://baymard.com/blog/no-results-page)
+- [Empty State Design - Toptal](https://www.toptal.com/designers/ux/empty-state-ux-design)
+- [No Results Found UX - LogRocket](https://blog.logrocket.com/ux-design/no-results-found-page-ux/)
+
+### Filter Badges & Chips
+- [Filter Chips Design - Good Practices](https://goodpractices.design/components/filter-chips)
+- [Badges vs Pills vs Chips - Smart Interface Design Patterns](https://smart-interface-design-patterns.com/articles/badges-chips-tags-pills/)
+- [Enhancing Fluent UI with Filter Chips - Perficient](https://blogs.perficient.com/2026/02/04/enhancing-fluent-ui-detailslist-with-custom-sorting-filtering-lazy-loading-and-filter-chips/)
+- [Table Filters - Innovaccer Design](https://design.innovaccer.com/patterns/tableFilters/usage/)
+
+### API Testing Tools
+- [Insomnia vs Postman 2026 - Abstracta](https://abstracta.us/blog/testing-tools/insomnia-vs-postman/)
+- [Postman Alternatives 2026 - Apidog](https://apidog.com/blog/top-postman-alternative-open-source/)
+- [API Testing Tools Guide 2026 - Tusk](https://www.usetusk.ai/resources/the-definitive-guide-to-api-testing-tools-in-2026)
+
+### Inline Editing & Debouncing
+- [Debounce Sources - Algolia](https://www.algolia.com/doc/ui-libraries/autocomplete/guides/debouncing-sources)
+- [Filter UI Inline Edit Best Practices - Eleken](https://www.eleken.co/blog-posts/filter-ux-and-ui-for-saas)
+- [React Search Bar Filtering - Refine](https://refine.dev/blog/react-search-bar-and-filtering/)
