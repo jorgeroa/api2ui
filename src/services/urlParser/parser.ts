@@ -233,3 +233,26 @@ function buildParameter(
     }
   }
 }
+
+/**
+ * Reconstruct query string preserving original parameter key format.
+ * Uses originalKey from parsed params to preserve bracket notation.
+ */
+export function reconstructQueryString(
+  values: Record<string, string>,
+  originalParams: ParsedUrlParameter[]
+): string {
+  const parts: string[] = []
+  const originalKeyMap = new Map(
+    originalParams.map(p => [p.name, p.originalKey])
+  )
+
+  for (const [name, value] of Object.entries(values)) {
+    if (!value) continue // Skip empty values
+    const key = originalKeyMap.get(name) ?? name
+    // Encode value but preserve key format
+    parts.push(`${key}=${encodeURIComponent(value)}`)
+  }
+
+  return parts.join('&')
+}
