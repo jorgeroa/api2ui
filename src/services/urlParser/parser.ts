@@ -37,7 +37,7 @@ export function parseUrlParameters(url: string): UrlParseResult {
 
   // Validate query string can be parsed
   try {
-    new URLSearchParams(queryString)
+    void new URLSearchParams(queryString)
   } catch {
     warnings.push('Failed to parse query string')
     return { parameters: [], groups, warnings }
