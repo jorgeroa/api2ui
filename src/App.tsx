@@ -288,15 +288,41 @@ function App() {
                 </div>
               )}
 
-              {/* Direct API URL flow (existing behavior) */}
-              {!parsedSpec && schema && data !== null && !loading && !error && (
+              {/* Direct API URL flow */}
+              {!parsedSpec && !loading && !error && (
                 <>
-                  <DynamicRenderer
-                    data={data}
-                    schema={schema.rootType}
-                    path="$"
-                    depth={0}
-                  />
+                  {/* Show parsed URL parameters when URL has query string */}
+                  {url && url.includes('?') && (() => {
+                    const currentUrl = url!  // Already checked url exists above
+                    return (
+                      <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-text mb-4">URL Parameters</h3>
+                        <ParameterForm
+                          parameters={[]}
+                          rawUrl={currentUrl}
+                          onSubmit={(values) => {
+                            // Reconstruct URL with modified params and re-fetch
+                            const baseUrl = currentUrl.split('?')[0]!
+                            const params = new URLSearchParams(values).toString()
+                            const newUrl = params ? `${baseUrl}?${params}` : baseUrl
+                            fetchAndInfer(newUrl)
+                          }}
+                          loading={loading}
+                          endpoint={currentUrl.split('?')[0]!}
+                        />
+                      </div>
+                    )
+                  })()}
+
+                  {/* Data rendering - show when data is present */}
+                  {schema && data !== null && (
+                    <DynamicRenderer
+                      data={data}
+                      schema={schema.rootType}
+                      path="$"
+                      depth={0}
+                    />
+                  )}
                 </>
               )}
 
