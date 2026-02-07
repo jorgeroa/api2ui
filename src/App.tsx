@@ -14,6 +14,7 @@ import { ThemeApplier } from './components/config/ThemeApplier'
 import { Sidebar } from './components/navigation/Sidebar'
 import { LayoutContainer } from './components/layout/LayoutContainer'
 import { parseUrlParameters, reconstructQueryString } from './services/urlParser/parser'
+import { Toaster } from '@/components/ui/sonner'
 import 'react-loading-skeleton/dist/skeleton.css'
 
 function App() {
@@ -382,6 +383,9 @@ function App() {
       {/* Floating config toggle and panel */}
       <ConfigToggle />
       <ConfigPanel />
+
+      {/* Toast notifications */}
+      <Toaster position="bottom-right" />
     </>
   )
 }
