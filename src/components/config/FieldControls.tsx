@@ -29,18 +29,18 @@ export function FieldControls({
   }
 
   return (
-    <div className="relative group flex items-start gap-1">
+    <div className="group flex items-center gap-2">
       {/* Eye icon toggle - left side, visible on hover */}
       <button
         onClick={handleToggleVisibility}
-        className="shrink-0 mt-0.5 text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all"
+        className="shrink-0 text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all"
         aria-label={isVisible ? 'Hide field' : 'Show field'}
         title={isVisible ? 'Hide field' : 'Show field'}
       >
         {isVisible ? (
           // Open eye icon
           <svg
-            className="w-4 h-4"
+            className="w-5 h-5"
             fill="none"
             stroke="currentColor"
             strokeWidth={2}
@@ -60,7 +60,7 @@ export function FieldControls({
         ) : (
           // Crossed-out eye icon
           <svg
-            className="w-4 h-4 text-red-400"
+            className="w-5 h-5 text-red-400"
             fill="none"
             stroke="currentColor"
             strokeWidth={2}
@@ -75,17 +75,10 @@ export function FieldControls({
         )}
       </button>
 
-      {/* Content with conditional dimming */}
-      <div className={`flex-1 ${isVisible ? '' : 'opacity-50'}`}>
+      {/* Content with conditional dimming and strikethrough when hidden */}
+      <div className={`flex-1 ${isVisible ? '' : 'opacity-50 line-through decoration-red-300'}`}>
         {children}
       </div>
-
-      {/* Hidden badge - top right */}
-      {!isVisible && (
-        <span className="absolute top-0 right-0 text-xs font-medium text-red-600 bg-red-100 px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-          Hidden
-        </span>
-      )}
     </div>
   )
 }
