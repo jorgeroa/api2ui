@@ -1,439 +1,616 @@
-# Features Research: v1.2 Smart Parameters & Layout System
+# Feature Landscape: Smart Default Component Selection
 
-**Domain:** Filter UIs, Parameter Forms, and Layout Systems for API Testing/Explorer Tools
-**Researched:** 2026-02-05
-**Focus:** Smart parameter handling, URL-to-form workflows, layout presets
-**Confidence:** MEDIUM-HIGH (WebSearch-verified patterns, awaiting Context7 verification on specific libraries)
+**Domain:** Semantic field detection and automatic component selection for API visualization
+**Researched:** 2026-02-07
+**Focus:** v1.3 Smart Default Selection milestone — making detail views look like designed product pages, not data dumps
+**Confidence:** MEDIUM-HIGH (patterns verified across design systems, low-code builders, and ecommerce PDPs; some heuristics require field testing)
 
 ## Summary
 
-This research examines how production filter UIs, smart parameter forms, and layout systems work in e-commerce, dashboards, and API testing tools. The v1.2 milestone adds smart parameter handling and layout flexibility to api2ui's existing basic parameter forms. Key findings: (1) Filter UIs must provide instant feedback with debouncing, clear visual state of applied filters via chips, and prevent zero-result frustration, (2) URL query param parsing requires handling array notation and bidirectional URL-state synchronization, (3) Smart type inference should cover dates, emails, coordinates, and use contextual placeholders not inline placeholders, (4) Progressive disclosure via expandable sections prevents overwhelming users with 10+ params, (5) Layout systems need 3-4 presets (sidebar, top bar, drawer, split) with user-switchable controls, (6) UX polish comes from real-time updates, clear "Clear All" actions, and count badges showing filter impact.
+This research examines how design systems, low-code builders, API visualization tools, and ecommerce platforms handle intelligent component selection and layout organization. The v1.3 milestone builds on api2ui's existing type-based component mapping (array→table, object→detail) by adding semantic awareness — understanding that a field named "reviews" should render as cards, not a table, even though it's technically an array.
 
-## Filter UI Patterns
+Key findings: (1) **Semantic field detection** relies on field name pattern matching combined with data shape analysis (reviews/comments/items → cards; specifications/attributes → key-value; images/gallery/photos → image grid), (2) **Field importance hierarchy** surfaces primary fields (name, title, price, image) prominently while de-emphasizing metadata (IDs, timestamps, internal codes), (3) **Auto-grouping** detects logical sections by analyzing field name prefixes, schema.org types, and related field clusters (billing* fields → "Billing Information" section), (4) **Layout heuristics** choose between tables vs cards based on field count (5-8 fields → cards; 10+ fields → table), data density, and presence of rich content (images/descriptions favor cards), (5) **Product detail page patterns** in ecommerce strongly favor **vertical accordions over horizontal tabs** (8% content overlooked vs 27% with tabs), with hero image → overview → expandable specs/reviews structure.
 
-### Table Stakes
+The research reveals that "smart defaults" in production tools combine three techniques: **name-based inference** (field names like "review", "rating"), **type-aware heuristics** (arrays of objects with 3-6 fields → cards; 10+ fields → table), and **visual hierarchy rules** (first image field becomes hero, name/title gets larger typography). Anti-patterns to avoid: overly aggressive inference without override escape hatches, horizontal tabs on detail pages (poor mobile UX), treating all arrays identically regardless of semantic meaning.
 
-Features users expect from any filter UI — missing these = product feels broken.
+## Table Stakes Features
+
+Features users expect from any "smart" component selection system — missing these = feels no smarter than manual configuration.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Multi-select filters | Users need to combine criteria (e.g., color=red OR blue) | Medium | Use checkboxes, not single-select radios |
-| Applied filter chips/badges | Users forget what filters are active without visual reminder | Low | Show chips above results with individual X to remove |
-| Clear all filters | Users need escape hatch when stuck in filtered state | Low | "Clear All" or "Reset Filters" button, always visible |
-| Real-time/instant feedback | Users expect to see results update as they filter | Medium | Requires debouncing (300-500ms) for text inputs |
-| Prevent zero results | Showing "0 results" frustrates users, hide unavailable options | High | Dynamically update filter counts or disable options with 0 matches |
-| Filter count indicators | Users want to know impact before selecting (e.g., "Size: M (143)") | Medium | Show count next to each filter option |
-| Collapsible filter groups | With 5+ filter categories, users need to collapse unused sections | Low | Accordion pattern for filter groups |
-| Preserve selections on error | If API call fails, don't clear user's filter state | Low | Maintain filter state in URL or React state |
-| Mobile-friendly filters | 70%+ traffic is mobile, filters must work on small screens | Medium | Bottom drawer or sticky filter bar for mobile |
-| Visible feedback on apply | When filter changes, show loading state during fetch | Low | Skeleton screens or spinner overlay |
+| Field name pattern recognition | Users expect "name", "title", "description" to be emphasized automatically | Low | Regex/substring matching on common patterns; already partially implemented in v1.1 field classification |
+| Array content differentiation | Users expect reviews/comments to render as cards, not tables | Medium | Analyze array item structure: 3-6 fields with text → cards; many fields → table |
+| Image field detection | Already implemented in v1.1, but must integrate with layout decisions | Low | Existing `isImageUrl()` detection; extend to influence card vs table choice |
+| Primary field emphasis | Name/title fields should be larger, bolder — secondary fields (IDs) smaller | Low | Existing typography hierarchy from v1.1; extend to detail views |
+| Preserve manual overrides | If user explicitly sets component type, respect that choice over auto-detection | Low | Already implemented via `componentType` config; ensure smart defaults don't override |
+| Basic semantic field types | Detect common patterns: reviews, ratings, prices, descriptions, images, dates | Medium | Pattern matching library with 20-30 common field name patterns |
+| Table vs cards heuristic | Automatically choose based on field count and content richness | Medium | If array items have <8 fields + images/text → cards; if 10+ fields → table |
+| Hero image detection | First image field in detail view should render prominently | Low | Already implemented in v1.1 for cards; extend to detail views |
 
 **Dependencies on existing features:**
-- Builds on v1.0 parameter forms (enum→dropdown, bool→checkbox)
-- Extends required/optional separation to show optional params in expandable sections
+- v1.1 image detection (`isImageUrl()`) — foundation for layout decisions
+- v1.1 typography hierarchy (primary vs secondary fields) — extend to detail views
+- v1.0 component type override system — must not break with smart defaults
+- v1.2 parameter grouping by prefix — similar pattern matching approach
 
-### Differentiators
+**Confidence:** HIGH — These patterns are standard across Airtable (auto-detects field types), Retool (100+ components with smart defaults), and admin panel generators like Hasura.
 
-Features that would make api2ui stand out from generic API tools.
+## Differentiators
+
+Features that would make api2ui's smart defaults exceptional — beyond basic pattern matching.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Auto-group by prefix | Parameters like `ddcFilter[status]`, `ddcFilter[date]` auto-group into "Filters" section | Medium | Parse bracket notation, create logical sections |
-| Smart defaults from URL | Parse existing query params and pre-populate form | Low | Already have URL state, just need to parse on load |
-| Type inference with examples | Show "e.g., 2026-02-05" placeholder for date fields | Medium | Pattern matching on param names/values |
-| Progressive disclosure | Show param breakdown first (read-only chips), then "Edit" to open form | Medium | Two-step: display → edit vs always-editable |
-| Query builder mode | Advanced users can build AND/OR filter logic visually | High | Complex, defer to post-v1.2 |
-| Filter history/presets | Save common filter combinations ("Last week's orders") | Medium | LocalStorage + preset management UI |
-| Shareable filter state | Copy URL with all active filters to share with team | Low | Already URL-based, just need "Copy Link" button |
-| Contextual help tooltips | Show API docs for each param inline (if OpenAPI spec available) | Low | Use `description` field from OpenAPI |
-| Auto-detect related params | Group `startDate`/`endDate` into single date range picker | High | Pattern matching on param names |
-| Filter impact preview | "Applying this will show ~142 results" before submit | High | Requires extra API call or server support |
+| Semantic section auto-grouping | Group related fields (billing*, shipping*, contact*) into visual sections/accordions | High | Pattern matching on prefixes + field relationship analysis |
+| Context-aware component selection | "status" field with 3-5 values → badge/pills, not dropdown; "tags" → tag chips | Medium | Combine field name + enum cardinality + data type |
+| Smart tab generation for complex objects | Objects with >15 fields auto-organize into tabs (Overview, Details, Technical, Reviews) | High | Requires semantic categorization of fields into logical groups |
+| Rating/review pattern detection | Arrays named "reviews" with "rating" + "comment" fields → star rating + card layout | Medium | Composite pattern: array name + child field names + data shape |
+| Nested array smart rendering | Reviews inside product detail → horizontal card scroller; specs → vertical list | Medium | Context-aware: location in hierarchy influences component choice |
+| Field importance scoring | Combine multiple signals (name pattern, data richness, position) to rank fields | High | ML-style scoring: name match (30%), data presence (20%), visual richness (20%), position (30%) |
+| Gallery detection | Arrays of image URLs → image gallery grid, not cards with individual images | Medium | Detect array of primitives (not objects) where all items are image URLs |
+| Key-value pair detection | Object fields with simple values (no nesting) → two-column key-value layout | Low | Already common pattern in detail views; make it the default for "specs" fields |
+| Price/currency formatting | Fields named "price", "cost", "amount" → formatted with currency symbol | Low | Pattern match + Intl.NumberFormat |
+| Date range pairing | Detect "startDate" + "endDate" pairs, render as single "Duration" or date range | High | Field relationship analysis (already explored in v1.2 research for forms) |
 
-**Recommendation for v1.2:**
-- Auto-group by prefix (MUST HAVE for ddcFilter use case)
-- Smart defaults from URL (MUST HAVE)
-- Type inference with examples (MUST HAVE)
-- Progressive disclosure (NICE TO HAVE)
-- Shareable filter state (EASY WIN)
-- Contextual help tooltips (EASY WIN if OpenAPI)
+**Recommendation for v1.3:**
+- Semantic section auto-grouping (HIGH VALUE — turns data dumps into organized pages)
+- Context-aware component selection (MEDIUM VALUE — badges, pills, tag chips feel professional)
+- Rating/review pattern detection (HIGH VALUE — common use case, high visual impact)
+- Gallery detection (MEDIUM VALUE — image-heavy APIs benefit greatly)
+- Field importance scoring (HIGH VALUE — core of "smart" defaults)
+- Defer to v1.4: Smart tab generation (complex, needs user research on tab categories)
 
-### Anti-Features
+## Anti-Features
 
-Things to deliberately NOT build — common mistakes in filter UI design.
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| Inline placeholder text | Nielsen Norman Group study: placeholders hurt usability, users confuse them with pre-filled values | Use label above field + helper text below or contextual examples outside input |
-| Auto-submit on every keystroke | Causes excessive API calls, poor UX for slow typers | Debounce 300-500ms or require explicit "Apply" button |
-| Hidden filters behind menu | Users overlook filters buried in hamburger menus | Use visible sidebar or top bar, reserve drawer for mobile only |
-| Complex nested filter UI | More than 2 disclosure levels = users get lost | Limit to 2 levels: Category → Options, not Category → Subcategory → Options → Sub-options |
-| Required filters first | Forcing users to fill required params before showing optional ones feels like a form, not exploration | Show all params, use visual distinction (bold label, asterisk) for required |
-| Auto-clear on navigation | Clearing filters when user switches endpoints is frustrating | Persist filters per endpoint in localStorage |
-| Filter modal overlays | Full-screen modals force context switch, user can't see results while filtering | Use sidebar or drawer that shows results alongside filters |
-| Overly smart grouping | Auto-grouping unrelated params confuses users | Only group when clear semantic relationship (shared prefix, OpenAPI tags) |
-| Disable filter options | Disabled checkboxes frustrate users ("Why can't I select this?") | Hide options with 0 results or show with "(0)" count |
-| Single-select filters | Forcing "pick one" when users want "any of these" | Use checkboxes for multi-select, radio only for mutually exclusive options |
-
-## Smart Type Inference
-
-### Table Stakes
-
-Basic inference users expect from any smart form.
-
-| Feature | Expected Behavior | Complexity | Implementation Notes |
-|---------|-------------------|------------|---------------------|
-| Date detection | Params named `date`, `createdAt`, `start`, `end` → date picker | Low | Regex match on param name + value pattern (ISO 8601) |
-| Number detection | Params with numeric values → number input with step | Low | Already have from v1.0, verify it works for query params |
-| Boolean detection | Params with `true/false`, `yes/no`, `0/1` → toggle/checkbox | Low | Already have from v1.0 |
-| Enum detection | Params with OpenAPI enum definition → dropdown | Low | Already have from v1.0, verify for non-OpenAPI URLs |
-| Array detection | Params with bracket notation `tag[]=x&tag[]=y` → multi-select or tag input | Medium | Parse repeated keys or bracket notation |
-| Email detection | Params named `email`, `userEmail` → email input with validation | Low | Pattern match on name + basic validation |
-| URL detection | Params named `url`, `website`, `callback` → URL input with validation | Low | Pattern match on name + URL validation |
-| Coordinate detection | Params named `lat`, `lng`, `latitude`, `longitude` → paired number inputs | Medium | Pattern match on name + optional map picker later |
-
-**Confidence:** HIGH — These patterns are standard across form libraries and API tools like Postman, Insomnia.
-
-### Differentiators
-
-Advanced inference that adds value beyond basic type detection.
-
-| Feature | Value Add | Complexity | Notes |
-|---------|-----------|------------|-------|
-| Zip code detection | Params named `zip`, `zipCode`, `postalCode` → formatted input (US: 12345 or 12345-6789) | Low | Pattern + input mask |
-| Phone number detection | Params named `phone`, `mobile` → formatted input with country code | Medium | Requires formatting library |
-| Date range inference | Params `startDate` + `endDate` → single date range picker | High | Group related params, render as unified component |
-| Multi-value CSV parsing | Param `tags=apple,orange,banana` → tag input with chips | Medium | Split on comma, render as editable chips |
-| Keyword search detection | Params named `q`, `query`, `search`, `keyword` → search input with icon | Low | Just styling + icon, maybe autocomplete later |
-| Currency detection | Params named `price`, `amount`, `cost` with numeric values → currency input | Medium | Format with $ prefix, 2 decimals |
-| Color detection | Params named `color`, `backgroundColor` with hex values → color picker | Low | Pattern match hex, render color input |
-| File path detection | Params with `/path/to/file` structure → read-only code display | Low | Pattern match, render in monospace |
-| JSON detection | Params with stringified JSON → expandable JSON editor | High | Detect `{` or `[` start, use CodeMirror or similar |
-| Relative date inference | Values like `7d`, `1w`, `30d` → dropdown with presets + custom picker | Medium | Parse shorthand, provide common presets |
-
-**Recommendation for v1.2:**
-- Date range inference (HIGH VALUE for filter UIs)
-- Multi-value CSV parsing (COMMON PATTERN)
-- Keyword search detection (EASY WIN)
-- Zip code detection (NICE TO HAVE)
-- Defer: phone, currency, color, JSON (complex, less common in filters)
-
-### Anti-Features
-
-Inference behaviors that frustrate users.
+Things to deliberately NOT build — common mistakes in automatic component selection.
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| Overly aggressive inference | Inferring `name` param as "person name" and applying title case auto-formatting | Only infer when high confidence (90%+), never auto-format user input |
-| Inference without escape hatch | Forcing date picker when user wants to manually type `2026-02-05` | Always allow text input fallback, picker is enhancement |
-| Hidden raw value | Showing formatted value but hiding actual param value sent to API | Show both: formatted in UI, raw in tooltip or "View as URL" mode |
-| Inference breaking paste | Date picker rejecting pasted text like "tomorrow" or "last week" | Accept text input, attempt to parse, show error inline if invalid |
-| Required format validation | Forcing specific format (MM/DD/YYYY vs DD/MM/YYYY) when API accepts ISO 8601 | Accept multiple formats, normalize to API format on submit |
+| Inference without escape hatch | If system picks wrong component and user can't override, they're stuck | Always honor manual `componentType` overrides; provide switcher in View mode |
+| Horizontal tabs in detail views | 27% of users overlook horizontal tabs (Baymard research); poor mobile UX | Use vertical accordions/collapsible sections instead (only 8% overlook) |
+| Treating all arrays identically | Reviews, images, and users are all arrays but should render differently | Analyze array item structure + field names to choose appropriate component |
+| Over-splitting into tabs | Creating 10+ tabs for every detail view overwhelms users | Limit to 3-4 logical groups max (Overview, Details, Reviews, Specs) |
+| Ignoring data density | Forcing cards for 20-field objects makes each card huge and unreadable | Use table when >10 fields per item, regardless of semantic hints |
+| Auto-grouping unrelated fields | Grouping "status" and "statistics" just because they share "sta" prefix | Require meaningful prefix (3+ chars) or explicit semantic relationship |
+| Hiding important fields in collapsed sections | Auto-collapsing "price" or "name" because they're in a group | Always show primary fields (top 3-5 by importance score) expanded by default |
+| Inferring relationships without evidence | Assuming "userId" and "userName" should be linked/nested without schema proof | Only group fields with clear prefix match or schema relationship |
+| Aggressive reformatting | Auto-converting "USD 100" to "$100.00" when API might return it formatted | Format only when field name matches AND value is pure number |
+| Irreversible smart defaults | Making auto-detected choices permanent, not allowing override | Store smart default as `autoDetectedType`, allow override to `componentType` |
 
-## URL Query Param Parsing
+**Key insight from research:** Horizontal tabs are the **worst-performing layout** for product detail pages (27% overlook rate vs 8% for vertical sections). api2ui should default to vertical accordions for section organization, never horizontal tabs.
 
-### Table Stakes
+## Semantic Field Detection Patterns
 
-| Feature | Expected Behavior | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Parse standard params | `?key=value&key2=value2` → form fields | Low | URLSearchParams API (built into browsers) |
-| Parse array notation | `?tag[]=x&tag[]=y` or `?tag=x&tag=y` → multi-value field | Medium | No universal standard, support both repeated keys and brackets |
-| Parse nested objects | `?filter[status]=active&filter[date]=2026` → grouped fields | Medium | Parse bracket notation into nested structure |
-| URL → form sync | On page load, populate form from URL query params | Low | Parse on mount, set form state |
-| Form → URL sync | When user edits form, update URL without reload | Low | Use React Router's `useSearchParams` or similar |
-| Preserve param order | Maintain order of params when rendering form | Low | Use array/map instead of plain object |
-| Handle special characters | URL-encoded values like `%20`, `%2C` decode correctly | Low | Built into URLSearchParams |
-| Handle empty values | `?foo=&bar=` → empty string, not `null` or omitted | Low | Distinguish empty from missing |
+The foundation of smart defaults — how to detect what a field represents based on its name, type, and data.
 
-**Confidence:** HIGH — Standard browser APIs and React libraries (nuqs, use-query-params) handle this.
+### Name-Based Patterns (High Confidence)
 
-### Differentiators
+Field name patterns that reliably indicate component type:
 
-| Feature | Value Add | Complexity | Notes |
-|---------|-----------|------------|-------|
-| Auto-detect array format | Guess if API uses `tag[]=x` vs `tag=x` vs `tag=x,y` from existing URL | Medium | Parse first, remember format, maintain on edit |
-| URL history | Show recently used URLs for quick re-filter | Low | LocalStorage + dropdown |
-| Diff view | Show "what changed" when user edits URL params | Medium | Compare before/after, highlight diffs |
-| Copy as cURL | Generate cURL command from current filter state | Low | Useful for developers |
-| Import from URL | Paste full URL from browser address bar, extract params | Low | Strip base URL, parse query string |
+| Pattern | Detected Semantic Type | Recommended Component | Confidence |
+|---------|------------------------|----------------------|------------|
+| `name`, `title`, `label`, `heading` | Primary identifier | Large bold text (text-lg font-bold) | HIGH |
+| `description`, `summary`, `overview`, `bio` | Long-form text | Multi-line text block, potentially truncated | HIGH |
+| `image`, `photo`, `picture`, `avatar`, `thumbnail`, `icon` | Image URL | Image component (hero if first, thumbnail if in list) | HIGH |
+| `images`, `gallery`, `photos` (array) | Image collection | Image grid or horizontal scroller | HIGH |
+| `rating`, `score`, `stars` | Numeric rating | Star rating component or badge | HIGH |
+| `review`, `comment`, `feedback` (singular) | Text review | Card with author/date/text layout | HIGH |
+| `reviews`, `comments`, `feedback` (array) | Review collection | Card list (NOT table) | HIGH |
+| `price`, `cost`, `amount`, `total`, `subtotal` | Currency amount | Formatted currency (Intl.NumberFormat) | HIGH |
+| `tags`, `categories`, `keywords` (array) | Tag collection | Tag chips (pills), not dropdown | HIGH |
+| `status`, `state`, `condition` (enum) | Status indicator | Badge/pill with color coding | HIGH |
+| `email`, `phone`, `website`, `url` | Contact info | Clickable link (mailto:, tel:, https://) | HIGH |
+| `date`, `createdAt`, `updatedAt`, `publishedAt` | Timestamp | Formatted date (relative or absolute) | HIGH |
+| `id`, `uuid`, `key`, `slug` | Internal identifier | Small monospace text (text-xs font-mono), de-emphasized | HIGH |
+| `spec`, `specification`, `attribute`, `property` | Key-value metadata | Two-column key-value layout | MEDIUM |
+| `features`, `highlights`, `benefits` (array) | Bullet points | Unordered list with checkmarks or bullets | MEDIUM |
 
-### Anti-Features
+**Implementation notes:**
+- Use case-insensitive matching: `toLowerCase()` before comparison
+- Support common variations: "userName" → "name", "productTitle" → "title"
+- Check substring, not just exact match: "productName" matches "name" pattern
+- Plural arrays: "review" vs "reviews" both match review pattern
 
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| Lossy parsing | Converting `tag[0]=x` to just `tag=x`, losing array index info | Preserve exact format, even if not used by form |
-| Auto-clean URL | Removing "empty" params like `?foo=` from URL (some APIs treat `foo=` differently from omitting `foo`) | Preserve all params as-is unless user explicitly removes |
-| Force canonical format | Rewriting user's URL from `tag=x&tag=y` to `tag[]=x&tag[]=y` without asking | Preserve original format, only normalize when needed for API |
+### Data Shape Heuristics (Medium Confidence)
 
-## Progressive Disclosure for Complex Params
+When field name is ambiguous, use data structure to infer component:
 
-### Table Stakes
+| Data Shape | Characteristics | Recommended Component | Use Case |
+|------------|----------------|----------------------|----------|
+| Array of objects with 3-6 fields | Small, card-sized items | Card list | Products, users, articles |
+| Array of objects with 10+ fields | Wide, table-optimized data | Table with columns | Transactions, logs, reports |
+| Array of objects with images + text | Rich content items | Card list with hero images | Blog posts, products, portfolios |
+| Array of primitives (strings) | Simple list | Tag chips or bullet list | Tags, categories, features |
+| Array of image URLs | All strings matching image pattern | Image grid (3-4 columns) | Gallery, portfolio, media library |
+| Object with 5-10 simple fields | Shallow key-value pairs | Two-column key-value layout | Specifications, attributes, settings |
+| Object with >15 fields | Complex nested structure | Tabbed/accordion sections | Full product details, user profiles |
+| Nested array inside detail view | Sub-collection within parent | Horizontal card scroller OR collapsible section | Reviews in product, orders in user |
 
-| Feature | Expected Behavior | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Collapsible sections | Group related params (Filters, Pagination, Sorting) into expandable sections | Low | Headless UI Disclosure component |
-| Required params always visible | Show required params first, optional in "Advanced" or "More Filters" section | Low | Filter by `required` flag from OpenAPI |
-| Show count of hidden params | "Show 12 more filters" or "Advanced (8)" to indicate what's collapsed | Low | Count optional params |
-| Remember disclosure state | If user expands "Advanced", keep it open on next visit | Low | Persist in localStorage |
-| Default to collapsed | Start with optional params hidden to reduce overwhelm | Low | Expand only required or previously used |
+**Threshold values** (can be tuned based on user feedback):
+- Card-friendly: 3-8 fields per item
+- Table-friendly: 9+ fields per item
+- Gallery threshold: 100% of array items are image URLs
+- Tab/section threshold: >15 top-level fields in object
 
-**Confidence:** HIGH — Nielsen Norman Group research on progressive disclosure, widely adopted pattern.
+### Composite Pattern Matching (High Value)
 
-### Differentiators
+Combine multiple signals for high-confidence detection:
 
-| Feature | Value Add | Complexity | Notes |
-|---------|-----------|------------|-------|
-| Smart defaults visible | Show params with values (even optional) in collapsed state as read-only chips | Medium | "Filters: status=active, date=2026-02 [Edit]" |
-| Two-step flow | (1) Show current filter state as chips, (2) Click "Edit" to open form | Medium | Reduces visual noise, makes clear what's active |
-| Contextual expansion | Auto-expand section if param has error or was just edited | Low | UX polish, focus management |
-| Progressive form | Ask for basic params first (keyword search), then suggest refinements | High | Requires multi-step wizard, complex for v1.2 |
+| Pattern Name | Field Name Signal | Type Signal | Data Signal | Result |
+|--------------|-------------------|-------------|-------------|--------|
+| **Product Review** | Field named "reviews" | Array of objects | Items have "rating" (number) + "comment" (string) | Card list with star ratings |
+| **Image Gallery** | Field named "gallery", "images", "photos" | Array | All items are image URL strings | Image grid layout |
+| **Rating Display** | Field named "rating", "score", "stars" | Number | Value between 0-5 or 0-10 | Star rating component |
+| **Price Display** | Field named "price", "cost" | Number or string | Numeric value, possibly with currency | Formatted currency |
+| **Tag Collection** | Field named "tags", "categories" | Array of strings | Short strings (<20 chars) | Tag chip pills |
+| **Status Badge** | Field named "status", "state" | String enum | 3-8 possible values | Colored badge/pill |
+| **Specification List** | Field named "specs", "attributes", "properties" | Object | Shallow (no nested objects) | Two-column key-value |
+| **Feature List** | Field named "features", "highlights" | Array of strings | Sentence-like strings | Bullet list with checkmarks |
 
-### Anti-Features
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| More than 2 nesting levels | Users get lost with Category → Subcategory → Sub-sub-category | Limit to 2 levels: Section → Fields |
-| Hide all params by default | If everything is collapsed, users don't know what's available | Always show required params or most-used params |
-| Bury important filters | Hiding high-impact filters (date range, status) in "Advanced" frustrates power users | Put common filters in main view, truly rare ones in "Advanced" |
-
-## Layout System
-
-### Table Stakes
-
-Core layout expectations for any UI with switchable layouts.
-
-| Feature | Expected Behavior | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| 3-4 layout presets | Sidebar (left), Top bar (horizontal), Drawer (slide-out), Split view (left/right columns) | Medium | Each layout needs separate CSS + component arrangement |
-| User-switchable control | Icon/dropdown in header to switch layouts | Low | Store preference in localStorage |
-| Persist preference | Remember user's layout choice per endpoint | Low | Key by endpoint URL in localStorage |
-| Responsive behavior | Mobile defaults to drawer, desktop defaults to sidebar | Medium | Media queries + auto-switch logic |
-| Smooth transitions | Layout change animates (slide, fade) not instant snap | Low | CSS transitions |
-| Clear visual affordance | Icon for layout switcher is recognizable (grid icon, layout icon) | Low | Use standard icons (Heroicons layout variants) |
-
-**Confidence:** MEDIUM — Common in dashboards (Grafana, Datadog) but less standardized than filter patterns.
-
-### Differentiators
-
-Layout features that add value beyond basic switching.
-
-| Feature | Value Add | Complexity | Notes |
-|---------|-----------|------------|-------|
-| Layout preview | Hover over layout option shows thumbnail preview | Medium | Render mini preview or use static images |
-| Keyboard shortcuts | `L` key cycles through layouts, `Cmd+1/2/3` for specific layouts | Low | Add global keyboard handler |
-| Per-endpoint defaults | Different endpoints default to different layouts (e.g., filters in sidebar, single-op in top bar) | Low | Heuristic based on param count |
-| Collapsible sidebar | In sidebar layout, allow collapsing to icons-only | Medium | Adds complexity to sidebar component |
-| Split view ratio adjustment | Drag divider to resize left/right panels in split view | Medium | Requires resize handler, persist ratio |
-| Layout templates | "Gallery view" (top bar + cards), "Data table view" (sidebar + table) — named presets that combine layout + component choice | High | Complex, couples layout to component type |
-
-**Recommendation for v1.2:**
-- 3-4 layout presets (MUST HAVE)
-- User-switchable control (MUST HAVE)
-- Persist preference (MUST HAVE)
-- Responsive behavior (MUST HAVE)
-- Smooth transitions (NICE TO HAVE)
-- Defer: preview, keyboard shortcuts, split ratio (polish for v1.3)
-
-### Anti-Features
-
-Layout complexity to avoid.
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| Freeform drag-and-drop layout | Letting users drag param form anywhere on screen is overwhelming | Provide 3-4 curated layouts, not infinite customization |
-| Layout builder UI | Modal with "design your layout" tools is too complex for a simple filter form | Preset layouts only |
-| Per-field layout control | Letting users position each field individually creates chaos | Layout applies to whole param form, not individual fields |
-| Layout affects data view | Coupling param layout to data component layout (e.g., sidebar forces table) confuses users | Param layout is independent of data component type |
-| Auto-switch without consent | Automatically changing layout based on screen size without user action is disorienting | Suggest layout on first mobile visit, don't force switch |
-
-## UX Polish Expectations
-
-What makes a filter UI feel like a "real product" not a dev tool — the intangibles.
-
-### Instant Feedback & Loading States
-
-| Pattern | Why It Matters | Implementation |
-|---------|----------------|----------------|
-| Debounced real-time search | Users expect search-as-you-type, but 100ms per keystroke is excessive | Debounce 300-500ms on text inputs, instant on checkboxes/dropdowns |
-| Skeleton screens during fetch | Blank screen after clicking "Apply" feels broken | Show skeleton loader or fade existing results |
-| Optimistic UI updates | Showing filter chip immediately (before API response) feels faster | Add chip to UI, remove if fetch fails |
-| Error recovery | If fetch fails, show error but keep form state intact | Don't clear params, show retry button |
-| Loading progress | For slow APIs, show "Loading... 3s" to indicate it's working | Use timeout to show duration if >2s |
-
-### Clear Visual State
-
-| Pattern | Why It Matters | Implementation |
-|---------|----------------|----------------|
-| Applied filter chips/badges | Users forget what filters are active without visual reminder | Chips above results with individual X icons |
-| Count badges | Show "Filters (3)" or "Active: 3" to indicate how many applied | Count non-empty params |
-| Clear visual hierarchy | Primary params (search) bigger/bolder than secondary (advanced filters) | Typography scale: text-lg for search, text-sm for advanced |
-| Highlight active filters | Active filter options have blue background, inactive are gray | Use `data-active` state in CSS |
-| "Showing X of Y results" | Users want to know if filters are working | Display count above results |
-
-### Discoverability
-
-| Pattern | Why It Matters | Implementation |
-|---------|----------------|----------------|
-| Onboarding tooltip | First-time users need hint: "Click here to change layout" | Show once, dismiss forever (localStorage flag) |
-| Empty state guidance | When no params provided, show "Start by entering a keyword" | Helpful empty state, not blank form |
-| Contextual help | Question mark icon next to params shows API docs | Pull from OpenAPI `description` field |
-| Keyboard hints | Show "Press Enter to apply" in search input | Subtle text-xs hint below input |
-| Undo support | After clearing all filters, show "Undo" toast | Store previous state, restore on undo |
-
-### Performance & Responsiveness
-
-| Pattern | Why It Matters | Implementation |
-|---------|----------------|----------------|
-| Fast initial load | Form renders in <500ms even with 20+ params | Progressive rendering, virtualize long lists |
-| No layout shift | Expanding "Advanced" section doesn't jump page | Reserve space or smooth slide transition |
-| Smooth animations | Layout switch, chip removal, section expand all animate at 200-300ms | CSS transitions, not JavaScript animation |
-| Mobile-first interactions | Touch targets 44x44px minimum, swipe to dismiss chips | Mobile UX best practices |
-
-## Comparison to API Testing Tools
-
-How do Postman, Insomnia, and similar tools handle parameters?
-
-| Tool | Param UI Pattern | Strengths | Gaps for api2ui |
-|------|------------------|-----------|-----------------|
-| **Postman** | Table with Key/Value/Description columns, checkbox to enable/disable each param | Clean, familiar spreadsheet metaphor, bulk editing easy | No smart grouping, no type inference beyond text/number, not beginner-friendly |
-| **Insomnia** | Simple key-value pairs in sidebar, environment variables for reuse | Minimalist, fast, supports autocomplete from environment | No progressive disclosure, assumes user knows all params upfront |
-| **Swagger UI** | Auto-generated form from OpenAPI spec with type-appropriate inputs | Automatic, no manual config, shows descriptions from spec | Ugly default styling, no grouping, all params always visible |
-| **Hoppscotch** | Key-value editor with type dropdown (text, file, etc.), import from URL | Modern UI, supports GraphQL, REST, WebSocket | Still dev-focused, no smart defaults for non-technical users |
-| **api2ui (current v1.0)** | Basic parameter form from OpenAPI spec, enum→dropdown, bool→checkbox | Already type-aware, already has required/optional separation | No URL parsing, no grouping, no progressive disclosure, no layout switching |
-
-**Key insight:** API testing tools focus on developer power users who know what params they need. api2ui's opportunity is making parameter forms accessible to non-technical users through smart defaults, progressive disclosure, and polished UX.
-
-## MVP Feature Prioritization for v1.2
-
-Based on research, recommended priority for v1.2 milestone:
-
-### Must Have (Table Stakes)
-
-1. **URL query param parsing** — Parse `?key=value` into form, sync form edits back to URL
-2. **Parameter grouping by prefix** — Auto-group `ddcFilter[*]` into sections
-3. **Smart type inference** — Date detection, email detection, array detection beyond OpenAPI
-4. **Applied filter chips** — Show active params as chips with individual remove
-5. **Clear all filters** — One-click reset to empty state
-6. **Layout presets** — Sidebar, Top bar, Drawer (mobile) with user switcher
-7. **Persist preferences** — Remember layout choice per endpoint
-8. **Real-time feedback** — Debounced auto-fetch or clear "Apply" button with loading state
-
-### Nice to Have (Differentiators)
-
-9. **Progressive disclosure** — Collapse optional params into "Advanced" section
-10. **Smart defaults from URL** — Pre-populate form on page load
-11. **Contextual placeholders** — "e.g., 2026-02-05" for date fields (NOT inline placeholders)
-12. **Shareable filter state** — "Copy URL" button
-13. **Contextual help** — Show OpenAPI `description` in tooltip
-
-### Defer to v1.3 (Complex)
-
-- Query builder (AND/OR logic)
-- Filter presets/history
-- Date range unified component
-- Layout preview thumbnails
-- Split view with adjustable ratio
-- Filter impact preview ("~142 results")
-
-## Feature Dependencies
-
+**Scoring approach:**
 ```
-v1.0 Foundation (Shipped):
-  Parameter Forms (enum→dropdown, bool→checkbox)
-    ↓
-  Required/Optional Separation
-    ↓
-v1.2 Smart Parameters:
-  URL Query Param Parsing
-    ↓
-    ├─→ Smart Type Inference (dates, emails, arrays)
-    ├─→ Parameter Grouping by Prefix
-    └─→ Smart Defaults from URL
-    ↓
-  Applied Filter Chips + Clear All
-    ↓
-  Progressive Disclosure (collapsible sections)
-    ↓
-  Layout System (sidebar, top bar, drawer)
-    ↓
-  Debounced Real-time Feedback
+confidence_score = (name_match ? 40 : 0) + (type_match ? 30 : 0) + (data_match ? 30 : 0)
+```
+- 70+ points: HIGH confidence, apply smart default
+- 40-69 points: MEDIUM confidence, apply if no manual override
+- <40 points: LOW confidence, fall back to type-based default
+
+## Field Importance Hierarchy
+
+How to determine which fields are "primary" (prominent) vs "secondary" (de-emphasized).
+
+### Importance Scoring Algorithm
+
+Combine multiple signals to rank fields by importance:
+
+| Factor | Weight | Scoring Rules |
+|--------|--------|---------------|
+| **Field Name Pattern** | 40% | name/title/label (10 pts), image/photo (8 pts), description (7 pts), price (8 pts), id/uuid (0 pts) |
+| **Visual Richness** | 25% | Image URL (10 pts), long text >200 chars (7 pts), array (5 pts), short string (3 pts) |
+| **Data Presence** | 20% | Non-null value (10 pts), null/empty (0 pts) |
+| **Position in Schema** | 15% | First 3 fields (10 pts), middle fields (5 pts), last fields (2 pts) |
+
+**Total score out of 100** → rank fields, apply visual hierarchy:
+- 70-100: **Primary** — text-lg/xl, font-bold, prominent placement
+- 40-69: **Secondary** — text-base, font-normal, standard placement
+- 0-39: **Tertiary** — text-sm, text-gray-600, collapsed by default or moved to "More Info"
+
+### Visual Hierarchy Rules
+
+Based on importance score, apply these rendering rules:
+
+| Importance Level | Typography | Placement | Visibility |
+|------------------|------------|-----------|------------|
+| **Primary (70-100)** | text-lg/xl font-bold text-gray-900 | Top of detail view, always visible | Never collapsed |
+| **Secondary (40-69)** | text-base font-normal text-gray-800 | Middle sections, visible by default | Can be in accordions (expanded) |
+| **Tertiary (0-39)** | text-sm text-gray-600 | Bottom or "More Info" section | Collapsed by default |
+| **Metadata (IDs, timestamps)** | text-xs font-mono text-gray-500 | Bottom, separate "Technical Details" section | Collapsed, de-emphasized |
+
+### Special Cases
+
+| Field Type | Override Rule | Example |
+|------------|---------------|---------|
+| First image in object | Always primary, hero position | Product thumbnail becomes hero image |
+| Price/cost fields | Always primary if present | Price is critical for products |
+| Status/state | Primary if near top, secondary otherwise | Order status is primary; internal state code is secondary |
+| IDs and UUIDs | Always tertiary, never primary | Even "userId" is not important to end users |
+| Timestamps | Secondary if "createdAt", tertiary if "updatedAt" | Created date is context, updated date is metadata |
+
+## Auto-Grouping and Section Organization
+
+How to detect logical groupings of fields and organize them into sections/accordions.
+
+### Prefix-Based Grouping (High Confidence)
+
+Fields sharing a common prefix should be grouped together:
+
+| Prefix Pattern | Group Name | Example Fields | Section Title |
+|----------------|------------|----------------|---------------|
+| `billing*` | Billing Information | billingAddress, billingCity, billingZip | "Billing Information" |
+| `shipping*` | Shipping Information | shippingAddress, shippingCity, shippingZip | "Shipping Information" |
+| `contact*` | Contact Details | contactName, contactEmail, contactPhone | "Contact Details" |
+| `payment*` | Payment Information | paymentMethod, paymentStatus, paymentDate | "Payment Details" |
+| `delivery*` | Delivery Information | deliveryDate, deliveryStatus, deliveryNotes | "Delivery Information" |
+| `product*` | Product Details | productName, productPrice, productSKU | "Product Details" |
+| `user*` | User Information | userName, userEmail, userId | "User Information" |
+| `meta*` or `metadata*` | Metadata | metaTitle, metaDescription, metaKeywords | "Metadata" |
+
+**Grouping rules:**
+- Minimum 2 fields required to form a group (don't create single-field sections)
+- Prefix must be 3+ characters to avoid false positives ("id" prefix too generic)
+- Fields without prefix remain in "Overview" or main section
+- Groups with 1-3 fields: inline in main view; 4+ fields: collapsible accordion
+
+### Semantic Field Clustering (Medium Confidence)
+
+Group fields by semantic relationship, even without shared prefix:
+
+| Cluster Type | Field Patterns | Section Name |
+|--------------|----------------|--------------|
+| **Contact Information** | email, phone, website, address, city, state, zip | "Contact Information" |
+| **Dimensions** | width, height, depth, weight, volume | "Dimensions" |
+| **Date Range** | startDate, endDate, duration, createdAt, updatedAt | "Timeline" or "Dates" |
+| **Location** | address, city, state, country, zip, latitude, longitude | "Location" |
+| **Pricing** | price, cost, discount, tax, total, subtotal | "Pricing" |
+| **Statistics** | views, likes, shares, downloads, clicks, impressions | "Statistics" |
+| **Technical Specs** | specs, specifications, attributes, properties, features | "Specifications" |
+| **Social/Reviews** | reviews, ratings, comments, testimonials | "Reviews" |
+
+**Detection approach:**
+- Check if 3+ fields match a semantic cluster pattern
+- If yes, create named section (e.g., "Contact Information")
+- Apply cluster-specific formatting (e.g., contact fields get icons, stats get number formatting)
+
+### Section Ordering and Defaults
+
+Recommended order for auto-generated sections:
+
+1. **Hero Section** (always first) — Primary image + name/title
+2. **Overview** (always visible, never collapsed) — Price, short description, status, key attributes
+3. **Details** (expanded by default) — Secondary fields that don't fit other categories
+4. **Specifications/Technical** (collapsed) — Specs, attributes, dimensions
+5. **Reviews** (expanded if present) — Ratings, reviews, comments
+6. **Additional Information** (collapsed) — Tertiary fields, less important data
+7. **Metadata/Technical Details** (collapsed) — IDs, timestamps, internal codes
+
+**Collapse rules:**
+- Sections 1-3: always expanded (hero, overview, details)
+- Sections 4-5: expanded if <8 fields, collapsed if 8+
+- Sections 6-7: always collapsed by default
+
+## Data Shape Heuristics: Table vs Cards vs Key-Value
+
+When to use each component type based on data characteristics.
+
+### Decision Matrix
+
+| Scenario | Field Count | Visual Richness | Recommended Component | Rationale |
+|----------|-------------|-----------------|----------------------|-----------|
+| Product listings | 3-6 fields | Images + text | **Cards** | Visual browsing, images are key |
+| Transaction history | 10+ fields | Mostly numbers/dates | **Table** | Comparison across rows, dense data |
+| User profiles | 8-12 fields | Mixed content | **Key-value (detail)** | Single record view, not list |
+| Reviews/comments | 4-6 fields | Text-heavy | **Cards** | Each review needs space, hierarchy |
+| Image gallery | 1 field (URLs) | All images | **Image grid** | Specialized layout for visual content |
+| Specifications | 5-15 fields | Simple values | **Key-value** | Two-column layout, easy scanning |
+| Feature list | Array of strings | Text-only | **Bullet list** | No need for table/card structure |
+| Log entries | 15+ fields | Timestamps, codes | **Table** | Chronological, need sorting/filtering |
+
+### Detailed Heuristics
+
+**Use Cards when:**
+- Array items have 3-8 fields
+- At least one field is an image URL
+- Contains rich text content (description >100 chars)
+- Field named "review", "comment", "post", "article"
+- User needs to scan visually (not compare numerically)
+
+**Use Table when:**
+- Array items have 9+ fields
+- Most fields are numbers, dates, or short codes
+- Visual comparison across rows is important
+- No images or rich text content
+- Data is dense (transactional, logs, analytics)
+
+**Use Key-Value (Detail View) when:**
+- Rendering a single object (not array)
+- 5-15 fields with mixed types
+- Some fields are primary (name, image), others secondary
+- Natural two-column layout (label: value)
+
+**Use Image Grid when:**
+- Array of primitive strings (not objects)
+- 100% of items are image URLs
+- Field named "images", "gallery", "photos"
+
+**Use Bullet List when:**
+- Array of strings (not objects)
+- Strings are sentence-like (>20 chars)
+- Field named "features", "benefits", "highlights"
+
+**Use Tag Chips when:**
+- Array of short strings (<20 chars)
+- Field named "tags", "categories", "keywords"
+
+### Threshold Values
+
+Concrete numbers for decision boundaries:
+
+```typescript
+// Card vs Table threshold
+const CARD_FIELD_COUNT_MAX = 8
+const TABLE_FIELD_COUNT_MIN = 9
+
+// Gallery detection
+const GALLERY_IMAGE_THRESHOLD = 1.0 // 100% of items are images
+
+// Rich content detection
+const RICH_TEXT_MIN_LENGTH = 100 // chars
+const HAS_IMAGE = true
+
+// Card suitability score
+function getCardScore(itemSchema: ObjectSchema): number {
+  let score = 0
+  const fieldCount = itemSchema.fields.size
+
+  // Field count scoring (sweet spot: 4-6 fields)
+  if (fieldCount >= 3 && fieldCount <= 6) score += 40
+  else if (fieldCount <= 8) score += 20
+  else score -= (fieldCount - 8) * 5 // penalty for too many fields
+
+  // Visual richness
+  if (hasImageField(itemSchema)) score += 30
+  if (hasRichTextField(itemSchema)) score += 20
+
+  // Semantic hints (field names)
+  const itemName = getParentFieldName() // e.g., "reviews", "products"
+  if (/review|comment|post|article|product|user|item/i.test(itemName)) score += 10
+
+  return score
+}
+
+// Decision: score > 50 → cards; score < 50 → table
 ```
 
-**Critical path for v1.2:**
-1. URL parsing (can't skip — core feature)
-2. Type inference (needed for smart inputs)
-3. Grouping by prefix (key UX improvement)
-4. Filter chips (makes active state visible)
-5. Layout presets (key differentiator)
+## UX Patterns from Ecommerce Product Detail Pages
+
+Proven patterns from ecommerce that apply to API detail views.
+
+### Layout Pattern: Vertical Accordions > Horizontal Tabs
+
+**Research finding:** 27% of users overlook horizontal tabs; only 8% overlook vertical sections ([Baymard Institute](https://baymard.com/research/product-page)).
+
+**Apply to api2ui:**
+- When detail view has >15 fields, organize into collapsible vertical sections
+- Never use horizontal tabs for primary content organization
+- Accordion sections allow simultaneous viewing (expand multiple sections)
+- Mobile-friendly: vertical scrolling is natural, horizontal swiping is not
+
+**Section structure:**
+```
+[Hero Image - Full Width]
+[Primary Fields - Always Visible]
+  Name/Title (text-xl font-bold)
+  Price (text-2xl)
+  Short Description (text-base)
+
+▼ [Section: Details - Expanded]
+  Secondary fields...
+
+▽ [Section: Specifications - Collapsed]
+  Key-value pairs...
+
+▽ [Section: Reviews - Collapsed]
+  Review cards...
+
+▽ [Section: Technical Details - Collapsed]
+  IDs, timestamps, metadata...
+```
+
+### Hero Image + Overview + Sections Pattern
+
+**Structure observed in top ecommerce sites:**
+1. **Above the fold:** Hero image (left) + name/price/short desc (right)
+2. **Below hero:** Key features as bullet points or badges
+3. **Expandable sections:** Long description, specifications, reviews, Q&A
+
+**Apply to api2ui detail views:**
+- First image field → hero position (full-width or left column)
+- Name/title + 2-3 most important fields → always visible overview
+- Remaining fields → grouped into logical sections below
+
+### Truncated Content with "Show More"
+
+**Pattern:** Long text fields (descriptions, reviews) are truncated to 3-4 lines with "Show more" button.
+
+**Apply to api2ui:**
+- Text content >300 chars: show first 200-250 chars + "... Show more"
+- Arrays with >10 items: show first 5-8 + "Show all (23 reviews)"
+- Prevents detail views from becoming overwhelming data dumps
+
+### "Best For" / Quick Info Pills
+
+**Pattern:** Badges or pills near the overview communicate key attributes quickly.
+
+**Apply to api2ui:**
+- Status field → colored badge (active=green, pending=yellow, inactive=gray)
+- Tags array → horizontal row of tag pills
+- Boolean features → checkmark list ("✓ Free shipping", "✓ In stock")
+
+## Real-World Examples from Tools
+
+How production tools handle smart component selection.
+
+### Airtable
+
+**Smart field type detection:**
+- Automatically detects field types on data import: email, phone, URL, attachment, checkbox
+- User can override detected type via dropdown
+- Rich field types: single select (dropdown), multi-select (chips), rating (stars), attachment (file upload)
+
+**Lessons for api2ui:**
+- Auto-detect but always allow override
+- Provide rich component types beyond basic string/number (badges, ratings, chips)
+- Detection is helpful for initial setup but should never be forced
+
+### Retool
+
+**Component library:**
+- 100+ pre-built components with smart defaults
+- Table component auto-detects column types (text, number, link, image, badge)
+- Form inputs auto-select based on field name (email → email validation, phone → phone formatting)
+
+**Lessons for api2ui:**
+- Component variety matters (current: table/cards/detail; needed: badges, pills, ratings, chips)
+- Column-level smart detection in tables (image columns get thumbnails)
+- Context matters: same field renders differently in table vs detail view
+
+### Hasura / Admin Panel Generators
+
+**Auto-generated UIs from GraphQL schema:**
+- Arrays of objects → table with inline editing
+- Relationships → nested detail views or foreign key dropdowns
+- Enums → dropdowns (in forms) or badges (in read views)
+
+**Lessons for api2ui:**
+- Schema hints (if available via OpenAPI) are valuable
+- Relationships are hard without schema (api2ui must infer from field names)
+- Read vs write contexts: same data, different components (dropdown vs badge)
+
+### Low-Code Builders (Appsmith, Retool, Budibase)
+
+**Common patterns:**
+- Drag-drop component placement (NOT applicable to api2ui's auto-render approach)
+- Data binding with auto-suggested field mappings (applicable!)
+- Template layouts for common use cases (list-detail, form-table, dashboard)
+
+**Lessons for api2ui:**
+- Auto-suggest but don't force mappings
+- Template approach: "Product Page" layout = hero image + specs + reviews sections
+- Field mapping UI can help users correct bad auto-detection
+
+## Feature Dependencies and Build Order
+
+How features relate and recommended implementation sequence.
+
+```
+v1.2 (Shipped):
+  Parameter type inference (dates, emails, arrays)
+  Parameter grouping by prefix
+    ↓
+v1.3 Smart Default Selection:
+  Semantic field name detection (reviews, ratings, prices)
+    ↓
+    ├─→ Field importance scoring (name + type + data presence)
+    ├─→ Array shape heuristics (card vs table decision)
+    └─→ Component type recommendations
+    ↓
+  Auto-section grouping (prefix + semantic clustering)
+    ↓
+    ├─→ Vertical accordion sections
+    └─→ Hero image + overview structure
+    ↓
+  Context-aware components (badges, pills, ratings)
+    ↓
+  Gallery detection (array of image URLs)
+```
+
+**Critical path for v1.3:**
+1. **Semantic field detection** (foundation) — pattern library for field names
+2. **Field importance scoring** (core value) — primary/secondary/tertiary ranking
+3. **Array shape heuristics** (key differentiator) — smart card vs table
+4. **Auto-section grouping** (high impact) — organized detail views
+5. **Context-aware components** (polish) — badges, ratings, chips
 
 **Can be done in parallel:**
-- Progressive disclosure (independent of parsing)
-- Layout system (independent of params)
-- UX polish (chips, loading states)
+- Gallery detection (independent feature)
+- Price/currency formatting (independent enhancement)
+- Rating component (new component type)
 
-## Success Criteria for v1.2 Research
+**Defer to v1.4:**
+- Smart tab generation (requires user research on categorization)
+- Date range pairing (complex relationship detection)
+- ML-based importance scoring (overkill for v1.3)
 
-Research is complete when these questions are answered:
+## Complexity Notes
 
-- [x] What are table stakes for filter UIs? — Multi-select, chips, clear all, instant feedback, prevent zero results, collapse groups
-- [x] How do you parse URL query params into forms? — URLSearchParams API, handle array notation (brackets or repeated keys), sync bidirectionally
-- [x] What types should smart inference detect? — Dates, emails, coords, arrays, booleans, numbers — pattern match on name + value
-- [x] How does progressive disclosure work? — Collapse optional params, show count, remember state, max 2 nesting levels
-- [x] What layout presets are expected? — Sidebar (desktop default), top bar (horizontal), drawer (mobile), split view (advanced)
-- [x] What makes filter UX feel polished? — Debounced real-time, skeleton loaders, applied filter chips, count badges, clear hierarchy, undo support
+### Low Complexity (1-2 days)
+- Field name pattern matching (regex library)
+- Price/currency formatting (Intl.NumberFormat)
+- Hero image in detail views (extend v1.1 pattern)
+- Tag chip rendering (new component, simple)
+- Status badge rendering (new component, simple)
+
+### Medium Complexity (3-5 days)
+- Array shape heuristics (card vs table scoring algorithm)
+- Field importance scoring (combine multiple signals)
+- Prefix-based auto-grouping (parse field names, group, render sections)
+- Context-aware component selection (match patterns to component types)
+- Gallery detection (array analysis + image URL detection)
+
+### High Complexity (5-10 days)
+- Semantic field clustering (relationship analysis without schema)
+- Smart tab generation (categorization logic + tab UI)
+- Vertical accordion sections (new UI pattern, animation, state management)
+- Composite pattern matching (multi-signal inference)
+- Rating/review specialized layouts (new component + detection)
+
+## Success Criteria
+
+v1.3 research is complete when these questions are answered:
+
+- [x] What semantic patterns should trigger different components? — Field names (reviews→cards, specs→key-value) + data shape (3-6 fields→cards, 10+→table)
+- [x] How do you determine field importance? — Score based on name (40%), visual richness (25%), data presence (20%), position (15%)
+- [x] When should fields be auto-grouped into sections? — Shared prefix (billing*, shipping*) OR semantic cluster (email+phone+address→"Contact")
+- [x] What are the heuristics for table vs cards? — Field count (≤8→cards, ≥9→table) + images/rich text favor cards
+- [x] How should complex detail views be organized? — Vertical accordions (NOT tabs), hero image + overview + expandable sections
+- [x] What component types are needed beyond table/cards? — Badges (status), pills (tags), ratings (stars), image grids, bullet lists, key-value
+- [x] What are the anti-patterns to avoid? — Horizontal tabs (27% miss content), treating all arrays identically, no override escape hatch
 
 ## Sources
 
-### Filter UI Patterns
-- [Filter UX Design Patterns & Best Practices - Pencil & Paper](https://www.pencilandpaper.io/articles/ux-pattern-analysis-enterprise-filtering)
-- [20 Filter UI Examples for SaaS - Arounda](https://arounda.agency/blog/filter-ui-examples)
-- [Filter UI and UX 101 - UXPin](https://www.uxpin.com/studio/blog/filter-ui-and-ux/)
-- [Algolia Search Filters Best Practices](https://www.algolia.com/blog/ux/search-filter-ux-best-practices)
-- [Filter Groups Best Practice - DEV Community](https://dev.to/jurooravec/filter-groups-the-best-practice-of-filtering-just-about-anything-18ei)
-- [Complex Filters UX - Smart Interface Design Patterns](https://smart-interface-design-patterns.com/articles/complex-filtering/)
+### Primary (HIGH confidence)
 
-### Progressive Disclosure
-- [Progressive Disclosure - Nielsen Norman Group](https://www.nngroup.com/articles/progressive-disclosure/)
-- [Progressive Disclosure UX - Interaction Design Foundation](https://www.interaction-design.org/literature/topics/progressive-disclosure)
-- [Progressive Disclosure for SaaS - UserPilot](https://userpilot.com/blog/progressive-disclosure-examples/)
-- [Progressive Disclosure in UX Design - LogRocket](https://blog.logrocket.com/ux-design/progressive-disclosure-ux-types-use-cases/)
+#### Design Systems & Component Libraries
+- [Retool vs Appsmith: 2025 Comparison](https://www.jetadmin.io/appsmith-vs-retool) — Low-code builders with 100+ smart components
+- [Appsmith Platform Guide](https://www.akveo.com/blog/appsmith-platform-guide) — 45+ pre-built components with customization
+- [Airtable Field Types](https://support.airtable.com/docs/supported-field-types-in-airtable-overview) — Auto-detection and rich field types
+- [Hasura GraphQL Schema](https://hasura.io/docs/2.0/schema/overview/) — Auto-generated UI from schema
 
-### URL Query Parameters & State Management
-- [URLSearchParams - MDN](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams)
-- [URL State Management in React - LogRocket](https://blog.logrocket.com/url-state-usesearchparams/)
-- [nuqs - Type-safe URL search params state management](https://nuqs.dev)
-- [Array Parameters in Query Strings - REST API Best Practices](https://www.moesif.com/blog/technical/api-design/REST-API-Design-Best-Practices-for-Parameters-and-Query-String-Usage/)
-- [Arrays in Query Params - RAML by Example](https://medium.com/raml-api/arrays-in-query-params-33189628fa68)
+#### UX Patterns & Research
+- [Table vs List vs Cards: Data Display Patterns (2025)](https://uxpatterns.dev/pattern-guide/table-vs-list-vs-cards) — When to use each pattern
+- [Large Data Display: Cards or Table?](https://bootcamp.uxdesign.cc/when-to-use-which-component-a-case-study-of-card-view-vs-table-view-7f5a6cff557b) — Card view vs table view case study
+- [RedUX: Cards versus Table](https://cwcorbin.medium.com/redux-cards-versus-table-ux-patterns-1911e3ca4b16) — UX patterns comparison
 
-### Layout Systems & UI Patterns
-- [Filter Drawer vs Sidebar vs Top Bar - UX for the Masses](https://www.uxforthemasses.com/filter-bars/)
-- [Horizontal Filtering Toolbars - Baymard](https://baymard.com/blog/horizontal-filtering-sorting-design)
-- [Drawer UI Design Best Practices - Mobbin](https://mobbin.com/glossary/drawer)
-- [Dashboard Layout Systems - SaaS Frame](https://www.saasframe.io/categories/dashboard)
+#### Ecommerce Product Detail Pages
+- [Product Page UX Best Practices 2025](https://baymard.com/blog/current-state-ecommerce-product-page-ux) — Baymard Institute research
+- [Product Detail Page Tabs UX](https://medium.com/@pio.oleksy/are-you-using-tabs-on-the-product-detail-page-for-organizing-content-013dea4e1e83) — 27% overlook horizontal tabs
+- [Product Details Page Research](https://baymard.com/research/product-page) — Comprehensive UX study
+- [Product Detail Pages Optimization Guide](https://www.mobiloud.com/blog/product-detail-pages-pdp-ecommerce) — Layout patterns and organization
 
-### Smart Defaults & Type Inference
-- [Smart Defaults in Form UX - Zuko](https://www.zuko.io/blog/how-to-use-defaults-to-optimize-your-form-ux)
-- [Cognitive Load and Smart Defaults - Shopify](https://www.shopify.com/partners/blog/cognitive-load)
-- [Form Design Guidelines - UW UX Design](https://uxdesign.uw.edu/interaction/forms.html)
-- [Placeholders Are Harmful - Nielsen Norman Group](https://www.nngroup.com/articles/form-design-placeholders/)
+#### Semantic Data & Field Detection
+- [The Semantic Value of Schema Markup in 2025](https://www.schemaapp.com/schema-markup/the-semantic-value-of-schema-markup-in-2025/) — Schema.org for structured data
+- [Named Entity Recognition Guide](https://www.geeksforgeeks.org/nlp/named-entity-recognition/) — Pattern recognition techniques
+- [From Words to Meaning: Semantic Analysis in NLP](https://www.mindwalkai.com/blog/from-words-to-meaning-exploring-semantic-analysis-in-nlp) — Semantic understanding approaches
 
-### Zero Results & Empty States
-- [Empty State UX Best Practices - Pencil & Paper](https://www.pencilandpaper.io/articles/empty-states)
-- [No Results Pages Strategies - Baymard](https://baymard.com/blog/no-results-page)
-- [Empty State Design - Toptal](https://www.toptal.com/designers/ux/empty-state-ux-design)
-- [No Results Found UX - LogRocket](https://blog.logrocket.com/ux-design/no-results-found-page-ux/)
+### Secondary (MEDIUM confidence)
 
-### Filter Badges & Chips
-- [Filter Chips Design - Good Practices](https://goodpractices.design/components/filter-chips)
-- [Badges vs Pills vs Chips - Smart Interface Design Patterns](https://smart-interface-design-patterns.com/articles/badges-chips-tags-pills/)
-- [Enhancing Fluent UI with Filter Chips - Perficient](https://blogs.perficient.com/2026/02/04/enhancing-fluent-ui-detailslist-with-custom-sorting-filtering-lazy-loading-and-filter-chips/)
-- [Table Filters - Innovaccer Design](https://design.innovaccer.com/patterns/tableFilters/usage/)
+#### Auto-Grouping & Field Organization
+- [Field Groups - Pipedrive](https://support.pipedrive.com/en/article/field-groups) — Organize related custom fields
+- [Grouped Fields on Object Detail Page](https://github.com/twentyhq/twenty/issues/10453) — CRM field grouping patterns
+- [Everlaw Auto-Detection](https://support.everlaw.com/hc/en-us/articles/204913069-Project-Settings-Metadata-Metadata-Fields-Aliases-Editable-Metadata-and-Other-Settings) — Automatic field detection
 
-### API Testing Tools
-- [Insomnia vs Postman 2026 - Abstracta](https://abstracta.us/blog/testing-tools/insomnia-vs-postman/)
-- [Postman Alternatives 2026 - Apidog](https://apidog.com/blog/top-postman-alternative-open-source/)
-- [API Testing Tools Guide 2026 - Tusk](https://www.usetusk.ai/resources/the-definitive-guide-to-api-testing-tools-in-2026)
+#### Tabs & Navigation Patterns
+- [Nested Tab UI Examples](https://www.designmonks.co/blog/nested-tab-ui) — Tab design guidelines
+- [Tabs UX: Best Practices](https://www.eleken.co/blog-posts/tabs-ux) — When to use tabs (and when not to)
+- [Carbon Design System Forms](https://carbondesignsystem.com/patterns/forms-pattern/) — Form grouping patterns
+- [Tabbed Interface Design Pattern](https://design.canada.ca/common-design-patterns/tabbed-interface.html) — Government UX guidelines
 
-### Inline Editing & Debouncing
-- [Debounce Sources - Algolia](https://www.algolia.com/doc/ui-libraries/autocomplete/guides/debouncing-sources)
-- [Filter UI Inline Edit Best Practices - Eleken](https://www.eleken.co/blog-posts/filter-ux-and-ui-for-saas)
-- [React Search Bar Filtering - Refine](https://refine.dev/blog/react-search-bar-and-filtering/)
+#### Admin Panel & Form Generation
+- [AI Schema Generator 2025](https://www.index.dev/blog/ai-tools-for-database-schema-generation-optimization) — Database schema inference
+- [Schema Evolution Guide](https://www.upsolver.com/blog/addressing-schema-evolution-automatically) — Automatic schema detection
+- [Dynamically Create Forms from JSON](https://surveyjs.io/stay-updated/blog/dynamically-create-forms-from-json-schema) — Form generation patterns
+
+#### Product Page Design
+- [Product Pages in 2026](https://www.bigcommerce.com/articles/ecommerce/product-page-examples/) — Design examples and inspiration
+- [15 Winning Product Page Examples](https://wisernotify.com/blog/product-page/) — Layout patterns
+- [20 Product Page Best Practices](https://www.optimonk.com/product-page-best-practices/) — Conversion-focused design
+
+### Tertiary (LOW confidence)
+
+#### Generative UI & AI
+- [Complete Guide to Generative UI Frameworks 2026](https://medium.com/@akshaychame2/the-complete-guide-to-generative-ui-frameworks-in-2026-fde71c4fa8cc) — AI-driven component selection
+- [Top 10 AI Data Visualization Tools 2026](https://www.fusioncharts.com/blog/top-ai-data-visualization-tools/) — AI for smart insights
+
+## Metadata
+
+**Confidence breakdown:**
+- Semantic patterns (field name matching): HIGH — Standard across Airtable, Retool, admin generators
+- Data shape heuristics (card vs table): MEDIUM-HIGH — Research-backed but thresholds need field testing
+- Auto-grouping (prefix/semantic): MEDIUM — Common in CRMs but complex to get right
+- Vertical accordions over tabs: HIGH — Baymard research 27% vs 8% overlook rate
+- Component variety (badges, ratings, chips): HIGH — Table stakes in modern admin UIs
+
+**Research date:** 2026-02-07
+**Valid until:** ~30 days (field testing will inform threshold tuning)
+**Recommended validation:** User test with 3-5 real APIs to tune thresholds and pattern matching

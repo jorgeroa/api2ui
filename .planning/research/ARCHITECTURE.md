@@ -1,1136 +1,1210 @@
-# Architecture Research: v1.2 Smart Parameters & Layout System
+# Architecture Patterns: Smart Default Selection
 
-**Researched:** 2026-02-05
+**Domain:** Semantic component selection for data-to-UI rendering
+**Researched:** 2026-02-07
 **Confidence:** HIGH
-**Context:** Subsequent milestone — extending existing api2ui architecture
 
-## Summary
+## Executive Summary
 
-The Smart Parameters & Layout System milestone adds four key capabilities to api2ui: (1) parsing raw URL query strings into the same `ParsedParameter[]` format used by OpenAPI, (2) smart type inference to automatically detect parameter types from query string values, (3) parameter value persistence per-endpoint for better UX, and (4) layout preset switching between sidebar and centered layouts. All features integrate cleanly with the existing architecture by extending existing components rather than introducing parallel systems.
+This research addresses how semantic component selection should integrate with api2ui's existing rendering pipeline. The core architectural challenge is **where** and **when** to perform field classification while preserving user overrides and maintaining clean separation of concerns.
 
-**Key integration principle:** New features extend the existing pipeline rather than creating parallel code paths. Query string parsing produces the same `ParsedParameter[]` format that OpenAPI parsing uses, smart type inference extends the existing `ParameterInput` component type mapping, parameter persistence leverages the existing `configStore` pattern, and layout switching builds on the existing two-layout structure in `App.tsx`.
+**Key finding:** Analysis belongs **before render**, in a preprocessing layer that transforms schema + data into enriched metadata. DynamicRenderer consumes this metadata to make smarter default selections, while configStore continues to hold user overrides that take precedence.
 
-## Integration Points
+**Recommended approach:** Data transformation pipeline architecture with cached analysis results stored alongside schema in appStore.
 
-### Query String Parsing → Unified Parameter Model
+## Current Architecture Analysis
 
-**Current state:**
-- `parser.ts` has `parseParameter()` function that converts OpenAPI parameter definitions to `ParsedParameter[]`
-- `ParameterForm.tsx` consumes `ParsedParameter[]` and renders form inputs
-- `ParameterInput.tsx` maps parameter types to input components
+### Existing Rendering Pipeline
 
-**Integration approach:**
-Create a new parser that converts URL query strings to the **same** `ParsedParameter[]` format:
+```
+API Response → Schema Inference → DynamicRenderer → Component Selection → Render
+                    ↓                    ↓                    ↓
+                appStore            configStore         ComponentRegistry
+                                   (user overrides)
+```
 
+**Current flow (DynamicRenderer.tsx:24-30):**
 ```typescript
-// NEW: services/querystring/parser.ts
-function parseQueryString(url: string): ParsedParameter[] {
-  const urlObj = new URL(url)
-  const params: ParsedParameter[] = []
-
-  urlObj.searchParams.forEach((value, name) => {
-    params.push({
-      name,
-      in: 'query',
-      required: false,  // All query params default to optional
-      description: '',
-      schema: inferTypeFromValue(value)  // Smart type inference
-    })
-  })
-
-  return params
+function getDefaultTypeName(schema: TypeSignature): string {
+  if (schema.kind === 'array' && schema.items.kind === 'object') return 'table'
+  if (schema.kind === 'array' && schema.items.kind === 'primitive') return 'primitive-list'
+  if (schema.kind === 'object') return 'detail'
+  if (schema.kind === 'primitive') return 'primitive'
+  return 'json'
 }
 ```
 
-**Data flow:**
-```
-Raw URL with query string
-    ↓
-parseQueryString() → ParsedParameter[]
-    ↓
-ParameterForm.tsx (EXISTING, no changes)
-    ↓
-ParameterInput.tsx (EXISTING, renders correctly)
-```
+This is **structural** selection (based on schema shape). Smart defaults need **semantic** selection (based on field names, data patterns, content).
 
-**Why this works:**
-`ParsedParameter[]` is already the unified format. Both OpenAPI parameters and query string parameters produce the same structure, so downstream components (ParameterForm, ParameterInput) need **zero** changes to support query string parameters.
+### Integration Points
 
-**Build order:**
-1. Create `services/querystring/parser.ts` with `parseQueryString()` function
-2. Create `services/querystring/inferrer.ts` with `inferTypeFromValue()` utility
-3. Modify `useAPIFetch.ts` to detect query strings and call `parseQueryString()`
-4. Store parsed parameters in `appStore.parsedSpec.operations[0].parameters`
+| Component | Current Role | Integration Point for Smart Defaults |
+|-----------|--------------|-------------------------------------|
+| `appStore.ts` | Holds `data` + `schema` | Add `analysisMetadata` field |
+| `DynamicRenderer.tsx` | Selects component via `getDefaultTypeName()` | Replace with `getSmartDefaultTypeName()` that reads metadata |
+| `configStore.ts` | Holds user overrides in `fieldConfigs` | Unchanged - continues to override defaults |
+| `ComponentRegistry.tsx` | Maps type names to components | Unchanged - registry stays same |
+| `DetailRenderer.tsx` | Already groups fields (primary/metadata/images/nested) | Consume analysis metadata for grouping decisions |
 
-**Architectural benefit:**
-- No duplicate form rendering code
-- Type inference is isolated in one utility
-- Existing parameter validation/submission logic reused
+### Current Field Classification
 
-### Smart Type Inference Layer
-
-**Current state:**
-- `ParameterInput.tsx` has type-to-component mapping based on `schema.type` and `schema.format`
-- Supports: string, number, integer, boolean, date, date-time, email, uri, enum
-- Always uses schema from OpenAPI spec (explicit types)
-
-**Integration approach:**
-Add type inference **before** the parameter reaches ParameterInput:
+DetailRenderer (lines 14-27) already implements **basic** semantic classification:
 
 ```typescript
-// NEW: services/querystring/inferrer.ts
-function inferTypeFromValue(value: string): ParsedParameter['schema'] {
-  // Boolean inference
-  if (value === 'true' || value === 'false') {
-    return { type: 'boolean', example: value }
-  }
+function isPrimaryField(fieldName: string): boolean {
+  const nameLower = fieldName.toLowerCase()
+  const primaryExact = ['name', 'title', 'label', 'heading', 'subject']
+  if (primaryExact.includes(nameLower)) return true
+  const primarySuffixes = ['_name', '_title', '_label', '-name', '-title', '-label', 'Name', 'Title']
+  return primarySuffixes.some(suffix => fieldName.endsWith(suffix))
+}
 
-  // Number inference
-  if (/^-?\d+$/.test(value)) {
-    return { type: 'integer', example: value }
-  }
-  if (/^-?\d+\.\d+$/.test(value)) {
-    return { type: 'number', example: value }
-  }
-
-  // Date inference
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return { type: 'string', format: 'date', example: value }
-  }
-
-  // Email inference
-  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-    return { type: 'string', format: 'email', example: value }
-  }
-
-  // URL inference
-  if (/^https?:\/\//.test(value)) {
-    return { type: 'string', format: 'uri', example: value }
-  }
-
-  // Default: string
-  return { type: 'string', example: value }
+function isMetadataField(fieldName: string): boolean {
+  return /created|updated|modified|timestamp|date/i.test(fieldName)
 }
 ```
 
-**Why this approach:**
-- Inference happens during parsing, producing a complete `schema` object
-- ParameterInput receives the same schema structure it already expects
-- No "if query string, do X; if OpenAPI, do Y" logic in rendering layer
-- Type inference is **pure function** — easy to test
-
-**Extended ParameterInput (optional enhancement):**
-For query strings with multiple values of the same type, we could detect arrays:
+And `imageDetection.ts` implements URL pattern matching:
 
 ```typescript
-// Enhanced: services/querystring/parser.ts
-function parseQueryString(url: string): ParsedParameter[] {
-  const urlObj = new URL(url)
-  const paramMap = new Map<string, string[]>()
+export function isImageUrl(value: unknown): boolean {
+  if (!value || typeof value !== 'string' || !/^https?:\/\//i.test(value)) {
+    return false
+  }
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.avif']
+  const url = new URL(value)
+  const pathname = url.pathname.toLowerCase()
+  return imageExtensions.some(ext => pathname.endsWith(ext))
+}
+```
 
-  // Group values by param name
-  urlObj.searchParams.forEach((value, name) => {
-    const existing = paramMap.get(name) || []
-    paramMap.set(name, [...existing, value])
-  })
+**Gap:** These classifications are **local** (per-component) and **runtime** (executed during render). Smart defaults need **global** (cross-field relationships) and **cached** (execute once per schema).
 
-  const params: ParsedParameter[] = []
-  paramMap.forEach((values, name) => {
-    if (values.length > 1) {
-      // Multiple values → detect as enum
-      params.push({
-        name,
-        in: 'query',
-        required: false,
-        description: `Detected ${values.length} possible values`,
-        schema: {
-          type: 'string',
-          enum: values,
-          example: values[0]
-        }
-      })
-    } else {
-      // Single value → infer type
-      params.push({
-        name,
-        in: 'query',
-        required: false,
-        description: '',
-        schema: inferTypeFromValue(values[0])
-      })
+## Recommended Architecture
+
+### Data Transformation Pipeline
+
+```
+API Response → Schema Inference → Field Analysis → Enriched Schema → DynamicRenderer
+                                        ↓
+                               AnalysisMetadata
+                               (cached in appStore)
+```
+
+**New architecture flow:**
+
+1. **Schema Inference** (existing): `inferSchema()` creates TypeSignature
+2. **Field Analysis** (new): `analyzeFields()` creates AnalysisMetadata
+3. **Enriched Schema** (new): appStore holds both schema + metadata
+4. **Smart Selection** (modified): DynamicRenderer reads metadata for defaults
+5. **User Override** (existing): configStore continues to override any default
+
+### Component Structure
+
+```
+src/
+├── services/
+│   └── analysis/
+│       ├── fieldAnalyzer.ts          # Main analysis orchestrator
+│       ├── fieldClassifier.ts        # Pattern matching for field types
+│       ├── groupingAnalyzer.ts       # Tab/section detection
+│       └── componentSuggester.ts     # Map classifications to components
+├── store/
+│   └── appStore.ts                   # Add analysisMetadata field
+├── components/
+│   └── DynamicRenderer.tsx           # Read metadata for smart defaults
+└── utils/
+    ├── imageDetection.ts             # Existing - keep for validation
+    └── fieldPatterns.ts              # NEW - shared pattern constants
+```
+
+### New Services/Utilities Needed
+
+#### 1. `fieldAnalyzer.ts` - Analysis Orchestrator
+
+**Responsibility:** Coordinate field classification and grouping analysis.
+
+```typescript
+import type { TypeSignature, FieldDefinition } from '../types/schema'
+import type { AnalysisMetadata } from '../types/analysis'
+
+export function analyzeFields(
+  schema: TypeSignature,
+  data: unknown,
+  path: string = '$'
+): AnalysisMetadata {
+  const classifier = new FieldClassifier()
+  const groupingAnalyzer = new GroupingAnalyzer()
+  const suggester = new ComponentSuggester()
+
+  // Classify fields based on names and values
+  const classifications = classifier.classify(schema, data, path)
+
+  // Detect grouping opportunities (tabs, sections)
+  const groupings = groupingAnalyzer.analyze(classifications)
+
+  // Suggest component types based on classifications
+  const suggestions = suggester.suggest(classifications, groupings)
+
+  return {
+    path,
+    classifications,
+    groupings,
+    suggestions,
+    analyzedAt: Date.now(),
+  }
+}
+```
+
+**When to call:** After `fetchSuccess()` in pipeline, before storing in appStore.
+
+**Confidence:** HIGH - This is a standard data transformation pattern in frontend architectures.
+
+#### 2. `fieldClassifier.ts` - Pattern Matching
+
+**Responsibility:** Classify fields into semantic categories.
+
+```typescript
+export type FieldCategory =
+  | 'primary'      // name, title (hero fields)
+  | 'description'  // long text content
+  | 'review'       // reviews, comments, feedback
+  | 'rating'       // stars, scores, ratings
+  | 'image'        // image URLs
+  | 'price'        // currency, cost
+  | 'spec'         // key-value attributes (color, size, weight)
+  | 'metadata'     // timestamps, IDs, system fields
+  | 'nested-collection' // arrays of objects
+  | 'regular'      // default category
+
+export interface FieldClassification {
+  fieldPath: string
+  fieldName: string
+  category: FieldCategory
+  confidence: 'high' | 'medium' | 'low'
+  reason: string  // Why this classification was chosen
+}
+
+export class FieldClassifier {
+  classify(schema: TypeSignature, data: unknown, path: string): FieldClassification[] {
+    // Pattern matching based on field names, data patterns, content
+    // Similar to existing isPrimaryField/isMetadataField but comprehensive
+  }
+}
+```
+
+**Pattern library:**
+
+| Category | Field Name Patterns | Data Patterns | Example Fields |
+|----------|-------------------|---------------|----------------|
+| `primary` | `name`, `title`, `label`, `heading`, `subject`, `*_name`, `*_title` | String, 10-100 chars | `product_name`, `title` |
+| `description` | `description`, `summary`, `body`, `content`, `details`, `about`, `bio` | String, >100 chars | `description`, `long_description` |
+| `review` | `review`, `comment`, `feedback`, `testimonial`, `opinion`, `*_review` | String or object with text field | `customer_reviews`, `comments` |
+| `rating` | `rating`, `score`, `stars`, `rank`, `*_rating`, `*_score` | Number 0-5 or 0-100 | `rating`, `average_rating` |
+| `image` | `image`, `photo`, `picture`, `thumbnail`, `avatar`, `icon`, `*_url`, `*_image` | URL string ending in image extension | `image_url`, `thumbnail` |
+| `price` | `price`, `cost`, `amount`, `fee`, `rate`, `*_price`, `*_cost` | Number, often with currency | `price`, `unit_price` |
+| `spec` | `specs`, `specifications`, `attributes`, `properties`, `features` | Object with short key-value pairs | `specifications`, `attributes` |
+| `metadata` | `id`, `*_id`, `created`, `updated`, `modified`, `timestamp`, `date`, `status` | System-generated values | `created_at`, `id`, `status` |
+| `nested-collection` | `reviews`, `images`, `items`, `products`, `users`, `comments` | Array of objects | `reviews`, `related_products` |
+
+**Source:** Pattern library synthesized from research on [metadata filtering best practices](https://lakefs.io/blog/metadata-filtering/) and [classification patterns](https://bigid.com/blog/smarter-classification-for-data-attributes-metadata-and-files/).
+
+**Confidence:** HIGH - These patterns are well-established in data classification systems.
+
+#### 3. `groupingAnalyzer.ts` - Tab/Section Detection
+
+**Responsibility:** Detect when fields should be grouped into tabs or sections.
+
+```typescript
+export type GroupingStrategy =
+  | 'tabs'         // Complex objects with 3+ logical groups
+  | 'sections'     // Moderate objects with 2-3 groups
+  | 'flat'         // Simple objects, no grouping needed
+
+export interface FieldGrouping {
+  strategy: GroupingStrategy
+  groups: Array<{
+    id: string
+    label: string
+    fieldPaths: string[]
+    priority: number  // Display order
+  }>
+}
+
+export class GroupingAnalyzer {
+  analyze(classifications: FieldClassification[]): FieldGrouping {
+    // Detect natural groupings based on field categories
+    // Example: reviews + ratings = "Reviews" tab
+    //          specs + attributes = "Specifications" tab
+    //          images = "Gallery" tab
+  }
+}
+```
+
+**Grouping heuristics:**
+
+| Condition | Strategy | Example Groups |
+|-----------|----------|----------------|
+| 5+ categories present, 3+ with 2+ fields | `tabs` | "Overview", "Reviews", "Specifications", "Gallery" |
+| 3-4 categories present | `sections` | "Details", "Metadata" |
+| <3 categories | `flat` | No grouping |
+| Nested collections present | `sections` | Each collection becomes a section |
+
+**Tab creation triggers:**
+
+- **Reviews tab:** 2+ fields in `review` or `rating` categories
+- **Specifications tab:** 3+ fields in `spec` category
+- **Gallery tab:** 3+ fields in `image` category
+- **About/Overview tab:** Default group for `primary`, `description`, `regular`
+
+**Source:** Based on [nested tab UI patterns](https://www.designmonks.co/blog/nested-tab-ui) and [semantic UI component grouping research](https://arxiv.org/html/2403.04984v1).
+
+**Confidence:** MEDIUM - Heuristics require tuning based on real data patterns.
+
+#### 4. `componentSuggester.ts` - Map to Components
+
+**Responsibility:** Suggest component types based on classifications.
+
+```typescript
+export interface ComponentSuggestion {
+  fieldPath: string
+  suggestedType: string  // Component type name from registry
+  reason: string
+  confidence: 'high' | 'medium' | 'low'
+}
+
+export class ComponentSuggester {
+  suggest(
+    classifications: FieldClassification[],
+    groupings: FieldGrouping
+  ): ComponentSuggestion[] {
+    // Map field categories to component types
+  }
+}
+```
+
+**Mapping rules:**
+
+| Field Category | Schema Kind | Suggested Component | Rationale |
+|----------------|-------------|---------------------|-----------|
+| `review` + `rating` | `array<object>` | `card-list` | Reviews need visual separation, rich content |
+| `nested-collection` | `array<object>` | `card-list` | Better for heterogeneous or text-heavy items |
+| `regular` | `array<object>` | `table` | Default for homogeneous data |
+| `image` | `array<string>` | `gallery` | Image URLs best displayed as gallery |
+| `spec` | `object` | `detail` (with key-value layout) | Specifications are key-value pairs |
+| `primary` + `description` + `image` | `object` | `hero` | Product-like objects get hero layout |
+| `regular` | `object` | `detail` | Default for objects |
+| `metadata` | `object` fields | Hidden by default or footer section | De-emphasize system fields |
+
+**Confidence:** HIGH - Mappings are derived from existing component patterns in api2ui.
+
+### Data Flow Changes
+
+#### Before (Current)
+
+```typescript
+// In pipeline service
+const schema = inferSchema(data)
+appStore.fetchSuccess(data, schema)
+
+// In DynamicRenderer
+const defaultType = getDefaultTypeName(schema)  // Structural selection
+const override = fieldConfigs[path]?.componentType
+const Component = getComponent(schema, override || defaultType)
+```
+
+#### After (Smart Defaults)
+
+```typescript
+// In pipeline service
+const schema = inferSchema(data)
+const analysisMetadata = analyzeFields(schema, data)  // NEW
+appStore.fetchSuccess(data, schema, analysisMetadata)  // MODIFIED
+
+// In DynamicRenderer
+const metadata = appStore.analysisMetadata  // NEW
+const defaultType = getSmartDefaultTypeName(schema, path, metadata)  // MODIFIED
+const override = fieldConfigs[path]?.componentType
+const Component = getComponent(schema, override || defaultType)  // Unchanged
+```
+
+**Key principle:** User overrides (`fieldConfigs`) **always** take precedence over smart defaults.
+
+## Preserving User Overrides
+
+### Architecture Pattern: Explicit Over Implicit
+
+```
+Priority hierarchy:
+1. User explicit override (fieldConfigs[path].componentType) → HIGHEST
+2. Smart default (analysisMetadata suggestions)              → MEDIUM
+3. Structural default (getDefaultTypeName)                   → LOWEST
+```
+
+**Implementation strategy:**
+
+```typescript
+function getSmartDefaultTypeName(
+  schema: TypeSignature,
+  path: string,
+  metadata: AnalysisMetadata | null
+): string {
+  // 1. Check if smart analysis has a suggestion
+  if (metadata) {
+    const suggestion = metadata.suggestions.find(s => s.fieldPath === path)
+    if (suggestion && suggestion.confidence !== 'low') {
+      return suggestion.suggestedType
     }
-  })
-
-  return params
-}
-```
-
-**Build order:**
-1. Implement basic `inferTypeFromValue()` with primitives (boolean, number, string)
-2. Add format detection (date, email, uri)
-3. Add enum detection for multi-value params (optional)
-4. Test with diverse query strings
-
-**Architectural benefit:**
-- Type inference is **centralized** in one utility
-- Easy to extend with new patterns (e.g., UUID detection)
-- No special-casing in ParameterInput component
-
-### Parameter Persistence → Extend configStore
-
-**Current state:**
-- `appStore.ts`: Session-only state (loading, data, schema, parameterValues)
-- `configStore.ts`: Persisted preferences (fieldConfigs, styleOverrides, theme, paginationConfigs)
-- `configStore` uses Zustand persist middleware with localStorage
-
-**Decision: Use configStore, not appStore**
-
-**Rationale:**
-- **User expectation:** Parameter values should persist across sessions (like other preferences)
-- **Existing pattern:** configStore already persists per-endpoint data (endpointOverrides, paginationConfigs)
-- **Key structure:** configStore already uses path-based keys (e.g., `paginationConfigs[path]`)
-
-**Integration approach:**
-Extend configStore with a new `parameterDefaults` object:
-
-```typescript
-// MODIFIED: store/configStore.ts
-interface ConfigStore extends ConfigState {
-  // ... existing methods
-
-  // NEW: Parameter defaults
-  setParameterDefault: (endpoint: string, paramName: string, value: string) => void
-  getParameterDefaults: (endpoint: string) => Record<string, string>
-  clearParameterDefaults: (endpoint: string) => void
-}
-
-interface ConfigState {
-  // ... existing state
-
-  // NEW: Persisted parameter defaults keyed by endpoint
-  parameterDefaults: Record<string, Record<string, string>>
-  // Example: { "/users": { "limit": "20", "sort": "name" } }
-}
-```
-
-**Key structure:**
-- **Outer key:** Endpoint path (e.g., `/users`, `/posts/{id}`)
-- **Inner object:** Parameter name → default value
-- **Persistence:** Included in Zustand persist middleware
-
-**Modified ParameterForm initialization:**
-
-```typescript
-// MODIFIED: components/forms/ParameterForm.tsx
-export function ParameterForm({ parameters, endpoint, onSubmit }: ParameterFormProps) {
-  const { getParameterDefaults } = useConfigStore()
-
-  const [values, setValues] = useState<Record<string, string>>(() => {
-    const persisted = getParameterDefaults(endpoint)  // NEW: Load from configStore
-    const initial: Record<string, string> = {}
-
-    for (const param of parameters) {
-      // Priority: persisted > schema.default > schema.example > empty
-      initial[param.name] =
-        persisted[param.name] ??
-        (param.schema.default !== undefined ? String(param.schema.default) : '') ||
-        (param.schema.example !== undefined ? String(param.schema.example) : '') ||
-        ''
-    }
-    return initial
-  })
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-
-    // NEW: Persist parameter values on submit
-    const { setParameterDefault } = useConfigStore.getState()
-    Object.entries(values).forEach(([name, value]) => {
-      if (value) {  // Only persist non-empty values
-        setParameterDefault(endpoint, name, value)
-      }
-    })
-
-    onSubmit(values)
   }
 
-  // ... rest of component unchanged
+  // 2. Fall back to structural default
+  return getDefaultTypeName(schema)
 }
 ```
 
-**Why this storage strategy:**
-- **Per-endpoint isolation:** Different endpoints can have different defaults for same parameter name (e.g., `limit`)
-- **Selective persistence:** Empty values not persisted (avoids clutter)
-- **Backwards compatible:** Existing configStore persist logic handles new field automatically
-- **Clear separation:** appStore = runtime data, configStore = user preferences
-
-**Build order:**
-1. Add `parameterDefaults` to ConfigState interface
-2. Implement `setParameterDefault`, `getParameterDefaults`, `clearParameterDefaults` in configStore
-3. Update `partialize` in persist middleware to include `parameterDefaults`
-4. Modify ParameterForm to load from configStore on mount
-5. Modify ParameterForm to save to configStore on submit
-
-**Architectural benefit:**
-- Consistent with existing persistence patterns
-- No new storage mechanism needed
-- Zustand persist middleware handles serialization/hydration
-- Easy to add UI for clearing parameter history later
-
-### Layout System → Modify App.tsx
-
-**Current state:**
-- `App.tsx` has two layout branches:
-  - **Sidebar layout:** When `parsedSpec` has 2+ operations (line 97-194)
-  - **Centered layout:** Single operation or direct URL (line 196-317)
-- Layout choice is **derived** from data, not user preference
-- No state management for layout preferences
-
-**Integration approach:**
-Add layout preset selection to configStore and conditional rendering in App.tsx:
+**User override preservation:**
 
 ```typescript
-// MODIFIED: types/config.ts
-export type LayoutPreset = 'auto' | 'sidebar' | 'centered'
+// In DynamicRenderer (no change needed)
+const override = fieldConfigs[path]?.componentType
+const Component = getComponent(schema, override || defaultType)
+```
 
-export interface ConfigState {
-  // ... existing state
+The override check **already exists** and runs **before** defaults are used. No modification needed to preserve overrides.
 
-  // NEW: Layout preference
-  layoutPreset: LayoutPreset  // Default: 'auto'
+**When defaults change:**
+
+| Scenario | Current Behavior | Smart Defaults Behavior |
+|----------|------------------|------------------------|
+| User has override set | Override used, default ignored | Override used, smart default ignored |
+| User has no override | Structural default used | Smart default used |
+| Schema changes | Structural default recalculated | Smart default recalculated |
+| User clears override | Returns to structural default | Returns to smart default |
+
+**Source:** Based on [CSS inheritance and override patterns](https://thelinuxcode.com/applying-inheritance-in-css-2026-predictable-styling-theming-and-safe-overrides/) and [Android ViewModel state preservation](https://developer.android.com/guide/topics/resources/runtime-changes).
+
+**Confidence:** HIGH - Override pattern already exists and works correctly.
+
+## Caching Analysis Results
+
+### Storage Location: appStore
+
+```typescript
+// src/store/appStore.ts
+interface AppState {
+  // Existing fields
+  data: unknown
+  schema: UnifiedSchema | null
+
+  // NEW
+  analysisMetadata: AnalysisMetadata | null
+
+  // Actions
+  fetchSuccess: (data: unknown, schema: UnifiedSchema, metadata: AnalysisMetadata) => void
 }
 ```
 
+**Why appStore:** Analysis metadata is **derived from schema + data**, not user configuration. It belongs with the data it describes, not with user preferences.
+
+### Cache Invalidation Strategy
+
 ```typescript
-// MODIFIED: store/configStore.ts
-export const useConfigStore = create<ConfigStore>()(
-  persist(
-    (set, get) => ({
-      // ... existing state
-      layoutPreset: 'auto' as LayoutPreset,
+// Analysis results are valid until:
+// 1. New API response fetched (different data)
+// 2. User manually triggers re-analysis
+// 3. Schema structure changes (different endpoint)
 
-      // NEW: Layout methods
-      setLayoutPreset: (preset) => set({ layoutPreset: preset }),
+// In appStore
+startFetch: () => set({
+  loading: true,
+  error: null,
+  data: null,
+  schema: null,
+  analysisMetadata: null  // Invalidate on new fetch
+})
+```
 
-      // ... existing methods
-    }),
-    {
-      name: 'api2ui-config',
-      version: 3,  // Increment version for migration
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        // ... existing partialize fields
-        layoutPreset: state.layoutPreset,  // NEW: Persist layout
-      }),
-      // ... existing merge
+**Caching benefits:**
+
+- **Performance:** Analysis runs once per response, not on every render
+- **Consistency:** Same analysis results across all components
+- **Debugging:** Analysis metadata visible in state for inspection
+
+**Source:** Caching strategy follows [React memoization best practices](https://www.toptal.com/react/react-memoization) and [frontend data transformation pipeline patterns](https://dev.to/jajibhee/solving-frontend-performance-the-data-pipeline-transformation-2206).
+
+**Confidence:** HIGH - Standard caching pattern for derived data.
+
+### Memoization Within Analysis
+
+```typescript
+// In fieldAnalyzer.ts
+import { useMemo } from 'react'
+
+// For expensive pattern matching
+const FIELD_PATTERNS = {
+  primary: /^(name|title|label|heading|subject)$/i,
+  metadata: /^(id|.*_id|created|updated|modified|timestamp|date|status)$/i,
+  // ... more patterns
+}
+
+// Compile once, reuse for all fields
+export class FieldClassifier {
+  private patterns: Map<FieldCategory, RegExp>
+
+  constructor() {
+    this.patterns = new Map()
+    for (const [category, pattern] of Object.entries(FIELD_PATTERNS)) {
+      this.patterns.set(category as FieldCategory, pattern)
     }
-  )
-)
-```
+  }
 
-```typescript
-// MODIFIED: App.tsx
-function App() {
-  const { layoutPreset } = useConfigStore()
-  const { parsedSpec } = useAppStore()
-
-  // Derive layout choice from preference + data
-  const hasMultipleOperations = parsedSpec !== null && parsedSpec.operations.length >= 2
-
-  const shouldShowSidebar =
-    layoutPreset === 'sidebar' ? true :
-    layoutPreset === 'centered' ? false :
-    hasMultipleOperations  // 'auto' mode: use existing logic
-
-  return (
-    <>
-      {/* Existing ThemeApplier, ConfigToggle, etc. */}
-
-      {shouldShowSidebar ? (
-        // Existing sidebar layout (unchanged)
-        <div className="flex min-h-screen bg-background text-text">
-          <Sidebar ... />
-          <main ...>
-            {/* Existing content */}
-          </main>
-        </div>
-      ) : (
-        // Existing centered layout (unchanged)
-        <div className="min-h-screen bg-background text-text py-8 px-4">
-          {/* Existing content */}
-        </div>
-      )}
-
-      {/* NEW: Layout preset selector (in ConfigPanel or header) */}
-      <ConfigPanel />
-    </>
-  )
+  classify(schema: TypeSignature, data: unknown, path: string): FieldClassification[] {
+    // Use pre-compiled patterns for matching
+  }
 }
 ```
 
-**Layout preset selector UI:**
+**Memoization targets:**
+
+1. **Pattern compilation:** Compile regexes once at initialization
+2. **Classification results:** Cache per field path
+3. **Grouping analysis:** Cache per object path
+
+**Source:** [React 19 compiler optimizations](https://dev.co/react/memoization) show that manual memoization is less critical with new compiler, but still beneficial for expensive non-React computations.
+
+**Confidence:** HIGH - Standard optimization for expensive operations.
+
+## Integration with Existing Components
+
+### DynamicRenderer.tsx Modifications
+
+**Current (lines 24-44):**
 
 ```typescript
-// NEW: components/config/LayoutPresetSelector.tsx
-export function LayoutPresetSelector() {
-  const { layoutPreset, setLayoutPreset } = useConfigStore()
+function getDefaultTypeName(schema: TypeSignature): string {
+  if (schema.kind === 'array' && schema.items.kind === 'object') return 'table'
+  // ... structural selection only
+}
 
-  return (
-    <div className="space-y-2">
-      <label className="text-sm font-medium">Layout</label>
-      <div className="flex gap-2">
-        <button
-          onClick={() => setLayoutPreset('auto')}
-          className={`px-3 py-2 rounded ${layoutPreset === 'auto' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-        >
-          Auto
-        </button>
-        <button
-          onClick={() => setLayoutPreset('sidebar')}
-          className={`px-3 py-2 rounded ${layoutPreset === 'sidebar' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-        >
-          Sidebar
-        </button>
-        <button
-          onClick={() => setLayoutPreset('centered')}
-          className={`px-3 py-2 rounded ${layoutPreset === 'centered' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-        >
-          Centered
-        </button>
-      </div>
-      <p className="text-xs text-gray-500">
-        Auto: Sidebar for 2+ endpoints, centered otherwise
-      </p>
-    </div>
-  )
+function getAvailableTypes(schema: TypeSignature): string[] {
+  if (schema.kind === 'array' && schema.items.kind === 'object') {
+    return ['table', 'card-list', 'list', 'gallery', 'timeline', 'stats', 'json']
+  }
+  // ... all available types
 }
 ```
 
-**Why this approach:**
-- **Preserves existing logic:** Auto mode maintains current behavior (no breaking change)
-- **User override capability:** Sidebar/Centered modes let user force a layout
-- **Minimal modification:** App.tsx only changes layout selection logic, not layout structure
-- **Persistent preference:** Layout choice saved in configStore
+**After (smart defaults):**
 
-**Build order:**
-1. Add `LayoutPreset` type and `layoutPreset` state to configStore
-2. Add `setLayoutPreset` method to configStore
-3. Update configStore persist config to include `layoutPreset`
-4. Modify App.tsx layout selection logic
-5. Create `LayoutPresetSelector` component
-6. Add selector to ConfigPanel
+```typescript
+function getSmartDefaultTypeName(
+  schema: TypeSignature,
+  path: string,
+  metadata: AnalysisMetadata | null
+): string {
+  // Try smart analysis first
+  if (metadata) {
+    const suggestion = metadata.suggestions.find(s => s.fieldPath === path)
+    if (suggestion && suggestion.confidence !== 'low') {
+      return suggestion.suggestedType
+    }
+  }
 
-**Architectural benefit:**
-- Existing layout code unchanged (no risk of breaking existing functionality)
-- Layout preference treated as configuration (consistent with other settings)
-- Easy to extend with additional layouts later (e.g., 'compact', 'wide')
+  // Fall back to structural default
+  return getDefaultTypeName(schema)
+}
 
-## New Components/Services
-
-### Services (Data Layer)
-
-| File | Purpose | Exports |
-|------|---------|---------|
-| `services/querystring/parser.ts` | Parse URL query strings to ParsedParameter[] | `parseQueryString(url: string): ParsedParameter[]` |
-| `services/querystring/inferrer.ts` | Infer parameter types from values | `inferTypeFromValue(value: string): ParameterSchema` |
-| `services/querystring/__tests__/parser.test.ts` | Unit tests for query string parsing | Test suite |
-| `services/querystring/__tests__/inferrer.test.ts` | Unit tests for type inference | Test suite |
-
-### Components (UI Layer)
-
-| File | Purpose | Props |
-|------|---------|-------|
-| `components/config/LayoutPresetSelector.tsx` | UI for switching layout presets | None (uses configStore) |
-| `components/config/ParameterHistory.tsx` | (Optional) UI for viewing/clearing persisted params | `endpoint: string` |
-
-### Types
-
-| File | Purpose | Exports |
-|------|---------|---------|
-| `types/querystring.ts` | (Optional) Type definitions if needed | Query string-specific types |
-
-## Modified Components
-
-### Critical Path (Must Modify)
-
-| File | Modification | Rationale |
-|------|-------------|-----------|
-| `store/configStore.ts` | Add `parameterDefaults` and `layoutPreset` state + methods | Persistence for parameter values and layout preference |
-| `hooks/useAPIFetch.ts` | Detect query strings, call `parseQueryString()` | Entry point for query string parsing |
-| `App.tsx` | Update layout selection logic to use `layoutPreset` | Enable layout switching |
-| `components/forms/ParameterForm.tsx` | Load initial values from configStore, persist on submit | Parameter persistence |
-| `types/config.ts` | Add `LayoutPreset` type and extend `ConfigState` | Type safety for new features |
-
-### Optional Enhancements
-
-| File | Modification | Rationale |
-|------|-------------|-----------|
-| `components/config/ConfigPanel.tsx` | Add LayoutPresetSelector and ParameterHistory sections | UI for new features |
-| `components/forms/ParameterInput.tsx` | Add visual indicator for persisted values | User feedback |
-
-## Data Flow
-
-### Query String Parsing Flow
-
-```
-User enters URL with query string
-  ↓
-URLInput component → setUrl() → appStore.url
-  ↓
-useAPIFetch.fetchAndInfer(url)
-  ↓
-  ├─ Detect query string: parseQueryString(url)
-  │    ↓
-  │    ├─ Parse URLSearchParams
-  │    ├─ inferTypeFromValue() for each param
-  │    └─ Return ParsedParameter[]
-  │
-  ├─ Create mock ParsedSpec with parsed parameters
-  │    spec = {
-  │      title: 'Query String Parameters',
-  │      operations: [{
-  │        path: pathname,
-  │        parameters: parsedParams  ← ParsedParameter[]
-  │      }]
-  │    }
-  │
-  └─ appStore.specSuccess(spec)
-       ↓
-App.tsx renders ParameterForm
-  ↓
-ParameterForm loads defaults from configStore.parameterDefaults[endpoint]
-  ↓
-User modifies values, submits
-  ↓
-ParameterForm.handleSubmit()
-  ├─ Persist values: configStore.setParameterDefault()
-  └─ Fetch API: fetchOperation()
+// getAvailableTypes() unchanged - all components remain available
 ```
 
-### Layout Switching Flow
+**Changes needed:**
 
-```
-User opens ConfigPanel
-  ↓
-LayoutPresetSelector displays current layoutPreset
-  ↓
-User clicks "Sidebar" button
-  ↓
-configStore.setLayoutPreset('sidebar')
-  ↓
-  ├─ Update state: layoutPreset = 'sidebar'
-  ├─ Persist to localStorage (Zustand persist middleware)
-  └─ Trigger React re-render
-       ↓
-App.tsx re-renders
-  ↓
-shouldShowSidebar = layoutPreset === 'sidebar' ? true : ...
-  ↓
-Render sidebar layout (even if only 1 operation)
+1. Import `analysisMetadata` from appStore
+2. Replace `getDefaultTypeName()` calls with `getSmartDefaultTypeName()`
+3. Pass `path` and `metadata` to new function
+
+**Lines affected:** ~5 lines modified, ~15 lines added
+
+**Risk:** LOW - Only changes default selection, doesn't affect override mechanism
+
+### DetailRenderer.tsx Modifications
+
+**Current (lines 149-180):**
+
+```typescript
+// View mode: manual field grouping
+const primaryFields: Array<[string, FieldDefinition]> = []
+const regularFields: Array<[string, FieldDefinition]> = []
+const imageFields: Array<[string, FieldDefinition]> = []
+const metaFields: Array<[string, FieldDefinition]> = []
+const nestedFields: Array<[string, FieldDefinition]> = []
+
+for (const field of visibleFields) {
+  const [fieldName, fieldDef] = field
+
+  if (isPrimaryField(fieldName)) {
+    primaryFields.push(field)
+  } else if (isMetadataField(fieldName)) {
+    metaFields.push(field)
+  }
+  // ... manual classification
+}
 ```
 
-### Parameter Persistence Flow
+**After (smart grouping):**
 
-```
-First visit to endpoint
-  ↓
-ParameterForm initializes
-  ↓
-configStore.getParameterDefaults(endpoint) → {}
-  ↓
-Use schema.default or schema.example
-  ↓
-User fills form, submits
-  ↓
-configStore.setParameterDefault(endpoint, paramName, value)
-  ↓
-Values saved to localStorage
+```typescript
+// View mode: use analysis metadata for grouping
+const metadata = appStore.analysisMetadata
+const grouping = metadata?.groupings
 
-Second visit to same endpoint
-  ↓
-ParameterForm initializes
-  ↓
-configStore.getParameterDefaults(endpoint) → { "limit": "20", "sort": "name" }
-  ↓
-Form pre-filled with previous values
+if (grouping?.strategy === 'tabs') {
+  // Render TabsRenderer with groups
+  return <TabsRenderer groups={grouping.groups} data={data} schema={schema} />
+}
+
+if (grouping?.strategy === 'sections') {
+  // Render with section headers
+  return renderSections(grouping.groups, data, schema)
+}
+
+// Fall back to existing flat layout
+const { primaryFields, regularFields, imageFields, metaFields, nestedFields }
+  = groupFieldsByMetadata(visibleFields, metadata)
 ```
+
+**Changes needed:**
+
+1. Import `analysisMetadata` from appStore
+2. Check for `tabs` or `sections` strategy
+3. Conditionally render TabsRenderer (NEW component) or SplitRenderer (existing)
+4. Fall back to existing flat layout if no grouping
+
+**Lines affected:** ~30 lines modified, ~50 lines added (TabsRenderer)
+
+**Risk:** MEDIUM - Significant behavior change, needs careful testing
+
+### appStore.ts Modifications
+
+**Current (lines 14-15, 47):**
+
+```typescript
+interface AppState {
+  data: unknown
+  schema: UnifiedSchema | null
+
+  fetchSuccess: (data: unknown, schema: UnifiedSchema) => void
+}
+```
+
+**After:**
+
+```typescript
+import type { AnalysisMetadata } from '../types/analysis'
+
+interface AppState {
+  data: unknown
+  schema: UnifiedSchema | null
+  analysisMetadata: AnalysisMetadata | null  // NEW
+
+  fetchSuccess: (
+    data: unknown,
+    schema: UnifiedSchema,
+    metadata: AnalysisMetadata  // NEW parameter
+  ) => void
+}
+
+// In implementation
+fetchSuccess: (data, schema, metadata) => set({
+  loading: false,
+  data,
+  schema,
+  analysisMetadata: metadata,  // Store metadata
+  error: null
+})
+```
+
+**Changes needed:**
+
+1. Add `analysisMetadata` field to state
+2. Add `metadata` parameter to `fetchSuccess()`
+3. Clear metadata on `startFetch()` and `reset()`
+
+**Lines affected:** ~5 lines modified
+
+**Risk:** LOW - Additive change, doesn't break existing code
+
+### Pipeline Service Modifications
+
+**Current (approximate, based on fetchSuccess call pattern):**
+
+```typescript
+// In some pipeline service or component
+const response = await fetch(url)
+const data = await response.json()
+const schema = inferSchema(data)
+appStore.fetchSuccess(data, schema)
+```
+
+**After:**
+
+```typescript
+import { analyzeFields } from '../services/analysis/fieldAnalyzer'
+
+const response = await fetch(url)
+const data = await response.json()
+const schema = inferSchema(data)
+const metadata = analyzeFields(schema.rootType, data)  // NEW
+appStore.fetchSuccess(data, schema, metadata)  // MODIFIED
+```
+
+**Changes needed:**
+
+1. Import `analyzeFields()`
+2. Call `analyzeFields()` after schema inference
+3. Pass metadata to `fetchSuccess()`
+
+**Lines affected:** ~3 lines added per pipeline entry point
+
+**Risk:** LOW - Analysis runs after schema inference, doesn't affect existing flow
+
+## Component Modification vs New Component Creation
+
+### Modified Components
+
+| Component | Type | Changes | Risk | Lines Changed |
+|-----------|------|---------|------|---------------|
+| `appStore.ts` | MODIFY | Add `analysisMetadata` field | LOW | ~5 |
+| `DynamicRenderer.tsx` | MODIFY | Use smart defaults | LOW | ~20 |
+| `DetailRenderer.tsx` | MODIFY | Use metadata for grouping | MEDIUM | ~30 |
+| Pipeline services | MODIFY | Call `analyzeFields()` | LOW | ~3 each |
+
+### New Components
+
+| Component | Type | Purpose | Complexity | Lines (est.) |
+|-----------|------|---------|------------|--------------|
+| `fieldAnalyzer.ts` | NEW | Analysis orchestrator | LOW | ~50 |
+| `fieldClassifier.ts` | NEW | Pattern matching | MEDIUM | ~150 |
+| `groupingAnalyzer.ts` | NEW | Tab/section detection | MEDIUM | ~100 |
+| `componentSuggester.ts` | NEW | Component mapping | LOW | ~80 |
+| `fieldPatterns.ts` | NEW | Shared pattern constants | LOW | ~30 |
+| `analysis.ts` (types) | NEW | TypeScript types | LOW | ~50 |
+
+**Total new code:** ~460 lines (analysis layer)
+**Total modified code:** ~60 lines (integration)
+
+**Build order rationale:** New analysis layer is **independent** from modifications. Can be built and tested in isolation before integration.
 
 ## Build Order
 
-Suggested implementation sequence that respects dependencies:
+### Phase 1: Analysis Layer (Independent)
 
-### Phase 1: Query String Parsing (Foundation)
+Build new services without touching existing components. Test in isolation.
 
-**Goal:** Parse query strings into ParsedParameter[] format
+**Tasks:**
 
-1. Create `services/querystring/inferrer.ts`
-   - Implement `inferTypeFromValue()` with basic types (string, number, boolean)
-   - Add format detection (date, email, uri)
-   - Write unit tests
+1. Create `src/types/analysis.ts` with type definitions
+2. Create `src/utils/fieldPatterns.ts` with pattern constants
+3. Create `src/services/analysis/fieldClassifier.ts`
+4. Create `src/services/analysis/groupingAnalyzer.ts`
+5. Create `src/services/analysis/componentSuggester.ts`
+6. Create `src/services/analysis/fieldAnalyzer.ts` (orchestrator)
 
-2. Create `services/querystring/parser.ts`
-   - Implement `parseQueryString()` using URLSearchParams
-   - Call inferrer for each parameter
-   - Handle multi-value params (enum detection)
-   - Write unit tests
+**Testing:** Unit tests for each classifier, mock schema + data
 
-3. Modify `hooks/useAPIFetch.ts`
-   - Add query string detection heuristic
-   - Call `parseQueryString()` when query string detected
-   - Create mock ParsedSpec with parsed parameters
-   - Store in appStore
+**Deliverable:** Working `analyzeFields()` function with comprehensive tests
 
-**Validation:** Enter URL with query string → See parameter form with inferred types
+**Dependencies:** None - pure functions operating on schema + data
 
-### Phase 2: Parameter Persistence
+### Phase 2: Storage Integration (Low Risk)
 
-**Goal:** Remember parameter values across sessions
+Add metadata storage without using it.
 
-4. Extend `types/config.ts`
-   - Add `parameterDefaults: Record<string, Record<string, string>>` to ConfigState
+**Tasks:**
 
-5. Modify `store/configStore.ts`
-   - Add `parameterDefaults` state
-   - Implement `setParameterDefault()`, `getParameterDefaults()`, `clearParameterDefaults()`
-   - Update `partialize` to include `parameterDefaults`
-   - Increment version to 3 for migration
+1. Modify `appStore.ts` to add `analysisMetadata` field
+2. Modify pipeline services to call `analyzeFields()` and store result
+3. Verify metadata appears in state (React DevTools inspection)
 
-6. Modify `components/forms/ParameterForm.tsx`
-   - Add `endpoint: string` prop
-   - Load initial values from `configStore.getParameterDefaults(endpoint)`
-   - Persist values on submit via `setParameterDefault()`
+**Testing:** Integration test that metadata is populated correctly
 
-**Validation:** Submit parameters → Reload page → Form pre-filled with previous values
+**Deliverable:** Metadata stored in appStore, visible but unused
 
-### Phase 3: Layout System
+**Dependencies:** Phase 1 complete
 
-**Goal:** Allow user to switch between sidebar and centered layouts
+### Phase 3: Smart Default Selection (Medium Risk)
 
-7. Extend `types/config.ts`
-   - Add `LayoutPreset` type
-   - Add `layoutPreset: LayoutPreset` to ConfigState
+Use metadata for component selection, preserve overrides.
 
-8. Modify `store/configStore.ts`
-   - Add `layoutPreset` state (default: 'auto')
-   - Implement `setLayoutPreset()`
-   - Update `partialize` to include `layoutPreset`
+**Tasks:**
 
-9. Modify `App.tsx`
-   - Calculate `shouldShowSidebar` based on `layoutPreset` + data
-   - Keep existing layout structures unchanged
+1. Modify `DynamicRenderer.tsx` to use `getSmartDefaultTypeName()`
+2. Test that smart defaults work
+3. Test that user overrides still work
+4. Test fallback to structural defaults when metadata missing
 
-10. Create `components/config/LayoutPresetSelector.tsx`
-    - Radio buttons for auto/sidebar/centered
-    - Visual preview icons
-    - Help text explaining each mode
+**Testing:** E2E tests with various API responses
 
-11. Modify `components/config/ConfigPanel.tsx`
-    - Add LayoutPresetSelector section
+**Deliverable:** Smart component selection working, overrides preserved
 
-**Validation:** Change layout preset → Layout switches immediately and persists across reload
+**Dependencies:** Phase 2 complete
 
-### Phase 4: Polish & Optional Enhancements
+### Phase 4: Smart Grouping (High Risk)
 
-12. (Optional) Create `components/config/ParameterHistory.tsx`
-    - Show saved parameter values for current endpoint
-    - Allow clearing individual parameters or all defaults
+Use metadata for tab/section organization in DetailRenderer.
 
-13. (Optional) Enhance `components/forms/ParameterInput.tsx`
-    - Visual indicator (badge/icon) for parameters with persisted values
-    - Tooltip showing last submitted value
+**Tasks:**
 
-14. (Optional) Add enum detection for repeated query params
-    - Extend parser to detect `?tag=foo&tag=bar` → enum schema
+1. Create `TabsRenderer.tsx` if using tabs strategy
+2. Modify `DetailRenderer.tsx` to check grouping strategy
+3. Conditionally render tabs/sections based on metadata
+4. Fall back to flat layout when no grouping
 
-## Architectural Patterns
+**Testing:** E2E tests with complex objects
 
-### Pattern 1: Format Convergence
+**Deliverable:** Automatic tab/section organization working
 
-**What:** Convert diverse input formats to unified internal representation early in the pipeline
+**Dependencies:** Phase 3 complete
 
-**Where:** Query string parsing produces ParsedParameter[], same as OpenAPI parsing
-
-**Why:**
-- Downstream components don't need to know data source
-- Eliminates conditional rendering logic
-- Makes adding new parameter sources trivial (GraphQL introspection, gRPC reflection, etc.)
-
-**Example:**
-```typescript
-// Good: Unified format
-const params = isQueryString(url)
-  ? parseQueryString(url)  // → ParsedParameter[]
-  : parseOpenAPIParams(spec)  // → ParsedParameter[]
-
-renderForm(params)  // Same rendering code
-
-// Bad: Source-specific rendering
-if (isQueryString(url)) {
-  renderQueryStringForm(url)
-} else {
-  renderOpenAPIForm(spec)
-}
-```
-
-### Pattern 2: Store Separation by Volatility
-
-**What:** Session-only data in appStore, persistent preferences in configStore
-
-**Where:**
-- appStore: loading, error, data, schema (runtime state)
-- configStore: parameterDefaults, layoutPreset, fieldConfigs (user preferences)
-
-**Why:**
-- Clear mental model: "What should survive a refresh?"
-- Prevents accidental persistence of sensitive data (API responses)
-- Makes state serialization predictable
-
-**Example:**
-```typescript
-// Good: Volatile data in appStore
-const { data, loading, error } = useAppStore()
-
-// Good: Persistent preferences in configStore
-const { layoutPreset, parameterDefaults } = useConfigStore()
-
-// Bad: Mixing persistence models
-const { data, layoutPreset } = useMixedStore()  // Confusing!
-```
-
-### Pattern 3: Derived Layout State
-
-**What:** Layout choice is computed from preference + data, not stored independently
-
-**Where:** App.tsx calculates `shouldShowSidebar` from `layoutPreset` and `parsedSpec`
-
-**Why:**
-- Single source of truth (layoutPreset in configStore)
-- Auto mode can intelligently choose layout based on data
-- No sync issues between stored layout and actual layout
-
-**Example:**
-```typescript
-// Good: Derived state
-const shouldShowSidebar =
-  layoutPreset === 'sidebar' ? true :
-  layoutPreset === 'centered' ? false :
-  hasMultipleOperations  // Auto mode
-
-// Bad: Independent state
-const [layoutPreset, setLayoutPreset] = useState('auto')
-const [actualLayout, setActualLayout] = useState('sidebar')  // Can desync!
-```
-
-### Pattern 4: Progressive Type Inference
-
-**What:** Start with basic type detection, refine with additional patterns over time
-
-**Where:** `inferTypeFromValue()` has clear extension points for new patterns
-
-**Why:**
-- Delivers value quickly (basic inference works day 1)
-- Easy to add specialized detection (UUID, ISO timestamps, etc.)
-- Testable incrementally (each pattern is independent)
-
-**Example:**
-```typescript
-// Good: Extensible inference
-function inferTypeFromValue(value: string): ParameterSchema {
-  if (isBooleanPattern(value)) return { type: 'boolean' }
-  if (isNumberPattern(value)) return { type: 'number' }
-  if (isDatePattern(value)) return { type: 'string', format: 'date' }
-  if (isEmailPattern(value)) return { type: 'string', format: 'email' }
-  // Easy to add:
-  // if (isUUIDPattern(value)) return { type: 'string', format: 'uuid' }
-  return { type: 'string' }
-}
-
-// Bad: Monolithic inference
-function inferType(value) {
-  // 500 lines of regex spaghetti
-}
-```
-
-### Pattern 5: Persistence Granularity
-
-**What:** Persist at endpoint granularity, not globally
-
-**Where:** `parameterDefaults` keyed by endpoint path
-
-**Why:**
-- Different endpoints often have same parameter name but different semantics (limit, offset)
-- Prevents wrong defaults being applied to unrelated endpoints
-- Allows per-endpoint clearing of history
-
-**Example:**
-```typescript
-// Good: Per-endpoint persistence
-parameterDefaults: {
-  "/users": { "limit": "20", "sort": "name" },
-  "/posts": { "limit": "10", "sort": "date" }
-}
-
-// Bad: Global persistence
-parameterDefaults: {
-  "limit": "20",  // Which endpoint is this for?
-  "sort": "name"  // Could be wrong for /posts
-}
-```
+**Risk mitigation:** Start with `sections` strategy (simpler) before `tabs` strategy.
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Parallel Rendering Paths
+### Anti-Pattern 1: Analysis During Render
 
-**What:** Separate rendering logic for query string vs. OpenAPI parameters
+**What goes wrong:** Calling `analyzeFields()` inside DynamicRenderer causes analysis to run on every render, killing performance.
 
-**Why bad:**
-- Code duplication
-- Behavior divergence over time
-- Testing burden doubles
+**Why it happens:** Temptation to keep analysis "close" to where it's used.
 
-**Instead:** Use format convergence pattern — parse both sources to ParsedParameter[]
+**Prevention:** Analysis must happen **once per response** in pipeline, **before** components render. Store result in appStore.
 
-**Detection:** If you see `if (isQueryString) { renderQueryStringForm() }` you've violated this
+**Detection:** Check React DevTools profiler for expensive computations in DynamicRenderer.
 
-### Anti-Pattern 2: Premature Type Detection
+### Anti-Pattern 2: Overriding User Overrides
 
-**What:** Complex heuristics trying to detect every possible type on day 1
+**What goes wrong:** Smart defaults accidentally overwrite explicit user choices.
 
-**Why bad:**
-- Over-engineering
-- High false positive rate (e.g., "123" could be string ID, not number)
-- Complexity blocks shipping
+**Why it happens:** Not checking configStore before applying smart defaults.
 
-**Instead:** Start with conservative inference (boolean, number, string), add patterns incrementally based on real usage
+**Prevention:** Always check `fieldConfigs[path]?.componentType` **before** using smart defaults. If override exists, use it and ignore defaults entirely.
 
-**Detection:** If your inferrer has >10 type patterns before shipping v1, you're over-engineering
+**Detection:** Manual test: Set override, trigger re-analysis, verify override persists.
 
-### Anti-Pattern 3: Layout State Duplication
+### Anti-Pattern 3: Blocking Rendering on Analysis
 
-**What:** Storing both `layoutPreset` and `currentLayout` separately
+**What goes wrong:** Waiting for analysis to complete before showing any UI.
 
-**Why bad:**
-- Sync issues (what if they disagree?)
-- Unclear source of truth
-- Extra state to manage
+**Why it happens:** Misunderstanding of when analysis happens.
 
-**Instead:** Store preference only, derive actual layout from preference + data
+**Prevention:** Analysis is synchronous and fast (<10ms for typical responses). Run immediately after schema inference, no async/await needed. If analysis fails, fall back to structural defaults.
 
-**Detection:** If you have two pieces of state that both influence layout, you've duplicated
+**Detection:** Network throttling test - UI should appear instantly even with slow network.
 
-### Anti-Pattern 4: Mixing Parameter Sources in Store
+### Anti-Pattern 4: Too-Specific Pattern Matching
 
-**What:** Storing query string parameters differently from OpenAPI parameters
+**What goes wrong:** Classification patterns are brittle, break on slight variations.
 
-**Why bad:**
-- Components need to know source to render correctly
-- Can't switch between sources without data migration
-- Violates format convergence pattern
+**Example:** Pattern `/^reviews$/` matches "reviews" but not "Reviews", "customer_reviews", "product_reviews".
 
-**Instead:** Store all parameters as ParsedParameter[] regardless of source
+**Why it happens:** Insufficient testing with diverse field names.
 
-**Detection:** If appStore has separate fields for queryParams and openapiParams, you've violated this
+**Prevention:** Use case-insensitive patterns with flexible matching. Test against diverse real-world APIs.
 
-### Anti-Pattern 5: Global Parameter Persistence
+**Detection:** Test classification with field names from 10+ different APIs.
 
-**What:** Persisting parameter values globally, not per-endpoint
+### Anti-Pattern 5: Analysis Without Fallbacks
 
-**Why bad:**
-- Same parameter name means different things on different endpoints
-- Wrong defaults applied when switching endpoints
-- No way to clear per-endpoint history
+**What goes wrong:** System breaks when analysis returns no suggestions.
 
-**Instead:** Key persistence by endpoint path
+**Why it happens:** Assuming analysis always succeeds.
 
-**Detection:** If clearing parameter history affects all endpoints, you've gone global incorrectly
+**Prevention:** Every analysis function must return a valid result. If no pattern matches, return `category: 'regular'` and `confidence: 'low'`. Rendering code must handle missing metadata gracefully.
 
-## Testing Strategy
+**Detection:** Test with unexpected data structures (empty objects, weird field names).
 
-### Unit Tests
+## Tab/Section Grouping Logic
 
-**Query String Parser:**
-```typescript
-describe('parseQueryString', () => {
-  it('parses simple query string', () => {
-    const params = parseQueryString('https://api.example.com/users?limit=10')
-    expect(params).toMatchObject([
-      { name: 'limit', schema: { type: 'integer', example: '10' } }
-    ])
-  })
+### When to Create Tabs vs Sections
 
-  it('detects boolean values', () => {
-    const params = parseQueryString('https://api.example.com/users?active=true')
-    expect(params[0].schema.type).toBe('boolean')
-  })
+**Decision tree:**
 
-  it('handles multi-value params as enum', () => {
-    const params = parseQueryString('https://api.example.com/users?tag=foo&tag=bar')
-    expect(params[0].schema.enum).toEqual(['foo', 'bar'])
-  })
-})
+```
+Object with N field categories:
+
+If N >= 5 AND 3+ categories have 2+ fields → tabs
+Else if N >= 3 → sections
+Else → flat (no grouping)
+
+Special cases:
+- If nested collections present → always sections (one per collection)
+- If only 1-2 total fields → always flat
 ```
 
-**Type Inferrer:**
-```typescript
-describe('inferTypeFromValue', () => {
-  it('infers boolean from true/false', () => {
-    expect(inferTypeFromValue('true')).toMatchObject({ type: 'boolean' })
-  })
+**Tab examples:**
 
-  it('infers integer from digits', () => {
-    expect(inferTypeFromValue('123')).toMatchObject({ type: 'integer' })
-  })
+```
+Product object with:
+- 2 primary fields (name, brand)
+- 1 description
+- 5 spec fields (color, size, weight, material, origin)
+- 3 image URLs
+- 8 reviews
+- 2 rating fields (average_rating, rating_count)
+- 3 metadata fields
 
-  it('infers date format from ISO date', () => {
-    expect(inferTypeFromValue('2026-02-05')).toMatchObject({
-      type: 'string',
-      format: 'date'
-    })
-  })
-})
+Categories present: 7
+Groups: "Overview" (primary + description), "Specifications" (specs), "Gallery" (images), "Reviews" (reviews + ratings), "Details" (metadata)
+
+Result: tabs (5 groups)
 ```
 
-**ConfigStore:**
-```typescript
-describe('configStore parameter persistence', () => {
-  it('persists parameter defaults', () => {
-    const { setParameterDefault, getParameterDefaults } = useConfigStore.getState()
+**Section examples:**
 
-    setParameterDefault('/users', 'limit', '20')
-    const defaults = getParameterDefaults('/users')
+```
+User object with:
+- 2 primary fields (name, email)
+- 3 regular fields (phone, address, bio)
+- 2 metadata fields (created_at, last_login)
 
-    expect(defaults).toEqual({ limit: '20' })
-  })
+Categories present: 3
+Groups: "Profile" (primary + regular), "Metadata" (metadata)
 
-  it('isolates defaults by endpoint', () => {
-    const { setParameterDefault, getParameterDefaults } = useConfigStore.getState()
-
-    setParameterDefault('/users', 'limit', '20')
-    setParameterDefault('/posts', 'limit', '10')
-
-    expect(getParameterDefaults('/users').limit).toBe('20')
-    expect(getParameterDefaults('/posts').limit).toBe('10')
-  })
-})
+Result: sections (2 groups)
 ```
 
-### Integration Tests
+**Flat examples:**
 
-**Query String to Form Rendering:**
-```typescript
-describe('Query string to parameter form', () => {
-  it('renders parameter form from query string', async () => {
-    const { fetchAndInfer } = useAPIFetch()
+```
+Simple object with:
+- 1 primary field (name)
+- 2 regular fields (value, status)
 
-    await fetchAndInfer('https://api.example.com/users?limit=10&sort=name')
-
-    const { parsedSpec } = useAppStore.getState()
-    expect(parsedSpec.operations[0].parameters).toHaveLength(2)
-    expect(parsedSpec.operations[0].parameters[0].name).toBe('limit')
-  })
-})
+Categories present: 2
+Result: flat (no grouping needed)
 ```
 
-**Parameter Persistence:**
-```typescript
-describe('Parameter persistence across sessions', () => {
-  it('pre-fills form with previous values', () => {
-    const { setParameterDefault } = useConfigStore.getState()
-    setParameterDefault('/users', 'limit', '50')
+### Tab Priority Order
 
-    render(<ParameterForm endpoint="/users" parameters={mockParams} onSubmit={jest.fn()} />)
-
-    expect(screen.getByDisplayValue('50')).toBeInTheDocument()
-  })
-})
+```
+1. Overview (primary + description + regular)
+2. Specifications (spec fields)
+3. Reviews (review + rating fields)
+4. Gallery (image fields)
+5. Details/Metadata (metadata fields)
 ```
 
-**Layout Switching:**
-```typescript
-describe('Layout preset switching', () => {
-  it('forces sidebar layout when preset is sidebar', () => {
-    const { setLayoutPreset } = useConfigStore.getState()
-    setLayoutPreset('sidebar')
+**Rationale:** Most important information first, system fields last.
 
-    render(<App />)
+### Section Headers
 
-    expect(screen.getByRole('navigation')).toBeInTheDocument()  // Sidebar present
-  })
-})
-```
-
-### E2E Tests
-
-**Full Query String Flow:**
-```typescript
-test('User enters URL with query string, sees form, submits, values persist', async () => {
-  // Enter URL with query string
-  await userEvent.type(screen.getByRole('textbox'), 'https://api.example.com/users?limit=10')
-  await userEvent.click(screen.getByText('Fetch'))
-
-  // Verify form rendered with inferred types
-  expect(screen.getByLabelText('limit')).toHaveAttribute('type', 'number')
-
-  // Change value and submit
-  await userEvent.clear(screen.getByLabelText('limit'))
-  await userEvent.type(screen.getByLabelText('limit'), '20')
-  await userEvent.click(screen.getByText('Fetch Data'))
-
-  // Reload page
-  window.location.reload()
-
-  // Verify value persisted
-  expect(screen.getByDisplayValue('20')).toBeInTheDocument()
-})
-```
-
-## Migration Strategy
-
-### ConfigStore Version Migration
-
-Since we're adding new fields to configStore, increment the version and handle migration:
+For `sections` strategy, render with visual separators:
 
 ```typescript
-// store/configStore.ts
-{
-  name: 'api2ui-config',
-  version: 3,  // Increment from 2 to 3
-  storage: createJSONStorage(() => localStorage),
-  partialize: (state) => ({
-    fieldConfigs: state.fieldConfigs,
-    drilldownMode: state.drilldownMode,
-    globalTheme: state.globalTheme,
-    styleOverrides: state.styleOverrides,
-    endpointOverrides: state.endpointOverrides,
-    paginationConfigs: state.paginationConfigs,
-    parameterDefaults: state.parameterDefaults,  // NEW
-    layoutPreset: state.layoutPreset,  // NEW
-  }),
-  migrate: (persistedState: unknown, version: number) => {
-    if (version < 3) {
-      // Add default values for new fields
-      return {
-        ...persistedState,
-        parameterDefaults: {},
-        layoutPreset: 'auto',
-      }
-    }
-    return persistedState
-  },
-}
+<div>
+  <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-3">
+    {group.label}
+  </h3>
+  {/* Fields in this group */}
+  <div className="border-t border-gray-200 mt-4" />
+</div>
 ```
 
-### Backwards Compatibility
+Follows existing pattern in DetailRenderer.tsx line 558.
 
-**ParameterForm signature:**
-Current signature: `ParameterForm({ parameters, onSubmit, loading })`
-New signature: `ParameterForm({ parameters, endpoint, onSubmit, loading })`
+## Field Importance Hierarchy
 
-Make `endpoint` optional to maintain backwards compatibility:
+### Priority Levels
 
-```typescript
-interface ParameterFormProps {
-  parameters: ParsedParameter[]
-  endpoint?: string  // Optional — defaults to pathname if not provided
-  onSubmit: (values: Record<string, string>) => void
-  loading?: boolean
-}
+| Level | Categories | Display Treatment |
+|-------|-----------|-------------------|
+| Hero | `primary` + hero `image` | Large text, prominent position |
+| Primary | `description`, `price`, `rating` | Normal emphasis, above fold |
+| Secondary | `regular`, `spec`, `nested-collection` | Standard display |
+| Tertiary | `metadata` | De-emphasized, small text, footer or hidden |
+
+### Visual Hierarchy Rules
+
+**Hero treatment:**
+- Font: text-2xl font-bold
+- Position: Top of object, before other fields
+- Hero image: Full-width above text
+
+**Primary treatment:**
+- Font: text-lg font-semibold
+- Position: First section/tab
+
+**Secondary treatment:**
+- Font: text-base
+- Position: Main content area
+
+**Tertiary treatment:**
+- Font: text-sm text-gray-500
+- Position: Footer section or hidden by default
+
+Follows existing typography hierarchy in DetailRenderer.tsx lines 223-231.
+
+## Architecture Diagrams
+
+### Data Flow: Complete Pipeline
+
+```
+┌─────────────────┐
+│  API Response   │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Schema Inference│ (existing)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Field Analysis  │ (NEW)
+│ - Classify      │
+│ - Group         │
+│ - Suggest       │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│   appStore      │
+│ - data          │
+│ - schema        │
+│ - metadata ←NEW │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ DynamicRenderer │
+│ - Read metadata │
+│ - Smart default │
+│ - Check override│
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Component Render│
+└─────────────────┘
 ```
 
-If `endpoint` not provided, derive from URL:
-```typescript
-const endpoint = props.endpoint ?? window.location.pathname
+### Component Dependencies
+
+```
+DynamicRenderer.tsx
+    │
+    ├─→ appStore (read metadata)
+    ├─→ configStore (read overrides)
+    ├─→ ComponentRegistry (get component)
+    └─→ getSmartDefaultTypeName()
+            │
+            └─→ AnalysisMetadata (from appStore)
+
+DetailRenderer.tsx
+    │
+    ├─→ appStore (read metadata for grouping)
+    ├─→ configStore (read field configs)
+    └─→ Conditionally:
+        ├─→ TabsRenderer (if tabs strategy)
+        ├─→ SectionRenderer (if sections strategy)
+        └─→ Flat layout (if no grouping)
+
+Pipeline Service
+    │
+    ├─→ inferSchema() (existing)
+    ├─→ analyzeFields() (NEW)
+    └─→ appStore.fetchSuccess()
 ```
 
-## Open Questions
+### Analysis Layer Internal
 
-Questions to resolve during implementation:
-
-1. **Type inference accuracy:** Should we infer types conservatively (fewer false positives) or aggressively (more convenience)?
-   - **Recommendation:** Start conservative, add patterns based on user feedback
-
-2. **Parameter history UI:** Should we expose parameter history in ConfigPanel, or keep it implicit (just pre-fill)?
-   - **Recommendation:** Start implicit, add UI if users request it
-
-3. **Layout preset icons:** What visual metaphor for layout presets (icons, previews, labels)?
-   - **Recommendation:** Icons + labels (clearest for all users)
-
-4. **Enum detection threshold:** How many values before treating repeated param as enum vs. array?
-   - **Recommendation:** 2+ distinct values = enum (simple rule)
-
-5. **Parameter clearing:** Should users be able to clear persisted values individually or only all at once?
-   - **Recommendation:** Start with all-at-once (simpler), add per-param clearing if requested
+```
+analyzeFields()
+    │
+    ├─→ FieldClassifier.classify()
+    │       │
+    │       ├─→ fieldPatterns.ts (pattern matching)
+    │       └─→ imageDetection.ts (URL validation)
+    │
+    ├─→ GroupingAnalyzer.analyze()
+    │       │
+    │       └─→ Detect tabs/sections from categories
+    │
+    └─→ ComponentSuggester.suggest()
+            │
+            └─→ Map categories → component types
+```
 
 ## Performance Considerations
 
-### Query String Parsing
+### Analysis Complexity
 
-- **URLSearchParams:** Native API, zero dependencies, fast
-- **Type inference:** Regex matching, O(n) where n = parameter count (not a concern for typical query strings)
-- **Caching:** Not needed — parsing is fast enough to run on every URL change
+| Operation | Complexity | Example (100 fields) |
+|-----------|-----------|---------------------|
+| Pattern matching per field | O(1) | ~0.01ms per field |
+| Classification all fields | O(n) | ~1ms total |
+| Grouping analysis | O(n) | ~0.5ms total |
+| Component suggestion | O(n) | ~0.5ms total |
+| **Total analysis** | **O(n)** | **~2ms for 100 fields** |
 
-### Parameter Persistence
+**Worst case:** 1000-field response = ~20ms analysis time. Still fast enough for synchronous execution.
 
-- **localStorage writes:** Only on form submit (not on every keystroke)
-- **localStorage reads:** Only on component mount (not on every render)
-- **Zustand persist:** Uses batched writes, efficient for multiple parameter updates
+**Optimization:** If responses exceed 1000 fields regularly, add async analysis with loading state. For v1, synchronous is sufficient.
 
-### Layout Switching
+### Memory Usage
 
-- **No re-mounting:** Layout switch is CSS-only (flex direction, padding), components don't re-mount
-- **No network:** Layout preference is client-side only, no API calls
+```
+AnalysisMetadata size for 100 fields:
+- 100 FieldClassification objects: ~10KB
+- 1 FieldGrouping object: ~1KB
+- 100 ComponentSuggestion objects: ~10KB
+Total: ~21KB per analysis
 
-## Security Considerations
+For 10 recent responses cached: ~210KB
+```
 
-### Query String Injection
+**Acceptable:** Modern browsers handle this easily. No special memory optimization needed.
 
-**Risk:** Malicious query strings could inject unexpected parameter types or values
+### Cache Hit Rate
 
-**Mitigation:**
-- Type inference is read-only (doesn't execute user input)
-- ParameterInput renders values as text/number inputs (HTML escaping by React)
-- API fetch uses URLSearchParams for serialization (prevents injection)
+**Scenario:** User switches between endpoints in multi-endpoint API.
 
-### Persisted Parameter XSS
+```
+Without cache: Analyze on every endpoint switch (2ms each)
+With cache: Analyze once per endpoint, reuse on return (0ms subsequent)
 
-**Risk:** Persisted parameter values could contain malicious scripts
+Expected hit rate: 60-80% for typical usage
+Savings: 1-2ms per cached endpoint switch
+```
 
-**Mitigation:**
-- React escapes all text content by default
-- ParameterInput uses controlled inputs (value prop)
-- No `dangerouslySetInnerHTML` in parameter rendering
+**Trade-off:** 20KB memory per cached analysis vs 2ms saved per switch. Worth it.
 
-### localStorage Overflow
+## Migration Strategy
 
-**Risk:** Unlimited parameter persistence could fill localStorage
+### Backwards Compatibility
 
-**Mitigation:**
-- Only persist non-empty values (reduces storage)
-- Per-endpoint isolation (prevents one endpoint from dominating)
-- Future: Add UI for clearing old parameter defaults
+**Guaranteed:** All existing functionality continues working.
+
+**How:**
+
+1. `getSmartDefaultTypeName()` **falls back** to `getDefaultTypeName()` if metadata missing
+2. User overrides in configStore **always** take precedence
+3. All existing components remain in ComponentRegistry
+4. ViewModeBadge shows all available types, not just smart defaults
+
+**Migration path:**
+
+```
+Phase 1: Ship with smart defaults OFF (feature flag)
+Phase 2: Enable for new users, keep OFF for existing users
+Phase 3: Enable for all users, allow opt-out in settings
+Phase 4: On by default, remove feature flag
+```
+
+### Opt-Out Mechanism (Optional)
+
+```typescript
+// In configStore
+interface ConfigStore {
+  useSmartDefaults: boolean  // Toggle in settings
+}
+
+// In DynamicRenderer
+const useSmartDefaults = configStore.useSmartDefaults
+const defaultType = useSmartDefaults
+  ? getSmartDefaultTypeName(schema, path, metadata)
+  : getDefaultTypeName(schema)
+```
+
+**Recommendation:** Start with opt-out available, remove after validation period.
+
+## Open Questions
+
+### Question 1: Multi-Sample Analysis
+
+**Problem:** Current schema inference uses multiple samples for confidence. Should field analysis also aggregate across samples?
+
+**Example:** Array of 20 products - analyze first product or aggregate patterns across all 20?
+
+**Trade-offs:**
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| Single sample (first item) | Fast, simple | May miss patterns |
+| All samples | More accurate patterns | Slower, more complex |
+| Hybrid (first 5 samples) | Balance of speed + accuracy | Arbitrary limit |
+
+**Recommendation:** Start with **first sample** for simplicity. Add multi-sample in v1.4 if needed.
+
+**Confidence:** MEDIUM - Needs validation with real-world data.
+
+### Question 2: User Feedback Loop
+
+**Problem:** Smart defaults may be wrong. How do users correct them?
+
+**Current override mechanism:** User can switch component via ViewModeBadge. This implicitly overrides smart defaults.
+
+**Open question:** Should we add explicit "Don't use this default again" feedback?
+
+**Options:**
+
+1. Implicit learning: Track user overrides, adjust confidence over time
+2. Explicit feedback: "This default was wrong" button → adjusts patterns
+3. No learning: User overrides are just preferences, no feedback loop
+
+**Recommendation:** Start with **no learning** (option 3). Add feedback loop in v1.4 if user testing shows need.
+
+**Confidence:** LOW - Requires user research to validate approach.
+
+### Question 3: Cross-Field Relationships
+
+**Problem:** Some classifications depend on relationships between fields.
+
+**Example:** `review_text` + `review_rating` together = review, but alone they're just string + number.
+
+**Current approach:** Each field classified independently.
+
+**Alternative:** Detect field relationships and classify groups.
+
+**Trade-offs:**
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| Independent fields | Simple, fast | Misses relationships |
+| Relationship detection | More accurate | Complex, slower |
+
+**Recommendation:** Start with **independent fields** plus simple suffix matching (`review_*` = review category). Add relationship detection in v1.4 if needed.
+
+**Confidence:** MEDIUM - Simple suffix matching covers 80% of cases.
 
 ## Sources
 
-**URL Query String Parsing (HIGH confidence):**
-- [A Comprehensive Guide to URLSearchParams in TypeScript](https://dev.to/bugudiramu/a-comprehensive-guide-to-urlsearchparams-in-typescript-51f7)
-- [How to Manage Query Params in TypeScript - Upmostly](https://upmostly.com/typescript/how-to-manage-query-params-in-typescript)
-- [query-string - npm](https://www.npmjs.com/package/query-string)
-- [How to Parse URL in JavaScript - Dmitri Pavlutin](https://dmitripavlutin.com/parse-url-javascript/)
+Architecture patterns and best practices:
 
-**Type Inference (MEDIUM confidence):**
-- [Decode URL search params at the type level - Total TypeScript](https://www.totaltypescript.com/tips/decode-url-search-params-at-the-type-level-with-ts-toolbelt)
-- [Extreme TypeScript Challenge: ParseQueryString - Medium](https://medium.com/@taitasciore/extreme-typescript-challenge-parsequerystring-c7bc64d73af2)
+- [Semantic UI React component selection patterns](https://react.semantic-ui.com/)
+- [CommonForms dataset for form field detection](https://arxiv.org/html/2509.16506v1)
+- [Frontend architecture caching strategies](https://www.debugbear.com/blog/performant-front-end-architecture)
+- [React memoization for expensive computations](https://www.toptal.com/react/react-memoization)
+- [Data transformation pipeline architecture](https://dev.to/jajibhee/solving-frontend-performance-the-data-pipeline-transformation-2206)
+- [Metadata filtering and classification patterns](https://lakefs.io/blog/metadata-filtering/)
+- [BigID classification for data attributes](https://bigid.com/blog/smarter-classification-for-data-attributes-metadata-and-files/)
+- [UI semantic component grouping research](https://arxiv.org/html/2403.04984v1)
+- [Nested tab UI patterns](https://www.designmonks.co/blog/nested-tab-ui)
+- [CSS inheritance and override patterns](https://thelinuxcode.com/applying-inheritance-in-css-2026-predictable-styling-theming-and-safe-overrides/)
+- [Android state preservation patterns](https://developer.android.com/guide/topics/resources/runtime-changes)
+- [React 19 optimization patterns](https://dev.co/react/memoization)
 
-**React Layout Patterns (HIGH confidence):**
-- [Modern Layout Design Techniques in ReactJS (2025 Guide) - DEV](https://dev.to/er-raj-aryan/modern-layout-design-techniques-in-reactjs-2025-guide-3868)
-- [Sidebar: Architecting a Scalable Sidebar System in React - Medium](https://medium.com/@rivainasution/shadcn-ui-react-series-part-11-sidebar-architecting-a-scalable-sidebar-system-in-react-f45274043863)
-- [React-admin - The Layout Component](https://marmelab.com/react-admin/Layout.html)
+## Summary
 
-**Zustand Persistence (HIGH confidence):**
-- [Persisting store data - Zustand](https://zustand.docs.pmnd.rs/integrations/persisting-store-data)
-- [persist - Zustand](https://zustand.docs.pmnd.rs/middlewares/persist)
-- [How to Use Zustand in React (With Local Storage Persistence) - Medium](https://medium.com/@jalish.dev/how-to-use-zustand-in-react-with-local-storage-persistence-fd67ab0cc5a0)
+**Core architectural decision:** Add a **data transformation layer** that runs between schema inference and rendering, producing enriched metadata that DynamicRenderer consumes for smart defaults.
 
-**OpenAPI Parameter Best Practices (MEDIUM confidence):**
-- [Query Parameters in OpenAPI best practices - Speakeasy](https://www.speakeasy.com/openapi/requests/parameters/query-parameters)
-- [Request Parameters in OpenAPI best practices - Speakeasy](https://www.speakeasy.com/openapi/requests/parameters)
+**Key principles:**
+
+1. **Analysis before render:** Field classification happens once per response, cached in appStore
+2. **User overrides always win:** Existing override mechanism in configStore takes precedence over smart defaults
+3. **Graceful degradation:** Smart defaults fall back to structural defaults when metadata missing or low confidence
+4. **Independent layer:** Analysis services are pure functions, testable in isolation
+5. **Additive changes:** Most integration is adding new code, not modifying existing behavior
+
+**Build order:** Analysis layer first (independent), storage integration second (low risk), smart selection third (medium risk), smart grouping last (high risk).
+
+**Confidence:** HIGH overall - Architecture patterns are well-established, integration points are clean, existing override mechanism provides safety net.
