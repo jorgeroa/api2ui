@@ -96,7 +96,7 @@ export function DraggableField({ id, children, disabled, fieldPath, isVisible = 
       <div
         data-drag-controls
         className={`flex items-center gap-0.5 shrink-0 transition-opacity ${
-          nested ? '' : 'pt-1'
+          nested ? '' : 'pt-1.5'
         } ${isHovered ? 'opacity-100' : 'opacity-0'}`}
       >
         {/* Drag handle */}
