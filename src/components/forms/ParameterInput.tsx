@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { ParsedParameter } from '../../services/openapi/types'
 import { TypeIcon } from './TypeIcon'
 
@@ -9,6 +10,7 @@ interface ParameterInputProps {
   typeOverride?: string // User's override (from store)
   onTypeOverride?: (type: string) => void // Callback for override
   onClear?: () => void // Callback to clear this field
+  validate?: (value: string) => string | null // Optional validation function
 }
 
 export function ParameterInput({
@@ -19,16 +21,42 @@ export function ParameterInput({
   typeOverride,
   onTypeOverride,
   onClear,
+  validate,
 }: ParameterInputProps) {
   const { name, required, description, schema } = parameter
 
+  // Validation state
+  const [error, setError] = useState<string | null>(null)
+  const [touched, setTouched] = useState(false)
+
   // Determine effective type: override > inferred > schema > string
   const effectiveType = typeOverride ?? inferredType ?? undefined
+
+  // Validation handler for blur
+  const handleBlur = () => {
+    setTouched(true)
+    if (validate) {
+      const validationError = validate(value)
+      setError(validationError)
+    } else if (required && !value) {
+      setError('This field is required')
+    }
+  }
+
+  // Modified change handler
+  const handleChange = (newValue: string) => {
+    onChange(newValue)
+    // Clear error when typing (if previously touched)
+    if (touched && error) {
+      setError(null)
+    }
+  }
 
   // Determine input type based on effective type or parameter schema
   const renderInput = () => {
     const baseClasses =
       'w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+    const errorClasses = error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''
     // Build placeholder: prefer example, then default
     const exampleHint = schema.example !== undefined ? `e.g. ${schema.example}` : undefined
     const defaultHint = schema.default !== undefined ? String(schema.default) : undefined
@@ -71,11 +99,12 @@ export function ParameterInput({
             <input
               type="number"
               value={value}
-              onChange={(e) => onChange(e.target.value)}
+              onChange={(e) => handleChange(e.target.value)}
+              onBlur={handleBlur}
               min={schema.minimum}
               max={schema.maximum}
               placeholder={placeholder}
-              className={baseClasses}
+              className={`${baseClasses} ${errorClasses}`}
               required={required}
             />
           )
@@ -85,9 +114,10 @@ export function ParameterInput({
             <input
               type="date"
               value={value}
-              onChange={(e) => onChange(e.target.value)}
+              onChange={(e) => handleChange(e.target.value)}
+              onBlur={handleBlur}
               placeholder={placeholder}
-              className={baseClasses}
+              className={`${baseClasses} ${errorClasses}`}
               required={required}
             />
           )
@@ -97,9 +127,10 @@ export function ParameterInput({
             <input
               type="email"
               value={value}
-              onChange={(e) => onChange(e.target.value)}
+              onChange={(e) => handleChange(e.target.value)}
+              onBlur={handleBlur}
               placeholder={placeholder}
-              className={baseClasses}
+              className={`${baseClasses} ${errorClasses}`}
               required={required}
             />
           )
@@ -109,9 +140,10 @@ export function ParameterInput({
             <input
               type="url"
               value={value}
-              onChange={(e) => onChange(e.target.value)}
+              onChange={(e) => handleChange(e.target.value)}
+              onBlur={handleBlur}
               placeholder={placeholder}
-              className={baseClasses}
+              className={`${baseClasses} ${errorClasses}`}
               required={required}
             />
           )
@@ -121,9 +153,10 @@ export function ParameterInput({
             <input
               type="text"
               value={value}
-              onChange={(e) => onChange(e.target.value)}
+              onChange={(e) => handleChange(e.target.value)}
+              onBlur={handleBlur}
               placeholder={placeholder ?? 'lat, lng'}
-              className={baseClasses}
+              className={`${baseClasses} ${errorClasses}`}
               required={required}
             />
           )
@@ -133,10 +166,11 @@ export function ParameterInput({
             <input
               type="text"
               value={value}
-              onChange={(e) => onChange(e.target.value)}
+              onChange={(e) => handleChange(e.target.value)}
+              onBlur={handleBlur}
               placeholder={placeholder ?? '12345 or 12345-6789'}
               pattern="^\d{5}(-\d{4})?$"
-              className={baseClasses}
+              className={`${baseClasses} ${errorClasses}`}
               required={required}
             />
           )
@@ -147,10 +181,11 @@ export function ParameterInput({
             <input
               type="text"
               value={value}
-              onChange={(e) => onChange(e.target.value)}
+              onChange={(e) => handleChange(e.target.value)}
+              onBlur={handleBlur}
               placeholder={placeholder}
               maxLength={schema.maxLength}
-              className={baseClasses}
+              className={`${baseClasses} ${errorClasses}`}
               required={required}
             />
           )
@@ -177,11 +212,12 @@ export function ParameterInput({
         <input
           type="number"
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => handleChange(e.target.value)}
+          onBlur={handleBlur}
           min={schema.minimum}
           max={schema.maximum}
           placeholder={placeholder}
-          className={baseClasses}
+          className={`${baseClasses} ${errorClasses}`}
           required={required}
         />
       )
@@ -193,9 +229,10 @@ export function ParameterInput({
         <input
           type="date"
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => handleChange(e.target.value)}
+          onBlur={handleBlur}
           placeholder={placeholder}
-          className={baseClasses}
+          className={`${baseClasses} ${errorClasses}`}
           required={required}
         />
       )
@@ -206,9 +243,10 @@ export function ParameterInput({
         <input
           type="datetime-local"
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => handleChange(e.target.value)}
+          onBlur={handleBlur}
           placeholder={placeholder}
-          className={baseClasses}
+          className={`${baseClasses} ${errorClasses}`}
           required={required}
         />
       )
@@ -220,9 +258,10 @@ export function ParameterInput({
         <input
           type="email"
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => handleChange(e.target.value)}
+          onBlur={handleBlur}
           placeholder={placeholder}
-          className={baseClasses}
+          className={`${baseClasses} ${errorClasses}`}
           required={required}
         />
       )
@@ -234,9 +273,10 @@ export function ParameterInput({
         <input
           type="url"
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => handleChange(e.target.value)}
+          onBlur={handleBlur}
           placeholder={placeholder}
-          className={baseClasses}
+          className={`${baseClasses} ${errorClasses}`}
           required={required}
         />
       )
@@ -247,10 +287,11 @@ export function ParameterInput({
       <input
         type="text"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => handleChange(e.target.value)}
+        onBlur={handleBlur}
         placeholder={placeholder}
         maxLength={schema.maxLength}
-        className={baseClasses}
+        className={`${baseClasses} ${errorClasses}`}
         required={required}
       />
     )
@@ -303,6 +344,9 @@ export function ParameterInput({
           </button>
         )}
       </div>
+      {error && touched && (
+        <p className="text-sm text-red-500 mt-1">{error}</p>
+      )}
       {hint && <p className="mt-1 text-xs text-gray-500">{hint}</p>}
     </div>
   )

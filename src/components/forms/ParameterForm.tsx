@@ -154,13 +154,6 @@ export function ParameterForm({
     setQuickValuesVersion((v) => v + 1)  // Trigger debounced fetch
   }
 
-  // For array parameters
-  const handleQuickArrayChange = (name: string, values: string[]) => {
-    // Convert array to comma-separated for storage
-    setValues((prev) => ({ ...prev, [name]: values.join(',') }))
-    setQuickValuesVersion((v) => v + 1)  // Trigger debounced fetch
-  }
-
   const handleClear = (name: string) => {
     setValues((prev) => {
       const { [name]: _, ...rest } = prev
