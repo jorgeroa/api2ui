@@ -89,14 +89,14 @@
 
 **Milestone Goal:** Make the rendering engine smarter about picking default components through semantic field analysis and intelligent component selection.
 
-### Phase 12: Core Semantic Detection
+### Phase 12: Core Semantic Detection ✅
 **Goal**: Engine accurately classifies common field patterns and assigns semantic meaning
 **Dependencies**: None (foundation phase)
 **Requirements**: SEM-01, SEM-02, SEM-03, SEM-04
 **Plans**: 3 plans
-- [ ] 12-01-PLAN.md -- Foundation types, confidence scoring, memoization cache, schema extension
-- [ ] 12-02-PLAN.md -- Pattern library (22 patterns) and detection engine
-- [ ] 12-03-PLAN.md -- Comprehensive tests and validation
+- [x] 12-01-PLAN.md -- Foundation types, confidence scoring, memoization cache, schema extension
+- [x] 12-02-PLAN.md -- Pattern library (22 patterns) and detection engine
+- [x] 12-03-PLAN.md -- Comprehensive tests and validation (98 tests)
 
 **Success Criteria:**
 1. Pattern library detects 20-30 common field types (reviews, images, price, rating, status, tags, specifications, etc.)
@@ -188,11 +188,11 @@ Phases execute in numeric order: 12 → 13 → 14 → 15 → 16
 | 9. URL Parsing & Type Inference Foundation | v1.2 | 7/7 | Complete | 2026-02-05 |
 | 10. Layout System & Parameter Grouping | v1.2 | 5/5 | Complete | 2026-02-07 |
 | 11. Rich Input Components & UX Polish | v1.2 | 7/7 | Complete | 2026-02-07 |
-| 12. Core Semantic Detection | v1.3 | 0/3 | Planned | - |
+| 12. Core Semantic Detection | v1.3 | 3/3 | Complete | 2026-02-07 |
 | 13. Field Importance & Grouping Analysis | v1.3 | 0/? | Pending | - |
 | 14. Smart Component Selection | v1.3 | 0/? | Pending | - |
 | 15. Smart Grouping & Visual Hierarchy | v1.3 | 0/? | Pending | - |
 | 16. Context-Aware Components | v1.3 | 0/? | Pending | - |
 
 ---
-*Last updated: 2026-02-07 after Phase 12 planning*
+*Last updated: 2026-02-07 after Phase 12 completion*

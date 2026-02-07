@@ -7,10 +7,10 @@
 
 ### Semantic Detection
 
-- [ ] **SEM-01**: Engine detects 20-30 common field name patterns (reviews, images, price, rating, status, tags, specifications, etc.)
-- [ ] **SEM-02**: Multi-signal detection requires name + type + values to agree for HIGH confidence classification
-- [ ] **SEM-03**: OpenAPI hints (description, format, title) inform semantic classification when available
-- [ ] **SEM-04**: Confidence scoring determines when to apply smart defaults vs fall back to type-based defaults
+- [x] **SEM-01**: Engine detects 20-30 common field name patterns (reviews, images, price, rating, status, tags, specifications, etc.)
+- [x] **SEM-02**: Multi-signal detection requires name + type + values to agree for HIGH confidence classification
+- [x] **SEM-03**: OpenAPI hints (description, format, title) inform semantic classification when available
+- [x] **SEM-04**: Confidence scoring determines when to apply smart defaults vs fall back to type-based defaults
 - [ ] **SEM-05**: User overrides always take precedence over smart defaults (explicit beats implicit)
 
 ### Array Rendering Intelligence
@@ -83,10 +83,10 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SEM-01 | Phase 12 | Pending |
-| SEM-02 | Phase 12 | Pending |
-| SEM-03 | Phase 12 | Pending |
-| SEM-04 | Phase 12 | Pending |
+| SEM-01 | Phase 12 | Complete |
+| SEM-02 | Phase 12 | Complete |
+| SEM-03 | Phase 12 | Complete |
+| SEM-04 | Phase 12 | Complete |
 | SEM-05 | Phase 13 | Pending |
 | ARR-01 | Phase 14 | Pending |
 | ARR-02 | Phase 14 | Pending |
@@ -123,4 +123,4 @@
 
 ---
 *Requirements defined: 2026-02-07*
-*Last updated: 2026-02-07 after v1.3 roadmap creation*
+*Last updated: 2026-02-07 after Phase 12 completion*
