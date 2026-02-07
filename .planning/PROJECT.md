@@ -53,7 +53,13 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 
 ### Active
 
-(No active requirements — ready for `/gsd:new-milestone`)
+**v1.3 Smart Default Selection** — Make the rendering engine smarter about picking default components.
+
+- [ ] Semantic component selection — Analyze field names/patterns to pick best component (reviews → cards, specs → key-value, images → gallery)
+- [ ] Automatic tab/section organization — Detect logical groupings in complex objects, create tabs when appropriate
+- [ ] Field importance hierarchy — Surface primary fields (name, image, price), de-emphasize secondary (IDs, timestamps, metadata)
+- [ ] Smart defaults for detail views — Drill-down renders like a designed product page, not a data dump
+- [ ] All existing components remain available — User can override any default via component switcher
 
 ### Out of Scope
 
@@ -104,4 +110,4 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 | @apidevtools/swagger-parser | Full $ref resolution for OpenAPI specs | Good, needs Buffer polyfill |
 
 ---
-*Last updated: 2026-02-07 after completing v1.2 milestone*
+*Last updated: 2026-02-07 after starting v1.3 milestone*
