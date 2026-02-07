@@ -29,11 +29,11 @@ export function FieldControls({
   }
 
   return (
-    <div className="group flex items-center gap-2">
-      {/* Eye icon toggle - left side, visible on hover */}
+    <div className="group relative">
+      {/* Eye icon positioned absolutely - doesn't affect content layout */}
       <button
         onClick={handleToggleVisibility}
-        className="shrink-0 w-5 h-5 text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all"
+        className="absolute -left-6 top-1 w-5 h-5 text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all"
         aria-label={isVisible ? 'Hide field' : 'Show field'}
         title={isVisible ? 'Hide field' : 'Show field'}
       >
@@ -76,7 +76,7 @@ export function FieldControls({
       </button>
 
       {/* Content with conditional dimming and strikethrough when hidden */}
-      <div className={`flex-1 ${isVisible ? '' : 'opacity-50 line-through decoration-red-300'}`}>
+      <div className={isVisible ? '' : 'opacity-50 line-through decoration-red-300'}>
         {children}
       </div>
     </div>
