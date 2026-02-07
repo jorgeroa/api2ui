@@ -120,12 +120,16 @@ Plans:
   5. Active filters display as removable chips above results with "Clear all" button
   6. Clicking "Apply" or changing params triggers smooth inline re-fetch with loading state (no full page reload)
   7. URL preview shows what will be fetched before user clicks Apply
-**Plans**: TBD
+**Plans**: 7 plans
 
 Plans:
-- [ ] 11-01: TBD
-- [ ] 11-02: TBD
-- [ ] 11-03: TBD
+- [ ] 11-01-PLAN.md — shadcn/ui setup and component installation
+- [ ] 11-02-PLAN.md — DateTimePicker and TagInput components
+- [ ] 11-03-PLAN.md — RangeSlider and EnumCheckboxGroup components
+- [ ] 11-04-PLAN.md — AppliedFilters and URLPreview components
+- [ ] 11-05-PLAN.md — ParameterInput integration with rich components
+- [ ] 11-06-PLAN.md — Hybrid re-fetch behavior and error toast
+- [ ] 11-07-PLAN.md — Full App.tsx integration and verification
 
 ## Progress
 
@@ -144,7 +148,7 @@ Phases execute in numeric order: 9 → 10 → 11
 | 8. Enhanced Detail Views | v1.1 | 2/2 | Complete | 2026-02-05 |
 | 9. URL Parsing & Type Inference Foundation | v1.2 | 7/7 | Complete | 2026-02-05 |
 | 10. Layout System & Parameter Grouping | v1.2 | 5/5 | Complete | 2026-02-07 |
-| 11. Rich Input Components & UX Polish | v1.2 | 0/TBD | Not started | - |
+| 11. Rich Input Components & UX Polish | v1.2 | 0/7 | Not started | - |
 
 ---
-*Last updated: 2026-02-07 after Phase 10 execution complete*
+*Last updated: 2026-02-07 after Phase 11 planning complete*
