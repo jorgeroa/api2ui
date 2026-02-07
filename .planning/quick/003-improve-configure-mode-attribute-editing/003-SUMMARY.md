@@ -17,5 +17,6 @@ Improved Configure Mode attribute row UX with two changes:
 - `src/components/config/EditableLabel.tsx` - Inline editing with accept/cancel buttons
 - `src/components/config/FieldControls.tsx` - Left-positioned eye icon
 
-## Commit
-093987a
+## Commits
+- `093987a` - Initial implementation
+- `1962f9f` - Improved eye icon size and hidden state styling (larger icon, strikethrough instead of badge)

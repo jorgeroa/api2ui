@@ -120,7 +120,7 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 001 | Fix CORS error on second fetch (bracket encoding) | 2026-02-06 | b238e76 | [001-fix-cors-error-second-fetch](./quick/001-fix-cors-error-second-fetch/) |
 | 002 | Add api URL parameter for auto-load and sync | 2026-02-07 | d4d73ce | [002-add-api-url-parameter-for-auto-load-and](./quick/002-add-api-url-parameter-for-auto-load-and/) |
-| 003 | Improve configure mode attribute editing UX | 2026-02-07 | 093987a | [003-improve-configure-mode-attribute-editing](./quick/003-improve-configure-mode-attribute-editing/) |
+| 003 | Improve configure mode attribute editing UX | 2026-02-07 | 1962f9f | [003-improve-configure-mode-attribute-editing](./quick/003-improve-configure-mode-attribute-editing/) |
 
 ## Session Continuity
 
