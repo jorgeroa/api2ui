@@ -75,34 +75,16 @@ export function EditableLabel({
     setDraftValue(e.currentTarget.textContent || '')
   }
 
-  const handleBlur = () => {
-    commitEdit()
-  }
-
-  // View mode or not editing: render as plain text
+  // View mode or not editing: render as plain text (click to edit in configure mode)
   if (!isConfigureMode || !isEditing) {
     return (
       <span className="inline-flex flex-col gap-0.5">
         <span
-          className={`${isConfigureMode ? 'cursor-pointer hover:text-blue-600 group' : ''}`}
+          className={`${isConfigureMode ? 'cursor-text hover:text-blue-600 hover:underline hover:decoration-dotted' : ''}`}
           onClick={handleClick}
+          title={isConfigureMode ? 'Click to edit' : undefined}
         >
           {value}
-          {isConfigureMode && (
-            <svg
-              className="inline-block w-3 h-3 ml-1 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-              />
-            </svg>
-          )}
         </span>
         {hasCustomLabel && (
           <span className="text-xs text-gray-400">
@@ -113,21 +95,54 @@ export function EditableLabel({
     )
   }
 
-  // Edit mode: contentEditable
+  // Edit mode: contentEditable with accept/cancel buttons
   return (
-    <div
-      ref={editableRef}
-      contentEditable
-      suppressContentEditableWarning
-      role="textbox"
-      aria-label={`Edit label for ${fieldPath}`}
-      aria-multiline="false"
-      className="inline-block px-2 py-1 border-2 border-blue-500 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-300"
-      onInput={handleInput}
-      onKeyDown={handleKeyDown}
-      onBlur={handleBlur}
-    >
-      {draftValue}
-    </div>
+    <span className="inline-flex items-center gap-1">
+      <div
+        ref={editableRef}
+        contentEditable
+        suppressContentEditableWarning
+        role="textbox"
+        aria-label={`Edit label for ${fieldPath}`}
+        aria-multiline="false"
+        className="inline-block px-2 py-1 border-2 border-blue-500 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 min-w-15"
+        onInput={handleInput}
+        onKeyDown={handleKeyDown}
+        onBlur={(e) => {
+          // Don't commit on blur if clicking the cancel button
+          if (e.relatedTarget?.closest('[data-cancel-edit]')) {
+            return
+          }
+          commitEdit()
+        }}
+      >
+        {draftValue}
+      </div>
+      {/* Accept button */}
+      <button
+        type="button"
+        onClick={commitEdit}
+        className="p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded transition-colors"
+        title="Save (Enter)"
+        aria-label="Save changes"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </button>
+      {/* Cancel button */}
+      <button
+        type="button"
+        data-cancel-edit
+        onClick={cancelEdit}
+        className="p-1 text-red-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+        title="Cancel (Escape)"
+        aria-label="Cancel changes"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </span>
   )
 }

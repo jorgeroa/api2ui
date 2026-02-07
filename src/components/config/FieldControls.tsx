@@ -1,23 +1,20 @@
 import type { ReactNode } from 'react'
 import { useConfigStore } from '../../store/configStore'
-import { EditableLabel } from './EditableLabel'
 
 interface FieldControlsProps {
   fieldPath: string
-  fieldName: string
+  fieldName?: string // Kept for backward compatibility
   isVisible: boolean
-  customLabel: string | undefined
+  customLabel?: string // Kept for backward compatibility
   children: ReactNode
 }
 
 export function FieldControls({
   fieldPath,
-  fieldName,
   isVisible,
-  customLabel,
   children,
 }: FieldControlsProps) {
-  const { mode, toggleFieldVisibility, setFieldLabel } = useConfigStore()
+  const { mode, toggleFieldVisibility } = useConfigStore()
 
   const isConfigureMode = mode === 'configure'
 
@@ -26,91 +23,69 @@ export function FieldControls({
     return <>{children}</>
   }
 
-  // Configure mode: render children + overlay controls
+  // Configure mode: render children + controls
   const handleToggleVisibility = () => {
     toggleFieldVisibility(fieldPath)
   }
 
-  const handleLabelChange = (newLabel: string) => {
-    setFieldLabel(fieldPath, newLabel)
-  }
-
-  // Format the display label
-  const displayLabel = customLabel || fieldName
-
   return (
-    <div className="relative group">
+    <div className="relative group flex items-start gap-1">
+      {/* Eye icon toggle - left side, visible on hover */}
+      <button
+        onClick={handleToggleVisibility}
+        className="shrink-0 mt-0.5 text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all"
+        aria-label={isVisible ? 'Hide field' : 'Show field'}
+        title={isVisible ? 'Hide field' : 'Show field'}
+      >
+        {isVisible ? (
+          // Open eye icon
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+            />
+          </svg>
+        ) : (
+          // Crossed-out eye icon
+          <svg
+            className="w-4 h-4 text-red-400"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+            />
+          </svg>
+        )}
+      </button>
+
       {/* Content with conditional dimming */}
-      <div className={isVisible ? '' : 'opacity-50'}>
+      <div className={`flex-1 ${isVisible ? '' : 'opacity-50'}`}>
         {children}
       </div>
 
-      {/* Overlay controls on hover */}
-      <div className="absolute top-0 right-0 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 px-2 py-1 rounded shadow-md">
-        {/* Eye icon toggle */}
-        <button
-          onClick={handleToggleVisibility}
-          className="text-gray-600 hover:text-blue-600 transition-colors"
-          aria-label={isVisible ? 'Hide field' : 'Show field'}
-          title={isVisible ? 'Hide field' : 'Show field'}
-        >
-          {isVisible ? (
-            // Open eye icon
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-              />
-            </svg>
-          ) : (
-            // Crossed-out eye icon
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-              />
-            </svg>
-          )}
-        </button>
-
-        {/* Hidden badge */}
-        {!isVisible && (
-          <span className="text-xs font-medium text-red-600 bg-red-100 px-2 py-0.5 rounded">
-            Hidden
-          </span>
-        )}
-      </div>
-
-      {/* Editable label (shown on hover, z-index to prevent overlap) */}
-      <div className="absolute -bottom-1 left-0 translate-y-full opacity-0 group-hover:opacity-100 transition-opacity z-30 pointer-events-none">
-        <div className="pointer-events-auto bg-white px-2 py-1 rounded shadow-md text-sm border border-gray-200">
-          <EditableLabel
-            value={displayLabel}
-            originalName={fieldName}
-            fieldPath={fieldPath}
-            onChange={handleLabelChange}
-          />
-        </div>
-      </div>
+      {/* Hidden badge - top right */}
+      {!isVisible && (
+        <span className="absolute top-0 right-0 text-xs font-medium text-red-600 bg-red-100 px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+          Hidden
+        </span>
+      )}
     </div>
   )
 }
