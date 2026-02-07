@@ -29,16 +29,15 @@ export function FieldControls({
   }
 
   return (
-    <div className="group relative">
-      {/* Eye icon positioned absolutely - doesn't affect content layout */}
+    <div className="group flex items-start gap-2">
+      {/* Eye icon - inline, visible on hover */}
       <button
         onClick={handleToggleVisibility}
-        className="absolute -left-8 top-0.5 w-4 h-4 text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all"
+        className="shrink-0 mt-1 w-4 h-4 text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all"
         aria-label={isVisible ? 'Hide field' : 'Show field'}
         title={isVisible ? 'Hide field' : 'Show field'}
       >
         {isVisible ? (
-          // Open eye icon
           <svg
             className="w-4 h-4"
             fill="none"
@@ -58,7 +57,6 @@ export function FieldControls({
             />
           </svg>
         ) : (
-          // Crossed-out eye icon
           <svg
             className="w-4 h-4 text-red-400"
             fill="none"
@@ -76,7 +74,7 @@ export function FieldControls({
       </button>
 
       {/* Content with conditional dimming and strikethrough when hidden */}
-      <div className={isVisible ? '' : 'opacity-50 line-through decoration-red-300'}>
+      <div className={`flex-1 ${isVisible ? '' : 'opacity-50 line-through decoration-red-300'}`}>
         {children}
       </div>
     </div>

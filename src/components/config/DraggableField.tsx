@@ -47,12 +47,12 @@ export function DraggableField({ id, children, disabled }: DraggableFieldProps) 
   const isConfigureMode = mode === 'configure'
 
   return (
-    <div ref={setNodeRef} style={style} className="relative">
+    <div ref={setNodeRef} style={style} className={`relative ${isConfigureMode ? 'pl-6' : ''}`}>
       {isConfigureMode && !disabled && (
         <button
           {...attributes}
           {...listeners}
-          className="absolute left-0 top-1/2 -translate-y-1/2 -ml-4 cursor-grab active:cursor-grabbing focus:outline-none focus:ring-2 focus:ring-blue-500 rounded p-0.5"
+          className="absolute left-0 top-1 cursor-grab active:cursor-grabbing focus:outline-none focus:ring-2 focus:ring-blue-500 rounded p-0.5"
           aria-label="Drag to reorder"
         >
           <GripIcon />
