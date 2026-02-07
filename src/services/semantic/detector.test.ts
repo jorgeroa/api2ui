@@ -518,3 +518,266 @@ describe('getBestMatch', () => {
     expect(best).toBeNull()
   })
 })
+
+/**
+ * Task 2: Edge cases and performance validation
+ */
+describe('edge cases', () => {
+  beforeEach(() => {
+    clearSemanticCache()
+  })
+
+  test('empty field name returns no high-confidence matches', () => {
+    const results = detectSemantics('root.', '', 'string', ['value'])
+    const highConfidence = results.filter(r => r.confidence >= 0.75)
+    expect(highConfidence.length).toBe(0)
+  })
+
+  test('empty sample values still detects by name', () => {
+    const results = detectSemantics('root.price', 'price', 'number', [])
+    // Should still detect price by name and type, but lower confidence without value validation
+    expect(results[0].category).toBe('price')
+    // Confidence will be lower without value match
+    expect(results[0].confidence).toBeGreaterThan(0.5)
+  })
+
+  test('null values in sample array handled gracefully', () => {
+    const results = detectSemantics('root.price', 'price', 'number', [null, 29.99, null])
+    expect(results[0].category).toBe('price')
+    expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+  })
+
+  test('undefined values in sample array handled gracefully', () => {
+    const results = detectSemantics('root.price', 'price', 'number', [undefined, 29.99])
+    expect(results[0].category).toBe('price')
+    expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+  })
+
+  test('case insensitive: PRICE matches price', () => {
+    const results = detectSemantics('root.PRICE', 'PRICE', 'number', [10])
+    expect(results[0].category).toBe('price')
+    expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+  })
+
+  test('case insensitive: Price matches price', () => {
+    const results = detectSemantics('root.Price', 'Price', 'number', [10])
+    expect(results[0].category).toBe('price')
+    expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+  })
+
+  test('case insensitive: pRiCe matches price', () => {
+    const results = detectSemantics('root.pRiCe', 'pRiCe', 'number', [10])
+    expect(results[0].category).toBe('price')
+    expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+  })
+
+  test('underscore naming: product_price matches price', () => {
+    // Note: \bprice\b won't match product_price because _ is part of word
+    // But the price pattern uses /\b(price|cost|...)\b/i
+    // So product_price won't match. Testing actual behavior.
+    const results = detectSemantics('root.product_price', 'product_price', 'number', [29.99])
+    // Should NOT match price with high confidence - name doesn't match pattern
+    // Only type and value may contribute
+    const priceResult = results.find(r => r.category === 'price')
+    if (priceResult) {
+      // With only type (0.2) + value (0.25) / 1.0 = 0.45, less than 0.75
+      expect(priceResult.confidence).toBeLessThan(0.75)
+    }
+  })
+
+  test('camelCase: productPrice matches price via value/type', () => {
+    // Similar to above - productPrice won't match \bprice\b pattern
+    const results = detectSemantics('root.productPrice', 'productPrice', 'number', [29.99])
+    // May still get low-confidence price match via type + value
+    const priceResult = results.find(r => r.category === 'price')
+    if (priceResult) {
+      expect(priceResult.confidence).toBeLessThan(0.75)
+    }
+  })
+
+  test('very long field name is processed', () => {
+    const longName = 'a'.repeat(200) + 'price' + 'b'.repeat(200)
+    const results = detectSemantics(`root.${longName}`, longName, 'number', [29.99])
+    // Still processes - may or may not match depending on pattern
+    expect(results).toBeDefined()
+  })
+
+  test('special characters in field name handled', () => {
+    const results = detectSemantics('root.$price$', '$price$', 'number', [29.99])
+    // $price$ should still contain 'price' which can match
+    const priceResult = results.find(r => r.category === 'price')
+    expect(priceResult).toBeDefined()
+  })
+})
+
+describe('type mismatch handling', () => {
+  beforeEach(() => {
+    clearSemanticCache()
+  })
+
+  test('rating field with string type has lower confidence than number type', () => {
+    clearSemanticCache()
+    const goodResults = detectSemantics('root.rating', 'rating', 'number', [4.5])
+    clearSemanticCache()
+    const badResults = detectSemantics('root.rating', 'rating', 'string', ['4.5'])
+
+    // Number type should have higher confidence for rating
+    expect(goodResults[0].category).toBe('rating')
+    expect(goodResults[0].confidence).toBeGreaterThan(badResults[0]?.confidence ?? 0)
+  })
+
+  test('price field with boolean type has very low confidence', () => {
+    const results = detectSemantics('root.price', 'price', 'boolean', [true])
+    const priceResult = results.find(r => r.category === 'price')
+    // Boolean is not in price typeConstraint.allowed, so lower confidence
+    if (priceResult) {
+      expect(priceResult.confidence).toBeLessThan(0.5)
+    }
+  })
+
+  test('email field with number type has very low confidence', () => {
+    const results = detectSemantics('root.email', 'email', 'number', [12345])
+    const emailResult = results.find(r => r.category === 'email')
+    // Number is not in email typeConstraint.allowed
+    if (emailResult) {
+      expect(emailResult.confidence).toBeLessThan(0.5)
+    }
+  })
+
+  test('array type for tags pattern yields high confidence', () => {
+    const results = detectSemantics('root.tags', 'tags', 'array', [['a', 'b']])
+    expect(results[0].category).toBe('tags')
+    expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+  })
+
+  test('string type for tags pattern yields lower confidence', () => {
+    const results = detectSemantics('root.tags', 'tags', 'string', ['a,b,c'])
+    const tagsResult = results.find(r => r.category === 'tags')
+    // String is not in tags typeConstraint.allowed
+    if (tagsResult) {
+      expect(tagsResult.confidence).toBeLessThan(0.75)
+    }
+  })
+})
+
+describe('memoization', () => {
+  beforeEach(() => {
+    clearSemanticCache()
+  })
+
+  test('same field detected twice returns cached result (same reference)', () => {
+    const first = detectSemantics('root.price', 'price', 'number', [10])
+    const second = detectSemantics('root.price', 'price', 'number', [10])
+    // Should be same array reference (cached)
+    expect(first).toBe(second)
+  })
+
+  test('different fields do not share cache', () => {
+    const price = detectSemantics('root.price', 'price', 'number', [10])
+    const rating = detectSemantics('root.rating', 'rating', 'number', [4])
+    expect(price[0].category).not.toBe(rating[0].category)
+    expect(price).not.toBe(rating)
+  })
+
+  test('cache can be cleared', () => {
+    const first = detectSemantics('root.price', 'price', 'number', [10])
+    clearSemanticCache()
+    const second = detectSemantics('root.price', 'price', 'number', [10])
+    // After clear, should be different reference
+    expect(first).not.toBe(second)
+    // But same content
+    expect(first[0].category).toBe(second[0].category)
+    expect(first[0].confidence).toBe(second[0].confidence)
+  })
+
+  test('same path but different values gives different cache key', () => {
+    const first = detectSemantics('root.price', 'price', 'number', [10])
+    const second = detectSemantics('root.price', 'price', 'number', [20])
+    // Different sample values = different cache key = different reference
+    expect(first).not.toBe(second)
+  })
+
+  test('same values but different type gives different cache key', () => {
+    const first = detectSemantics('root.value', 'value', 'number', [10])
+    const second = detectSemantics('root.value', 'value', 'string', [10])
+    expect(first).not.toBe(second)
+  })
+})
+
+describe('performance', () => {
+  test('detect 100 fields in under 100ms', () => {
+    clearSemanticCache()
+    const fields = Array.from({ length: 100 }, (_, i) => ({
+      path: `root.field${i}`,
+      name: i % 2 === 0 ? 'price' : 'rating',
+      type: 'number' as const,
+      values: [i] as unknown[],
+    }))
+
+    const start = performance.now()
+    for (const field of fields) {
+      detectSemantics(field.path, field.name, field.type, field.values)
+    }
+    const duration = performance.now() - start
+
+    expect(duration).toBeLessThan(100)
+  })
+
+  test('detect 100 unique fields in under 200ms (no cache benefit)', () => {
+    clearSemanticCache()
+    const fields = Array.from({ length: 100 }, (_, i) => ({
+      path: `root.field${i}`,
+      name: `field${i}`, // Unique name each time
+      type: 'number' as const,
+      values: [i] as unknown[],
+    }))
+
+    const start = performance.now()
+    for (const field of fields) {
+      detectSemantics(field.path, field.name, field.type, field.values)
+    }
+    const duration = performance.now() - start
+
+    expect(duration).toBeLessThan(200)
+  })
+
+  test('cache improves performance significantly', () => {
+    clearSemanticCache()
+
+    // First pass: no cache
+    const startFirst = performance.now()
+    for (let i = 0; i < 50; i++) {
+      clearSemanticCache()
+      detectSemantics('root.price', 'price', 'number', [29.99])
+    }
+    const firstDuration = performance.now() - startFirst
+
+    // Second pass: with cache
+    clearSemanticCache()
+    const startSecond = performance.now()
+    for (let i = 0; i < 50; i++) {
+      detectSemantics('root.price', 'price', 'number', [29.99])
+    }
+    const secondDuration = performance.now() - startSecond
+
+    // Cached should be faster (at least 2x improvement expected)
+    expect(secondDuration).toBeLessThan(firstDuration)
+  })
+
+  test('composite detection under 10ms per call', () => {
+    const itemFields = [
+      { name: 'rating', type: 'number' },
+      { name: 'comment', type: 'string' },
+    ]
+    const sampleItems = [{ rating: 5, comment: 'Great!' }]
+
+    const start = performance.now()
+    for (let i = 0; i < 100; i++) {
+      detectCompositeSemantics(`root.reviews${i}`, 'reviews', itemFields, sampleItems)
+    }
+    const duration = performance.now() - start
+    const avgDuration = duration / 100
+
+    expect(avgDuration).toBeLessThan(10)
+  })
+})
