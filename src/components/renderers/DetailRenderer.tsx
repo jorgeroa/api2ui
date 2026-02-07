@@ -482,9 +482,10 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
       )
 
       // In Configure mode: wrap with DraggableField (hover-reveal controls)
+      // nested=true for Disclosure content - uses different alignment
       if (isConfigureMode) {
         return (
-          <DraggableField key={fieldName} id={fieldPath} fieldPath={fieldPath} isVisible={isVisible}>
+          <DraggableField key={fieldName} id={fieldPath} fieldPath={fieldPath} isVisible={isVisible} nested>
             {nestedContent}
           </DraggableField>
         )

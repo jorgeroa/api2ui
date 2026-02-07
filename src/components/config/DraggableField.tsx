@@ -11,6 +11,8 @@ interface DraggableFieldProps {
   fieldPath?: string
   /** Current visibility state */
   isVisible?: boolean
+  /** True for nested/collapsible content (Disclosure) - affects icon alignment */
+  nested?: boolean
 }
 
 /** Grip icon - 6 dots in 2 columns */
@@ -48,7 +50,7 @@ function EyeIcon({ visible }: { visible: boolean }) {
   )
 }
 
-export function DraggableField({ id, children, disabled, fieldPath, isVisible = true }: DraggableFieldProps) {
+export function DraggableField({ id, children, disabled, fieldPath, isVisible = true, nested = false }: DraggableFieldProps) {
   const [isHovered, setIsHovered] = useState(false)
   const { mode, toggleFieldVisibility } = useConfigStore()
   const {
@@ -89,11 +91,13 @@ export function DraggableField({ id, children, disabled, fieldPath, isVisible = 
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Control buttons - show/hide based on JS hover state */}
+      {/* pt-1 aligns icons with text that has py-1 padding in primitive fields */}
+      {/* nested content (Disclosure) already uses flex items-center, no padding needed */}
       <div
         data-drag-controls
         className={`flex items-center gap-0.5 shrink-0 transition-opacity ${
-          isHovered ? 'opacity-100' : 'opacity-0'
-        }`}
+          nested ? '' : 'pt-1'
+        } ${isHovered ? 'opacity-100' : 'opacity-0'}`}
       >
         {/* Drag handle */}
         {!disabled && (
