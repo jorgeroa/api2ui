@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useAppStore } from './store/appStore'
 import { useConfigStore } from './store/configStore'
+import { useParameterStore } from './store/parameterStore'
 import { useAPIFetch } from './hooks/useAPIFetch'
 import { URLInput } from './components/URLInput'
 import { DynamicRenderer } from './components/DynamicRenderer'
@@ -8,6 +9,7 @@ import { ErrorDisplay } from './components/error/ErrorDisplay'
 import { SkeletonTable } from './components/loading/SkeletonTable'
 import { OperationSelector } from './components/openapi/OperationSelector'
 import { ParameterForm } from './components/forms/ParameterForm'
+import { AppliedFilters } from './components/forms/AppliedFilters'
 import { ConfigToggle } from './components/config/ConfigToggle'
 import { ConfigPanel } from './components/config/ConfigPanel'
 import { ThemeApplier } from './components/config/ThemeApplier'
@@ -31,6 +33,7 @@ function App() {
     setSelectedOperation
   } = useAppStore()
   const { mode, setMode, clearFieldConfigs } = useConfigStore()
+  const { getValues, clearValue, clearEndpoint } = useParameterStore()
   const { fetchAndInfer, fetchOperation } = useAPIFetch()
 
   // Read api param from URL and auto-fetch on load
@@ -62,10 +65,60 @@ function App() {
   // Derive selected operation
   const selectedOperation = parsedSpec?.operations[selectedOperationIndex]
 
+  // Get endpoint for current state
+  const getEndpoint = () => {
+    if (parsedSpec && selectedOperation) {
+      return `${parsedSpec.baseUrl}${selectedOperation.path}`
+    }
+    if (url) {
+      return url.split('?')[0]
+    }
+    return ''
+  }
+
   // Handle parameter form submission
   const handleParameterSubmit = (values: Record<string, string>) => {
     if (parsedSpec && selectedOperation) {
       fetchOperation(parsedSpec.baseUrl, selectedOperation, values)
+    }
+  }
+
+  // Handle filter removal - clear single filter and re-fetch
+  const handleFilterRemove = (key: string) => {
+    const endpoint = getEndpoint()
+    if (!endpoint) return
+
+    const currentValues = getValues(endpoint)
+    clearValue(endpoint, key)
+
+    // Trigger re-fetch with updated values
+    const updatedValues = { ...currentValues }
+    delete updatedValues[key]
+
+    if (parsedSpec && selectedOperation) {
+      fetchOperation(parsedSpec.baseUrl, selectedOperation, updatedValues)
+    } else if (url) {
+      // Direct API URL flow
+      const { parameters: originalParams } = parseUrlParameters(url)
+      const queryString = reconstructQueryString(updatedValues, originalParams)
+      const newUrl = queryString ? `${endpoint}?${queryString}` : endpoint
+      fetchAndInfer(newUrl)
+    }
+  }
+
+  // Handle clear all filters - clear all and re-fetch
+  const handleFilterClearAll = () => {
+    const endpoint = getEndpoint()
+    if (!endpoint) return
+
+    clearEndpoint(endpoint)
+
+    // Trigger re-fetch with empty values
+    if (parsedSpec && selectedOperation) {
+      fetchOperation(parsedSpec.baseUrl, selectedOperation, {})
+    } else if (url) {
+      // Direct API URL flow - fetch base URL with no params
+      fetchAndInfer(endpoint)
     }
   }
 
@@ -191,10 +244,18 @@ function App() {
                             onSubmit={handleParameterSubmit}
                             loading={loading}
                             endpoint={`${parsedSpec.baseUrl}${selectedOperation.path}`}
+                            baseUrl={`${parsedSpec.baseUrl}${selectedOperation.path}`}
                           />
                         }
                         results={
                           <>
+                            {/* Applied Filter Chips */}
+                            <AppliedFilters
+                              filters={getValues(`${parsedSpec.baseUrl}${selectedOperation.path}`)}
+                              onRemove={handleFilterRemove}
+                              onClearAll={handleFilterClearAll}
+                            />
+
                             {/* Inline operation error — form stays usable above */}
                             {error && <ErrorDisplay error={error} />}
 
@@ -294,10 +355,18 @@ function App() {
                           onSubmit={handleParameterSubmit}
                           loading={loading}
                           endpoint={`${parsedSpec.baseUrl}${selectedOperation.path}`}
+                          baseUrl={`${parsedSpec.baseUrl}${selectedOperation.path}`}
                         />
                       }
                       results={
                         <>
+                          {/* Applied Filter Chips */}
+                          <AppliedFilters
+                            filters={getValues(`${parsedSpec.baseUrl}${selectedOperation.path}`)}
+                            onRemove={handleFilterRemove}
+                            onClearAll={handleFilterClearAll}
+                          />
+
                           {/* Inline operation error — form stays usable above */}
                           {error && <ErrorDisplay error={error} />}
 
@@ -354,10 +423,18 @@ function App() {
                         }}
                         loading={loading}
                         endpoint={baseUrl}
+                        baseUrl={baseUrl}
                       />
                     }
                     results={
                       <>
+                        {/* Applied Filter Chips */}
+                        <AppliedFilters
+                          filters={getValues(baseUrl)}
+                          onRemove={handleFilterRemove}
+                          onClearAll={handleFilterClearAll}
+                        />
+
                         {/* Data rendering - show when data is present */}
                         {schema && data !== null && (
                           <DynamicRenderer
