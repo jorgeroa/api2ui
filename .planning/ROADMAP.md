@@ -64,72 +64,24 @@
 
 </details>
 
-### ✅ v1.2 Smart Parameters & Layout System (SHIPPED 2026-02-07)
+<details>
+<summary>✅ v1.2 Smart Parameters & Layout System (Phases 9-11) - SHIPPED 2026-02-07</summary>
 
 **Milestone Goal:** Transform parameter handling with smart URL parsing, type inference, rich input components, and user-switchable layouts.
 
 #### Phase 9: URL Parsing & Type Inference Foundation ✅
 **Goal**: Parse raw URL query strings with smart type inference and parameter persistence
-**Depends on**: Phase 8
-**Requirements**: PARSE-01, PARSE-02, PARSE-03, PARSE-04, PARSE-05, PARSE-06, PARSE-07, PARSE-08
-**Success Criteria** (what must be TRUE):
-  1. User can paste any URL with query params and see them parsed into editable form fields
-  2. Array parameters work in both bracket notation (tag[]=x) and repeated key formats (tag=x&tag=y)
-  3. Parameters with common prefixes auto-group into collapsible sections (e.g., ddcFilter[*] → "Filters")
-  4. Date strings, emails, URLs, coordinates, and zip codes are automatically detected and shown with appropriate input types
-  5. Parameter values persist across browser sessions per endpoint
-**Plans**: 7 plans
-
-Plans:
-- [x] 09-01-PLAN.md — URL parser with array detection (TDD)
-- [x] 09-02-PLAN.md — Type inferrer service (TDD)
-- [x] 09-03-PLAN.md — Parameter persistence store
-- [x] 09-04-PLAN.md — Parameter grouping UI
-- [x] 09-05-PLAN.md — Type icons and override dropdown
-- [x] 09-06-PLAN.md — ParameterForm integration
-- [x] 09-07-PLAN.md — App.tsx integration (gap closure)
+**Plans**: 7 plans completed
 
 #### Phase 10: Layout System & Parameter Grouping ✅
 **Goal**: User-selectable layout presets with responsive behavior
-**Depends on**: Phase 9
-**Requirements**: LAYOUT-01, LAYOUT-02, LAYOUT-03, LAYOUT-04, LAYOUT-05, LAYOUT-06
-**Success Criteria** (what must be TRUE):
-  1. User can switch between sidebar, top bar, split view, and drawer layouts with a visible control
-  2. Layout choice persists per endpoint across sessions
-  3. On mobile (viewport < 768px), layout defaults to collapsible drawer for optimal touch interaction
-  4. Layout transitions are smooth without losing form state or scroll position
-  5. Parameter groups from Phase 9 adapt to each layout mode appropriately
-**Plans**: 5 plans
-
-Plans:
-- [x] 10-01-PLAN.md — Layout preference store + useMediaQuery hook
-- [x] 10-02-PLAN.md — Sidebar and TopBar layout components
-- [x] 10-03-PLAN.md — Split and Drawer layout components
-- [x] 10-04-PLAN.md — LayoutSwitcher and LayoutContainer
-- [x] 10-05-PLAN.md — App.tsx integration with verification
+**Plans**: 5 plans completed
 
 #### Phase 11: Rich Input Components & UX Polish ✅
 **Goal**: Rich form components with inline re-fetch, validation, and applied filter chips
-**Depends on**: Phase 10
-**Requirements**: FORM-01, FORM-02, FORM-03, FORM-04, FORM-05, FORM-06, FETCH-01, FETCH-02, FETCH-03, FETCH-04, FETCH-05, FETCH-06, FETCH-07
-**Success Criteria** (what must be TRUE):
-  1. Date/datetime fields show calendar picker instead of plain text input
-  2. Array parameters render as tag input with chip UI (add/remove individual values)
-  3. Numeric ranges show slider components when min/max are known or inferred
-  4. User receives inline validation feedback on blur (not on keystroke) before submitting
-  5. Active filters display as removable chips above results with "Clear all" button
-  6. Clicking "Apply" or changing params triggers smooth inline re-fetch with loading state (no full page reload)
-  7. URL preview shows what will be fetched before user clicks Apply
-**Plans**: 7 plans
+**Plans**: 7 plans completed
 
-Plans:
-- [x] 11-01-PLAN.md — shadcn/ui setup and component installation
-- [x] 11-02-PLAN.md — DateTimePicker and TagInput components
-- [x] 11-03-PLAN.md — RangeSlider and EnumCheckboxGroup components
-- [x] 11-04-PLAN.md — AppliedFilters and URLPreview components
-- [x] 11-05-PLAN.md — ParameterInput integration with rich components
-- [x] 11-06-PLAN.md — Hybrid re-fetch behavior and error toast
-- [x] 11-07-PLAN.md — Full App.tsx integration and verification
+</details>
 
 ## Progress
 

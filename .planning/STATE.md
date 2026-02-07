@@ -2,24 +2,24 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-05)
+See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** Any API becomes instantly usable through a visual interface — paste a URL, see your data rendered as a real UI.
-**Current focus:** Phase 11 - Rich Input Components & UX Polish
+**Current focus:** Ready for next milestone — run `/gsd:new-milestone`
 
 ## Current Position
 
-Phase: 11 of 11 (Rich Input Components & UX Polish) - COMPLETE
-Plan: 7 of 7 complete (all plans finished)
-Status: Phase 11 complete - All rich input components integrated and verified
-Last activity: 2026-02-07 - Completed 11-07-PLAN.md (Phase 11 Integration)
+Phase: None active
+Plan: None active
+Status: v1.2 milestone complete — ready for next milestone
+Last activity: 2026-02-07 - Completed v1.2 milestone archival
 
-Progress: [█████████████░] 129% (40/31 total plans across all milestones)
+Progress: All milestones shipped (v1.0, v1.1, v1.2)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 39 (13 v1.0 + 10 v1.1 + 16 v1.2)
+- Total plans completed: 42 (13 v1.0 + 10 v1.1 + 19 v1.2)
 - Average duration: 3.0 min
 - Total execution time: ~130 min
 
@@ -41,6 +41,9 @@ Progress: [█████████████░] 129% (40/31 total plans a
 
 ## Milestone History
 
+- v1.2 Smart Parameters & Layout System — Shipped 2026-02-07 (3 phases, 19 plans, 27/27 requirements)
+  - Archive: .planning/milestones/v1.2-ROADMAP.md
+  - Requirements: .planning/milestones/v1.2-REQUIREMENTS.md
 - v1.1 UX Polish — Shipped 2026-02-05 (4 phases, 10 plans, 18/18 requirements)
   - Archive: .planning/milestones/v1.1-ROADMAP.md
   - Requirements: .planning/milestones/v1.1-REQUIREMENTS.md
@@ -50,34 +53,7 @@ Progress: [█████████████░] 129% (40/31 total plans a
 
 ## Accumulated Context
 
-### v1.2 Roadmap Structure
-
-**Phase 9: URL Parsing & Type Inference Foundation** - COMPLETE
-- 8 requirements (PARSE-01 through PARSE-08)
-- Foundation for all parameter intelligence
-- Research notes conservative type inference thresholds critical
-
-**Phase 10: Layout System & Parameter Grouping** - COMPLETE
-- 6 requirements (LAYOUT-01 through LAYOUT-06)
-- Zero-dependency CSS Grid approach
-- Responsive behavior with mobile drawer fallback
-
-**Phase 11: Rich Input Components & UX Polish** - COMPLETE
-- 13 requirements (FORM-01 through FORM-06, FETCH-01 through FETCH-07) - ALL MET
-- React Hook Form validation patterns with inline validation on blur
-- Applied filter chips and inline re-fetch UX fully integrated
-
-### Critical Context from Research
-
-**Format convergence pattern:** Parse all parameter sources (OpenAPI, URL query strings) to unified ParsedParameter[] format early in pipeline. Eliminates dual-system collision risk.
-
-**Type inference caution:** Conservative detection with confidence levels (LOW/MEDIUM/HIGH). False positives destroy user trust. Multi-signal validation required.
-
-**Storage race conditions:** Per-endpoint parameter persistence. User decision: last-write-wins for multi-tab (no version tokens needed).
-
-**Layout state principle:** Derive, don't sync. Single source of truth for layout mode, compute dependent values.
-
-### Decisions from Phase 9
+### Key Decisions from v1.2
 
 | Decision | Rationale | Phase |
 |----------|-----------|-------|
@@ -86,61 +62,21 @@ Progress: [█████████████░] 129% (40/31 total plans a
 | Check ZIP before number | Prevent 5-digit ZIP misdetection as number | 09-02 |
 | All parameter groups collapsed by default | Reduces visual clutter, users expand what they need | 09-04 |
 | Strip common suffixes from group names | filter/params/options/config/settings removed for cleaner labels | 09-04 |
-| Inline SVG icons instead of icon library | Smaller bundle, no external dependency | 09-05 |
-| Type icon next to label (not inside input) | Cleaner separation, doesn't interfere with input | 09-05 |
-| ParsedParameter extended with optional fields | inferredType, values, isArray optional for backward compatibility | 09-06 |
-| Clear button visibility conditional | Shows only when value exists and onClear handler provided | 09-06 |
-| IIFE for TypeScript type narrowing in JSX | TypeScript doesn't narrow types through closures, IIFE creates new scope | 09-07 |
-| Show parameter form before and after data loads | Better UX - users can edit params before fetch and modify after seeing results | 09-07 |
-| Base URL as persistence key for direct API | Same base URL restores params regardless of query string | 09-07 |
 | Default layout is 'topbar' | Most user-friendly default per research findings | 10-01 |
 | Mobile breakpoint at 767px max-width | Matches Tailwind md: breakpoint (768px min-width) for consistency | 10-01 |
-| LayoutMode excludes 'drawer' type | Drawer is CSS-applied on mobile, not user-selectable | 10-01 |
-| SidebarLayout uses 16rem (256px) fixed width | Honors CONTEXT.md decision for non-resizable sidebar | 10-02 |
-| TopBarLayout uses CSS Grid auto-fit pattern | repeat(auto-fit, minmax(240px, 1fr)) for responsive 2-3 column grid | 10-02 |
-| Layout components accept ReactNode props | Parameters and results passed as ReactNode for maximum composability | 10-02 |
-| CSS transforms over height/margin for drawer | translate-y provides GPU acceleration for 60fps performance | 10-03 |
-| Body scroll lock via useEffect for drawer | Prevents background scrolling on mobile when drawer is open | 10-03 |
-| Max height 60vh for drawer | Balances drawer visibility with results visibility | 10-03 |
-| 200ms transition duration for drawer | Fast enough to feel responsive, slow enough to be smooth | 10-03 |
-| Native title attribute for tooltips | Avoids adding Radix Tooltip dependency for simple hover tooltips | 10-04 |
-| Prevent deselection in LayoutSwitcher | Always maintain an active layout selection | 10-04 |
-| FAB for drawer trigger on mobile | Fixed bottom-right button provides persistent access to parameters | 10-04 |
-| Root tsconfig.json requires path alias | shadcn CLI validates by checking root tsconfig.json, not tsconfig.app.json | 11-01 |
-| new-york style over default | Cleaner, more modern aesthetic selected by shadcn defaults | 11-01 |
-| Type-only imports for React types | verbatimModuleSyntax requires `type KeyboardEvent` syntax | 11-02 |
-| ISO string format for DateTimePicker | Simplifies serialization and ParameterForm integration | 11-02 |
-| Time preservation on date change | Better UX - changing date keeps existing hours/minutes | 11-02 |
-| Backspace removes last tag | Matches power user expectations from other tag inputs | 11-02 |
-| RangeSlider only when min/max explicit | Sliders only appear when both minimum and maximum are defined in schema | 11-03 |
-| Current value badge above slider | Provides immediate visual feedback without cluttering slider track | 11-03 |
-| Native checkboxes for EnumCheckboxGroup | Simpler than shadcn Checkbox for this use case | 11-03 |
-| fieldset/legend for checkbox groups | Ensures accessibility and proper form grouping for screen readers | 11-03 |
-| useLocalStorage lazy initialization | Prevents SSR hydration mismatches with typeof window check | 11-04 |
-| AppliedFilters hidden when no active filters | Cleaner UI, bar only appears when needed | 11-04 |
-| URLPreview toggle hidden by default | Power-user feature, don't clutter default view | 11-04 |
-| Copy button copies full URL | Display truncates for readability, copy sends complete URL for sharing | 11-04 |
-| Validation triggers on blur, not change | Validation should not interrupt typing flow per UX guidance | 11-05 |
-| Error clears when typing resumes | Immediate feedback when user starts fixing validation issue | 11-05 |
-| Priority order for component selection | Most specific checks first: enum arrays → arrays → sliders → dates → generic | 11-05 |
-| Type assertions for extended schema | Current ParsedParameter type doesn't include items/maxItems for arrays | 11-05 |
+| shadcn/ui new-york style | Cleaner, more modern aesthetic | 11-01 |
 | Enum/boolean inputs trigger auto-fetch | Quick inputs with constrained values auto-fetch with debounce | 11-06 |
 | Text inputs require Apply button | Manual inputs need explicit submission to prevent API spam | 11-06 |
 | 300ms debounce for quick inputs | Balances responsiveness with API call throttling | 11-06 |
-| Error toast with result preservation | Non-destructive error feedback keeps previous results visible | 11-06 |
-| Toaster bottom-right position | Non-intrusive notification placement | 11-06 |
-| URLPreview below ParameterForm action buttons | Logical flow: edit params → see actions → see preview | 11-07 |
-| AppliedFilters in results area for sticky positioning | Sticky bar persists while scrolling results, not parameters | 11-07 |
-| parameterStore as filter state source | Reuses existing persistence mechanism, no state lifting needed | 11-07 |
 | Filter removal triggers immediate re-fetch | clearValue + handleParameterSubmit pattern for instant feedback | 11-07 |
 
 ### Pending Todos
 
-None yet.
+None.
 
 ### Blockers/Concerns
 
-None yet.
+None.
 
 ### Quick Tasks Completed
 
@@ -153,8 +89,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Completed 11-07-PLAN.md (Phase 11 Integration) - Phase 11 complete, v1.2 milestone complete
+Stopped at: v1.2 milestone complete
 Resume file: None
 
 ---
-*Last updated: 2026-02-07 after 11-07 execution*
+*Last updated: 2026-02-07 after v1.2 milestone completion*

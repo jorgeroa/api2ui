@@ -39,9 +39,6 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 - Detail views with hero images, two-column layout, and visual grouping — v1.1
 - Nested arrays render as horizontal card scrollers in detail views — v1.1
 - Breadcrumb navigation for nested detail drill-down — v1.1
-
-### Active
-
 - Raw URL query param parsing with type inference (not just Swagger) — v1.2
 - Parameter grouping by prefix (e.g., ddcFilter[*] → "Filters" section) — v1.2
 - Progressive param reveal: show breakdown first, then make editable — v1.2
@@ -53,6 +50,10 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 - Parameter value persistence across sessions — v1.2
 - User-selectable page layouts (sidebar, top bar, split view, drawer) — v1.2
 - Polished UX that feels like a real product — v1.2
+
+### Active
+
+(No active requirements — ready for `/gsd:new-milestone`)
 
 ### Out of Scope
 
@@ -68,7 +69,8 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 
 - **Shipped v1.0 MVP** with 6,099 lines of TypeScript/TSX/CSS across 207 files
 - **Shipped v1.1 UX Polish** with smart visual defaults, discoverable component switching, pagination, and enhanced detail views
-- **Tech stack:** React 19, TypeScript 5.9, Vite 7, Tailwind CSS 4, Zustand, Headless UI, @dnd-kit, @apidevtools/swagger-parser
+- **Shipped v1.2 Smart Parameters & Layout System** with URL parsing, type inference, rich input components, applied filter chips, and user-selectable layouts
+- **Tech stack:** React 19, TypeScript 5.9, Vite 7, Tailwind CSS 4, Zustand, Headless UI, @dnd-kit, @apidevtools/swagger-parser, shadcn/ui, Sonner
 - The rendering engine has two symmetric sides: input (parameters -> form controls) and output (responses -> data components), both following type-based defaults with developer overrides
 - Nesting is handled via master-detail: top-level collection (table/cards) -> click item -> detail view (modal/panel) with nested objects as sub-sections and nested arrays as sub-tables
 - Two distinct modes: Configure mode (settings panel + inline editing) for developers, View mode (clean output) for consumers
@@ -102,4 +104,4 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 | @apidevtools/swagger-parser | Full $ref resolution for OpenAPI specs | Good, needs Buffer polyfill |
 
 ---
-*Last updated: 2026-02-05 after starting v1.2 milestone*
+*Last updated: 2026-02-07 after completing v1.2 milestone*
