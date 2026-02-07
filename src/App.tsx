@@ -299,7 +299,17 @@ function App() {
                 </div>
               )}
 
-              {/* Direct API URL flow */}
+              {/* Simple URL result (no query params, just data) */}
+              {!parsedSpec && !loading && !error && schema && data !== null && url && !url.includes('?') && (
+                <DynamicRenderer
+                  data={data}
+                  schema={schema.rootType}
+                  path="$"
+                  depth={0}
+                />
+              )}
+
+              {/* Direct API URL flow (URLs with query params) */}
               {!parsedSpec && !loading && !error && url && url.includes('?') && (() => {
                 const currentUrl = url
                 const baseUrl = currentUrl.split('?')[0]!
