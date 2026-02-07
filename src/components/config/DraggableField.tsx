@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useConfigStore } from '../../store/configStore'
@@ -48,6 +49,7 @@ function EyeIcon({ visible }: { visible: boolean }) {
 }
 
 export function DraggableField({ id, children, disabled, fieldPath, isVisible = true }: DraggableFieldProps) {
+  const [isHovered, setIsHovered] = useState(false)
   const { mode, toggleFieldVisibility } = useConfigStore()
   const {
     attributes,
@@ -78,11 +80,21 @@ export function DraggableField({ id, children, disabled, fieldPath, isVisible = 
   }
 
   // Configure mode: inline flex with controls
-  // Using named group (group/row) to isolate hover state from nested DraggableFields
   return (
-    <div ref={setNodeRef} style={style} className="group/row flex items-start gap-1">
-      {/* Control buttons - use opacity for hover reveal, isolated per row via group/row */}
-      <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover/row:opacity-100 transition-opacity">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-start gap-1"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Control buttons - show/hide based on JS hover state */}
+      <div
+        data-drag-controls
+        className={`flex items-center gap-0.5 shrink-0 transition-opacity ${
+          isHovered ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
         {/* Drag handle */}
         {!disabled && (
           <button
