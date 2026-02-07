@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-05)
 ## Current Position
 
 Phase: 11 of 11 (Rich Input Components & UX Polish) - IN PROGRESS
-Plan: 4 of 7 complete (11-04)
-Status: Wave 2 advancing - AppliedFilters and URLPreview complete
-Last activity: 2026-02-07 - Completed 11-04-PLAN.md (AppliedFilters & URLPreview Components)
+Plan: 6 of 7 complete (11-06)
+Status: Wave 3 advancing - Hybrid re-fetch and error toasts complete
+Last activity: 2026-02-07 - Completed 11-06-PLAN.md (Hybrid Re-fetch & Error Toasts)
 
-Progress: [████████████░░] 122% (38/31 total plans across all milestones)
+Progress: [████████████░░] 126% (39/31 total plans across all milestones)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 38 (13 v1.0 + 10 v1.1 + 15 v1.2)
+- Total plans completed: 39 (13 v1.0 + 10 v1.1 + 16 v1.2)
 - Average duration: 3.1 min
-- Total execution time: ~118 min
+- Total execution time: ~123 min
 
 **By Phase:**
 
@@ -37,7 +37,7 @@ Progress: [████████████░░] 122% (38/31 total plans a
 | 8 | 2/2 | 5 min | 2.5 min |
 | 9 | 7/7 | 23 min | 3.3 min |
 | 10 | 5/5 | 8 min | 1.6 min |
-| 11 | 4/7 | 8.3 min | 2.1 min |
+| 11 | 6/7 | 13.3 min | 2.2 min |
 
 ## Milestone History
 
@@ -120,6 +120,11 @@ Progress: [████████████░░] 122% (38/31 total plans a
 | AppliedFilters hidden when no active filters | Cleaner UI, bar only appears when needed | 11-04 |
 | URLPreview toggle hidden by default | Power-user feature, don't clutter default view | 11-04 |
 | Copy button copies full URL | Display truncates for readability, copy sends complete URL for sharing | 11-04 |
+| Enum/boolean inputs trigger auto-fetch | Quick inputs with constrained values auto-fetch with debounce | 11-06 |
+| Text inputs require Apply button | Manual inputs need explicit submission to prevent API spam | 11-06 |
+| 300ms debounce for quick inputs | Balances responsiveness with API call throttling | 11-06 |
+| Error toast with result preservation | Non-destructive error feedback keeps previous results visible | 11-06 |
+| Toaster bottom-right position | Non-intrusive notification placement | 11-06 |
 
 ### Pending Todos
 
@@ -140,8 +145,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Completed 11-04-PLAN.md (AppliedFilters & URLPreview Components) - Phase 11 Wave 2 in progress
+Stopped at: Completed 11-06-PLAN.md (Hybrid Re-fetch & Error Toasts) - Phase 11 Wave 3 in progress
 Resume file: None
 
 ---
-*Last updated: 2026-02-07 after 11-04 execution*
+*Last updated: 2026-02-07 after 11-06 execution*
