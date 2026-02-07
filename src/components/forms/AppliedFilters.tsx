@@ -28,21 +28,21 @@ export function AppliedFilters({
       {activeFilters.map(([key, value]) => (
         <span
           key={key}
-          className="group inline-flex items-center gap-1 max-w-[240px] pl-3 pr-1.5 py-1.5 text-sm bg-slate-50 text-slate-700 rounded-full border border-slate-200 hover:border-slate-300 hover:bg-slate-100 transition-all shadow-sm"
+          className="inline-flex items-center gap-0.5 max-w-[200px] pl-2 pr-1 py-0.5 text-xs bg-blue-50 text-blue-700 rounded-full border border-blue-200 hover:bg-blue-100 transition-colors"
         >
-          <span className="text-slate-400 truncate">{key}</span>
-          <span className="text-slate-600 font-medium truncate">{value}</span>
+          <span className="text-blue-400 truncate">{key}</span>
+          <span className="truncate">{value}</span>
           <button
             type="button"
             onClick={() => onRemove(key)}
-            className="ml-1 rounded-full p-1 shrink-0 text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors"
+            className="ml-0.5 rounded-full p-0.5 shrink-0 text-blue-400 hover:text-blue-600 hover:bg-blue-200 transition-colors"
             aria-label={`Remove filter ${key}`}
           >
             <svg
               className="h-3 w-3"
               fill="none"
               stroke="currentColor"
-              strokeWidth={2.5}
+              strokeWidth={2}
               viewBox="0 0 24 24"
             >
               <path
