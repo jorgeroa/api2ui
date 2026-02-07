@@ -5,7 +5,6 @@ import type { FieldDefinition } from '../../types/schema'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DynamicRenderer } from '../DynamicRenderer'
 import { useConfigStore } from '../../store/configStore'
-import { FieldControls } from '../config/FieldControls'
 import { FieldConfigPopover } from '../config/FieldConfigPopover'
 import { SortableFieldList } from '../config/SortableFieldList'
 import { DraggableField } from '../config/DraggableField'
@@ -220,16 +219,16 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
     }
 
     return (
-      <div key={fieldName} className="grid grid-cols-[max-content_1fr] gap-x-4 items-baseline" {...contextMenuHandlers}>
+      <div key={fieldName} className="grid grid-cols-[auto_1fr] gap-x-3 items-baseline min-w-0" {...contextMenuHandlers}>
         <div className={primary
-          ? "text-base font-semibold text-gray-700 py-1"
-          : "text-sm font-medium text-gray-600 py-1"
+          ? "text-base font-semibold text-gray-700 py-1 whitespace-nowrap"
+          : "text-sm font-medium text-gray-600 py-1 whitespace-nowrap"
         }>
           {displayLabel}:
         </div>
         <div className={primary
-          ? "py-1 text-lg font-semibold text-gray-900"
-          : "py-1"
+          ? "py-1 text-lg font-semibold text-gray-900 min-w-0"
+          : "py-1 min-w-0"
         }>
           <PrimitiveRenderer
             data={value}
@@ -395,18 +394,11 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
             </div>
           )
 
-          // Wrap with FieldControls/DraggableField in Configure mode (same pattern as existing)
+          // Wrap with DraggableField in Configure mode
           if (isConfigureMode) {
             return (
-              <DraggableField key={fieldName} id={fieldPath}>
-                <FieldControls
-                  fieldPath={fieldPath}
-                  fieldName={fieldName}
-                  isVisible={isVisible}
-                  customLabel={config?.label}
-                >
-                  {imageContent}
-                </FieldControls>
+              <DraggableField key={fieldName} id={fieldPath} fieldPath={fieldPath} isVisible={isVisible}>
+                {imageContent}
               </DraggableField>
             )
           }
@@ -438,16 +430,16 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
         }
 
         const fieldContent = (
-          <div className="grid grid-cols-[max-content_1fr] gap-x-4 items-baseline" {...contextMenuHandlers}>
+          <div className="grid grid-cols-[auto_1fr] gap-x-3 items-baseline min-w-0" {...contextMenuHandlers}>
             <div className={primary
-              ? "text-base font-semibold text-gray-700 py-1"
-              : "text-sm font-medium text-gray-600 py-1"
+              ? "text-base font-semibold text-gray-700 py-1 whitespace-nowrap"
+              : "text-sm font-medium text-gray-600 py-1 whitespace-nowrap"
             }>
               {displayLabel}:
             </div>
             <div className={primary
-              ? "py-1 text-lg font-semibold text-gray-900"
-              : "py-1"
+              ? "py-1 text-lg font-semibold text-gray-900 min-w-0"
+              : "py-1 min-w-0"
             }>
               <PrimitiveRenderer
                 data={value}
@@ -459,30 +451,16 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
           </div>
         )
 
-        // In Configure mode: wrap with FieldControls and DraggableField
-        const wrappedField = isConfigureMode ? (
-          <FieldControls
-            key={fieldName}
-            fieldPath={fieldPath}
-            fieldName={fieldName}
-            isVisible={isVisible}
-            customLabel={config?.label}
-          >
-            {fieldContent}
-          </FieldControls>
-        ) : (
-          <div key={fieldName}>{fieldContent}</div>
-        )
-
+        // In Configure mode: wrap with DraggableField (hover-reveal controls)
         if (isConfigureMode) {
           return (
-            <DraggableField key={fieldName} id={fieldPath}>
-              {wrappedField}
+            <DraggableField key={fieldName} id={fieldPath} fieldPath={fieldPath} isVisible={isVisible}>
+              {fieldContent}
             </DraggableField>
           )
         }
 
-        return wrappedField
+        return <div key={fieldName}>{fieldContent}</div>
       }
 
       // Render nested objects/arrays as collapsible sections
@@ -503,30 +481,16 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
         </Disclosure>
       )
 
-      // In Configure mode: wrap with FieldControls and DraggableField
-      const wrappedNestedField = isConfigureMode ? (
-        <FieldControls
-          key={fieldName}
-          fieldPath={fieldPath}
-          fieldName={fieldName}
-          isVisible={isVisible}
-          customLabel={config?.label}
-        >
-          {nestedContent}
-        </FieldControls>
-      ) : (
-        <div key={fieldName}>{nestedContent}</div>
-      )
-
+      // In Configure mode: wrap with DraggableField (hover-reveal controls)
       if (isConfigureMode) {
         return (
-          <DraggableField key={fieldName} id={fieldPath}>
-            {wrappedNestedField}
+          <DraggableField key={fieldName} id={fieldPath} fieldPath={fieldPath} isVisible={isVisible}>
+            {nestedContent}
           </DraggableField>
         )
       }
 
-      return wrappedNestedField
+      return <div key={fieldName}>{nestedContent}</div>
     })
   }
 
