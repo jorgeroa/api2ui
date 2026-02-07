@@ -10,6 +10,23 @@ export type TypeSignature =
 /** Confidence level based on multi-sample consistency */
 export type Confidence = 'high' | 'medium' | 'low'
 
+/**
+ * Semantic detection metadata for a field.
+ * Stores the result of semantic pattern matching.
+ */
+export interface SemanticMetadata {
+  /** Detected semantic category (null if no confident match) */
+  detectedCategory: string | null
+  /** Confidence score (0.0-1.0) */
+  confidence: number
+  /** Discretized confidence level */
+  level: 'high' | 'medium' | 'low' | 'none'
+  /** How the semantic was applied */
+  appliedAt: 'user' | 'smart-default' | 'type-based'
+  /** Alternative category matches with their confidence scores */
+  alternatives: Array<{ category: string; confidence: number }>
+}
+
 /** A single field in the inferred schema */
 export interface FieldDefinition {
   name: string
@@ -18,6 +35,8 @@ export interface FieldDefinition {
   nullable: boolean
   confidence: Confidence
   sampleValues: unknown[]
+  /** Semantic detection result (optional, populated by semantic analyzer) */
+  semantics?: SemanticMetadata
 }
 
 /** The complete inferred schema for an API response */
