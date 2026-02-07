@@ -17,6 +17,8 @@ export interface ParsedUrlParameter extends Omit<ParsedParameter, 'in' | 'requir
   originalKey: string
   /** Raw URL-encoded key (preserves original encoding, e.g., "ddcFilter%5Bname%5D") */
   rawKey: string
+  /** Raw URL-encoded value (preserves original encoding, e.g., "c,z" stays as "c,z" not "c%2Cz") */
+  rawValue: string
   /** True if parameter appeared multiple times or used bracket notation */
   isArray: boolean
   /** All values for array parameters */

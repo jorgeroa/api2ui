@@ -97,9 +97,10 @@ function extractQueryString(input: string, warnings: string[]): string {
 }
 
 interface RawEntry {
-  rawKey: string   // Original URL-encoded key
-  key: string      // Decoded key for display/matching
-  value: string
+  rawKey: string    // Original URL-encoded key
+  rawValue: string  // Original URL-encoded value
+  key: string       // Decoded key for display/matching
+  value: string     // Decoded value
 }
 
 /**
@@ -134,7 +135,7 @@ function collectRawEntries(queryString: string, warnings: string[]): RawEntry[] 
     const key = safeDecodeURIComponent(rawKey, warnings)
     const value = safeDecodeURIComponent(rawValue.replace(/\+/g, ' '), warnings)
 
-    entries.push({ rawKey, key, value })
+    entries.push({ rawKey, rawValue, key, value })
   }
 
   return entries
@@ -156,8 +157,9 @@ function safeDecodeURIComponent(str: string, warnings: string[]): string {
 
 interface KeyEntry {
   rawKey: string        // Original URL-encoded key
+  rawValue: string      // Original URL-encoded value
   originalKey: string   // Decoded key
-  value: string
+  value: string         // Decoded value
   isBracketArray: boolean
 }
 
@@ -170,13 +172,13 @@ function groupByNormalizedKey(
 ): Map<string, KeyEntry[]> {
   const groups = new Map<string, KeyEntry[]>()
 
-  for (const { rawKey, key, value } of entries) {
+  for (const { rawKey, rawValue, key, value } of entries) {
     const bracketMatch = key.match(BRACKET_ARRAY_REGEX)
     const normalizedKey = bracketMatch ? bracketMatch[1]! : key
     const isBracketArray = !!bracketMatch
 
     const group = groups.get(normalizedKey) ?? []
-    group.push({ rawKey, originalKey: key, value, isBracketArray })
+    group.push({ rawKey, rawValue, originalKey: key, value, isBracketArray })
     groups.set(normalizedKey, group)
   }
 
@@ -224,6 +226,7 @@ function buildParameter(
     name: paramName,
     originalKey: firstEntry.originalKey,
     rawKey: firstEntry.rawKey,
+    rawValue: firstEntry.rawValue,
     in: 'query',
     required: false,
     description: '',
@@ -239,25 +242,44 @@ function buildParameter(
 
 /**
  * Reconstruct query string preserving original URL encoding.
- * Uses rawKey from parsed params to preserve exact original encoding
- * (e.g., ddcFilter%5Bzipcode%5D stays encoded, not decoded to ddcFilter[zipcode]).
+ * Uses rawKey and rawValue from parsed params to preserve exact original encoding.
+ * Only re-encodes values that have actually changed from their original decoded form.
  */
 export function reconstructQueryString(
   values: Record<string, string>,
   originalParams: ParsedUrlParameter[]
 ): string {
   const parts: string[] = []
-  // Map from param name to rawKey (URL-encoded key)
-  const rawKeyMap = new Map(
-    originalParams.map(p => [p.name, p.rawKey])
+
+  // Map from param name to { rawKey, rawValue, originalValue (decoded) }
+  const paramMap = new Map(
+    originalParams.map(p => [p.name, {
+      rawKey: p.rawKey,
+      rawValue: p.rawValue,
+      originalValue: p.schema.default as string | undefined
+    }])
   )
 
   for (const [name, value] of Object.entries(values)) {
     if (!value) continue // Skip empty values
+
+    const original = paramMap.get(name)
+    if (!original) {
+      // New param - encode both key and value
+      parts.push(`${encodeURIComponent(name)}=${encodeURIComponent(value)}`)
+      continue
+    }
+
     // Use rawKey which preserves original URL encoding
-    const key = rawKeyMap.get(name) ?? encodeURIComponent(name)
-    // Encode value, key is already in original URL-encoded format
-    parts.push(`${key}=${encodeURIComponent(value)}`)
+    const key = original.rawKey
+
+    // If value unchanged from original, use rawValue to preserve exact encoding
+    // Otherwise, encode the new value
+    const encodedValue = value === original.originalValue
+      ? original.rawValue
+      : encodeURIComponent(value)
+
+    parts.push(`${key}=${encodedValue}`)
   }
 
   return parts.join('&')
