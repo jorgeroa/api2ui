@@ -220,7 +220,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
     }
 
     return (
-      <div key={fieldName} className="grid grid-cols-[auto_1fr] gap-x-6" {...contextMenuHandlers}>
+      <div key={fieldName} className="grid grid-cols-[10rem_1fr] gap-x-6" {...contextMenuHandlers}>
         <div className={primary
           ? "text-base font-semibold text-gray-700 py-1"
           : "text-sm font-medium text-gray-600 py-1"
@@ -438,7 +438,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
         }
 
         const fieldContent = (
-          <div className="grid grid-cols-[auto_1fr] gap-x-6" {...contextMenuHandlers}>
+          <div className="grid grid-cols-[10rem_1fr] gap-x-6" {...contextMenuHandlers}>
             <div className={primary
               ? "text-base font-semibold text-gray-700 py-1"
               : "text-sm font-medium text-gray-600 py-1"

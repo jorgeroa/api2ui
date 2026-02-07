@@ -115,7 +115,7 @@ export function HeroRenderer({ data, schema, path, depth }: RendererProps) {
       {remainingPrimitives.length > 0 && (
         <div className="p-4 border-t border-border space-y-2">
           {remainingPrimitives.map(([name, def]) => (
-            <div key={name} className="grid grid-cols-[auto_1fr] gap-x-4 text-sm">
+            <div key={name} className="grid grid-cols-[8rem_1fr] gap-x-4 text-sm">
               <span className="font-medium text-gray-600">{formatLabel(name)}:</span>
               <PrimitiveRenderer
                 data={obj[name]}
