@@ -4,7 +4,7 @@
 
 - ✅ **v1.0 MVP** - Phases 1-4 (shipped 2026-01-XX)
 - ✅ **v1.1 UX Polish** - Phases 5-8 (shipped 2026-02-05)
-- 🚧 **v1.2 Smart Parameters & Layout System** - Phases 9-11 (in progress)
+- ✅ **v1.2 Smart Parameters & Layout System** - Phases 9-11 (shipped 2026-02-07)
 
 ## Phases
 
@@ -64,7 +64,7 @@
 
 </details>
 
-### 🚧 v1.2 Smart Parameters & Layout System (In Progress)
+### ✅ v1.2 Smart Parameters & Layout System (SHIPPED 2026-02-07)
 
 **Milestone Goal:** Transform parameter handling with smart URL parsing, type inference, rich input components, and user-switchable layouts.
 
@@ -108,7 +108,7 @@ Plans:
 - [x] 10-04-PLAN.md — LayoutSwitcher and LayoutContainer
 - [x] 10-05-PLAN.md — App.tsx integration with verification
 
-#### Phase 11: Rich Input Components & UX Polish
+#### Phase 11: Rich Input Components & UX Polish ✅
 **Goal**: Rich form components with inline re-fetch, validation, and applied filter chips
 **Depends on**: Phase 10
 **Requirements**: FORM-01, FORM-02, FORM-03, FORM-04, FORM-05, FORM-06, FETCH-01, FETCH-02, FETCH-03, FETCH-04, FETCH-05, FETCH-06, FETCH-07
@@ -123,13 +123,13 @@ Plans:
 **Plans**: 7 plans
 
 Plans:
-- [ ] 11-01-PLAN.md — shadcn/ui setup and component installation
-- [ ] 11-02-PLAN.md — DateTimePicker and TagInput components
-- [ ] 11-03-PLAN.md — RangeSlider and EnumCheckboxGroup components
-- [ ] 11-04-PLAN.md — AppliedFilters and URLPreview components
-- [ ] 11-05-PLAN.md — ParameterInput integration with rich components
-- [ ] 11-06-PLAN.md — Hybrid re-fetch behavior and error toast
-- [ ] 11-07-PLAN.md — Full App.tsx integration and verification
+- [x] 11-01-PLAN.md — shadcn/ui setup and component installation
+- [x] 11-02-PLAN.md — DateTimePicker and TagInput components
+- [x] 11-03-PLAN.md — RangeSlider and EnumCheckboxGroup components
+- [x] 11-04-PLAN.md — AppliedFilters and URLPreview components
+- [x] 11-05-PLAN.md — ParameterInput integration with rich components
+- [x] 11-06-PLAN.md — Hybrid re-fetch behavior and error toast
+- [x] 11-07-PLAN.md — Full App.tsx integration and verification
 
 ## Progress
 
@@ -148,7 +148,7 @@ Phases execute in numeric order: 9 → 10 → 11
 | 8. Enhanced Detail Views | v1.1 | 2/2 | Complete | 2026-02-05 |
 | 9. URL Parsing & Type Inference Foundation | v1.2 | 7/7 | Complete | 2026-02-05 |
 | 10. Layout System & Parameter Grouping | v1.2 | 5/5 | Complete | 2026-02-07 |
-| 11. Rich Input Components & UX Polish | v1.2 | 0/7 | Not started | - |
+| 11. Rich Input Components & UX Polish | v1.2 | 7/7 | Complete | 2026-02-07 |
 
 ---
-*Last updated: 2026-02-07 after Phase 11 planning complete*
+*Last updated: 2026-02-07 after Phase 11 execution complete - v1.2 milestone shipped*
