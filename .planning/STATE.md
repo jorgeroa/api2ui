@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-05)
 ## Current Position
 
 Phase: 11 of 11 (Rich Input Components & UX Polish) - IN PROGRESS
-Plan: 2 of 7 complete (11-03)
-Status: Wave 2 in progress - RangeSlider and EnumCheckboxGroup complete
-Last activity: 2026-02-07 - Completed 11-03-PLAN.md (RangeSlider and EnumCheckboxGroup)
+Plan: 4 of 7 complete (11-04)
+Status: Wave 2 advancing - AppliedFilters and URLPreview complete
+Last activity: 2026-02-07 - Completed 11-04-PLAN.md (AppliedFilters & URLPreview Components)
 
-Progress: [████████████░░] 119% (37/31 total plans across all milestones)
+Progress: [████████████░░] 122% (38/31 total plans across all milestones)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 36 (13 v1.0 + 10 v1.1 + 13 v1.2)
-- Average duration: 3.2 min
-- Total execution time: ~116 min
+- Total plans completed: 38 (13 v1.0 + 10 v1.1 + 15 v1.2)
+- Average duration: 3.1 min
+- Total execution time: ~118 min
 
 **By Phase:**
 
@@ -37,7 +37,7 @@ Progress: [████████████░░] 119% (37/31 total plans a
 | 8 | 2/2 | 5 min | 2.5 min |
 | 9 | 7/7 | 23 min | 3.3 min |
 | 10 | 5/5 | 8 min | 1.6 min |
-| 11 | 2/7 | 6.1 min | 3.1 min |
+| 11 | 4/7 | 8.3 min | 2.1 min |
 
 ## Milestone History
 
@@ -116,6 +116,10 @@ Progress: [████████████░░] 119% (37/31 total plans a
 | Current value badge above slider | Provides immediate visual feedback without cluttering slider track | 11-03 |
 | Native checkboxes for EnumCheckboxGroup | Simpler than shadcn Checkbox for this use case | 11-03 |
 | fieldset/legend for checkbox groups | Ensures accessibility and proper form grouping for screen readers | 11-03 |
+| useLocalStorage lazy initialization | Prevents SSR hydration mismatches with typeof window check | 11-04 |
+| AppliedFilters hidden when no active filters | Cleaner UI, bar only appears when needed | 11-04 |
+| URLPreview toggle hidden by default | Power-user feature, don't clutter default view | 11-04 |
+| Copy button copies full URL | Display truncates for readability, copy sends complete URL for sharing | 11-04 |
 
 ### Pending Todos
 
@@ -136,8 +140,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Completed 11-03-PLAN.md (RangeSlider and EnumCheckboxGroup) - Phase 11 Wave 2 in progress
+Stopped at: Completed 11-04-PLAN.md (AppliedFilters & URLPreview Components) - Phase 11 Wave 2 in progress
 Resume file: None
 
 ---
-*Last updated: 2026-02-07 after 11-03 execution*
+*Last updated: 2026-02-07 after 11-04 execution*
