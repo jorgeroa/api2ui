@@ -33,14 +33,14 @@ export function FieldControls({
       {/* Eye icon positioned absolutely - doesn't affect content layout */}
       <button
         onClick={handleToggleVisibility}
-        className="absolute -left-7 top-1 w-5 h-5 text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all"
+        className="absolute -left-10 top-0.5 w-4 h-4 text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all"
         aria-label={isVisible ? 'Hide field' : 'Show field'}
         title={isVisible ? 'Hide field' : 'Show field'}
       >
         {isVisible ? (
           // Open eye icon
           <svg
-            className="w-5 h-5"
+            className="w-4 h-4"
             fill="none"
             stroke="currentColor"
             strokeWidth={2}
@@ -60,7 +60,7 @@ export function FieldControls({
         ) : (
           // Crossed-out eye icon
           <svg
-            className="w-5 h-5 text-red-400"
+            className="w-4 h-4 text-red-400"
             fill="none"
             stroke="currentColor"
             strokeWidth={2}
