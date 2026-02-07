@@ -105,6 +105,9 @@ export function ParameterForm({
   // Auto-save with debounce when endpoint is provided
   useDebouncedPersist(endpoint ?? '', values)
 
+  // Track version of quick values for debounce trigger
+  const [quickValuesVersion, setQuickValuesVersion] = useState(0)
+
   // Apply type inference to all params
   const paramsWithTypes = useMemo(() => {
     return effectiveParams.map((param) => ({
@@ -145,6 +148,19 @@ export function ParameterForm({
     setValues((prev) => ({ ...prev, [name]: value }))
   }
 
+  // Handler for quick value changes (selects, checkboxes, etc.) - triggers debounced fetch
+  const handleQuickChange = (name: string, value: string) => {
+    setValues((prev) => ({ ...prev, [name]: value }))
+    setQuickValuesVersion((v) => v + 1)  // Trigger debounced fetch
+  }
+
+  // For array parameters
+  const handleQuickArrayChange = (name: string, values: string[]) => {
+    // Convert array to comma-separated for storage
+    setValues((prev) => ({ ...prev, [name]: values.join(',') }))
+    setQuickValuesVersion((v) => v + 1)  // Trigger debounced fetch
+  }
+
   const handleClear = (name: string) => {
     setValues((prev) => {
       const { [name]: _, ...rest } = prev
@@ -167,6 +183,17 @@ export function ParameterForm({
       setTypeOverride(endpoint, name, type)
     }
   }
+
+  // Auto-fetch on quick value changes (debounced 300ms)
+  useEffect(() => {
+    if (quickValuesVersion === 0) return  // Skip initial render
+
+    const timer = setTimeout(() => {
+      onSubmit(values)
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [quickValuesVersion])  // Only trigger on version bump, not on values change
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -225,7 +252,14 @@ export function ParameterForm({
                 key={param.name}
                 parameter={param}
                 value={values[param.name] ?? ''}
-                onChange={(value) => handleChange(param.name, value)}
+                onChange={(value) => {
+                  // Check if this is a "quick" input type (enum select or boolean)
+                  if (param.schema.enum || param.schema.type === 'boolean') {
+                    handleQuickChange(param.name, value)
+                  } else {
+                    handleChange(param.name, value)  // Manual - needs Apply
+                  }
+                }}
                 inferredType={param.inferredType}
                 typeOverride={endpoint ? getTypeOverride(endpoint, param.name) : undefined}
                 onTypeOverride={endpoint ? (t) => handleTypeOverride(param.name, t) : undefined}
@@ -263,7 +297,14 @@ export function ParameterForm({
                     key={param.name}
                     parameter={param}
                     value={values[param.name] ?? ''}
-                    onChange={(value) => handleChange(param.name, value)}
+                    onChange={(value) => {
+                      // Check if this is a "quick" input type (enum select or boolean)
+                      if (param.schema.enum || param.schema.type === 'boolean') {
+                        handleQuickChange(param.name, value)
+                      } else {
+                        handleChange(param.name, value)  // Manual - needs Apply
+                      }
+                    }}
                     inferredType={param.inferredType}
                     typeOverride={endpoint ? getTypeOverride(endpoint, param.name) : undefined}
                     onTypeOverride={endpoint ? (t) => handleTypeOverride(param.name, t) : undefined}
@@ -287,7 +328,14 @@ export function ParameterForm({
                   key={param.name}
                   parameter={param}
                   value={values[param.name] ?? ''}
-                  onChange={(value) => handleChange(param.name, value)}
+                  onChange={(value) => {
+                    // Check if this is a "quick" input type (enum select or boolean)
+                    if (param.schema.enum || param.schema.type === 'boolean') {
+                      handleQuickChange(param.name, value)
+                    } else {
+                      handleChange(param.name, value)  // Manual - needs Apply
+                    }
+                  }}
                   inferredType={param.inferredType}
                   typeOverride={endpoint ? getTypeOverride(endpoint, param.name) : undefined}
                   onTypeOverride={endpoint ? (t) => handleTypeOverride(param.name, t) : undefined}
