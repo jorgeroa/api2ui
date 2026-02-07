@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useAppStore } from './store/appStore'
 import { useConfigStore } from './store/configStore'
 import { useAPIFetch } from './hooks/useAPIFetch'
@@ -18,6 +19,7 @@ import 'react-loading-skeleton/dist/skeleton.css'
 function App() {
   const {
     url,
+    setUrl,
     loading,
     error,
     data,
@@ -28,6 +30,16 @@ function App() {
   } = useAppStore()
   const { mode, setMode, clearFieldConfigs } = useConfigStore()
   const { fetchAndInfer, fetchOperation } = useAPIFetch()
+
+  // Read api param from URL and auto-fetch on load
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const apiParam = params.get('api')
+    if (apiParam) {
+      setUrl(apiParam)
+      fetchAndInfer(apiParam)
+    }
+  }, [])
 
   const handleRetry = () => {
     if (url) {

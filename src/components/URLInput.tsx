@@ -51,6 +51,12 @@ export function URLInput() {
 
     // Clear validation error and fetch
     setValidationError(null)
+
+    // Update browser URL with api param for shareable links
+    const newUrl = new URL(window.location.href)
+    newUrl.searchParams.set('api', url)
+    window.history.pushState({}, '', newUrl.toString())
+
     fetchAndInfer(url)
   }
 
@@ -58,6 +64,12 @@ export function URLInput() {
     setUrl(exampleUrl)
     setValidationError(null)
     setLastClickedExample(exampleUrl)
+
+    // Update browser URL with api param for shareable links
+    const newUrl = new URL(window.location.href)
+    newUrl.searchParams.set('api', exampleUrl)
+    window.history.pushState({}, '', newUrl.toString())
+
     await fetchAndInfer(exampleUrl)
     setLastClickedExample(null)
   }
