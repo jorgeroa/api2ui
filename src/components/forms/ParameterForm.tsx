@@ -3,6 +3,7 @@ import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react
 import type { ParsedParameter } from '../../services/openapi/types'
 import { ParameterInput } from './ParameterInput'
 import { ParameterGroup } from './ParameterGroup'
+import { URLPreview } from './URLPreview'
 import { parseUrlParameters } from '../../services/urlParser/parser'
 import { inferParameterType } from '../../services/urlParser/typeInferrer'
 import { extractGroupPrefix } from '../../services/urlParser/groupUtils'
@@ -15,6 +16,7 @@ interface ParameterFormProps {
   loading?: boolean
   endpoint?: string           // For persistence key
   rawUrl?: string             // Raw URL to parse (alternative to parameters)
+  baseUrl?: string            // For URL preview construction
 }
 
 /**
@@ -40,6 +42,7 @@ export function ParameterForm({
   loading = false,
   endpoint,
   rawUrl,
+  baseUrl,
 }: ParameterFormProps) {
   // Store operations
   const { getValues, clearValue, clearEndpoint, getTypeOverride, setTypeOverride } = useParameterStore()
@@ -196,6 +199,25 @@ export function ParameterForm({
   // Check if there are any values to reset
   const hasValues = Object.values(values).some((v) => v !== '')
 
+  // Construct preview URL from current values
+  const constructPreviewUrl = () => {
+    if (!baseUrl && !endpoint) return ''
+
+    const base = baseUrl ?? endpoint ?? ''
+    const params = new URLSearchParams()
+
+    for (const [key, value] of Object.entries(values)) {
+      if (value) {
+        params.set(key, value)
+      }
+    }
+
+    const queryString = params.toString()
+    return queryString ? `${base}?${queryString}` : base
+  }
+
+  const previewUrl = constructPreviewUrl()
+
   // If no visible parameters and no groups, just show submit button
   if (visibleUngrouped.length === 0 && grouped.size === 0) {
     return (
@@ -213,6 +235,11 @@ export function ParameterForm({
           )}
           {loading ? 'Fetching...' : 'Fetch Data'}
         </button>
+
+        {/* URL Preview */}
+        {previewUrl && (
+          <URLPreview url={previewUrl} />
+        )}
       </form>
     )
   }
@@ -368,6 +395,11 @@ export function ParameterForm({
           {loading ? 'Fetching...' : 'Fetch Data'}
         </button>
       </div>
+
+      {/* URL Preview */}
+      {previewUrl && (
+        <URLPreview url={previewUrl} />
+      )}
     </form>
   )
 }
