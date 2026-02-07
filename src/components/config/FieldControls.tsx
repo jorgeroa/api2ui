@@ -33,7 +33,7 @@ export function FieldControls({
       {/* Eye icon positioned absolutely - doesn't affect content layout */}
       <button
         onClick={handleToggleVisibility}
-        className="absolute -left-6 top-1 w-5 h-5 text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all"
+        className="absolute -left-12 top-1 w-5 h-5 text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all"
         aria-label={isVisible ? 'Hide field' : 'Show field'}
         title={isVisible ? 'Hide field' : 'Show field'}
       >
