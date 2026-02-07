@@ -89,7 +89,7 @@ Plans:
 - [x] 09-06-PLAN.md — ParameterForm integration
 - [x] 09-07-PLAN.md — App.tsx integration (gap closure)
 
-#### Phase 10: Layout System & Parameter Grouping
+#### Phase 10: Layout System & Parameter Grouping ✅
 **Goal**: User-selectable layout presets with responsive behavior
 **Depends on**: Phase 9
 **Requirements**: LAYOUT-01, LAYOUT-02, LAYOUT-03, LAYOUT-04, LAYOUT-05, LAYOUT-06
@@ -99,11 +99,14 @@ Plans:
   3. On mobile (viewport < 768px), layout defaults to collapsible drawer for optimal touch interaction
   4. Layout transitions are smooth without losing form state or scroll position
   5. Parameter groups from Phase 9 adapt to each layout mode appropriately
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] 10-01: TBD
-- [ ] 10-02: TBD
+- [x] 10-01-PLAN.md — Layout preference store + useMediaQuery hook
+- [x] 10-02-PLAN.md — Sidebar and TopBar layout components
+- [x] 10-03-PLAN.md — Split and Drawer layout components
+- [x] 10-04-PLAN.md — LayoutSwitcher and LayoutContainer
+- [x] 10-05-PLAN.md — App.tsx integration with verification
 
 #### Phase 11: Rich Input Components & UX Polish
 **Goal**: Rich form components with inline re-fetch, validation, and applied filter chips
@@ -140,8 +143,8 @@ Phases execute in numeric order: 9 → 10 → 11
 | 7. Pagination | v1.1 | 2/2 | Complete | 2026-02-04 |
 | 8. Enhanced Detail Views | v1.1 | 2/2 | Complete | 2026-02-05 |
 | 9. URL Parsing & Type Inference Foundation | v1.2 | 7/7 | Complete | 2026-02-05 |
-| 10. Layout System & Parameter Grouping | v1.2 | 0/TBD | Not started | - |
+| 10. Layout System & Parameter Grouping | v1.2 | 5/5 | Complete | 2026-02-07 |
 | 11. Rich Input Components & UX Polish | v1.2 | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-02-05 after Phase 9 execution complete*
+*Last updated: 2026-02-07 after Phase 10 execution complete*
