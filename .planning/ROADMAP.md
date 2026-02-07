@@ -93,13 +93,16 @@
 **Goal**: Engine accurately classifies common field patterns and assigns semantic meaning
 **Dependencies**: None (foundation phase)
 **Requirements**: SEM-01, SEM-02, SEM-03, SEM-04
-**Plans**: Pending
+**Plans**: 3 plans
+- [ ] 12-01-PLAN.md -- Foundation types, confidence scoring, memoization cache, schema extension
+- [ ] 12-02-PLAN.md -- Pattern library (22 patterns) and detection engine
+- [ ] 12-03-PLAN.md -- Comprehensive tests and validation
 
 **Success Criteria:**
 1. Pattern library detects 20-30 common field types (reviews, images, price, rating, status, tags, specifications, etc.)
 2. Multi-signal detection validates name + type + values before HIGH confidence classification
 3. OpenAPI hints (description, format, title) successfully inform semantic classification when present
-4. Confidence scoring determines fallback behavior: >90% confidence applies smart default, <90% falls back to type-based default
+4. Confidence scoring determines fallback behavior: >=75% confidence applies smart default, <75% falls back to type-based default
 5. Classification runs once per API response with <100ms overhead
 
 ### Phase 13: Field Importance & Grouping Analysis
@@ -134,7 +137,7 @@
 6. Arrays with date/timestamp progression render as timeline view
 7. Smart defaults integrate with DynamicRenderer without breaking v1.2 behavior
 8. Component switcher continues to work for user overrides (INT-05)
-9. Analysis falls back to type-based defaults when confidence <90%
+9. Analysis falls back to type-based defaults when confidence <75%
 
 ### Phase 15: Smart Grouping & Visual Hierarchy
 **Goal**: Detail views organize into visual sections with hero layout and accordion-based grouping
@@ -185,11 +188,11 @@ Phases execute in numeric order: 12 → 13 → 14 → 15 → 16
 | 9. URL Parsing & Type Inference Foundation | v1.2 | 7/7 | Complete | 2026-02-05 |
 | 10. Layout System & Parameter Grouping | v1.2 | 5/5 | Complete | 2026-02-07 |
 | 11. Rich Input Components & UX Polish | v1.2 | 7/7 | Complete | 2026-02-07 |
-| 12. Core Semantic Detection | v1.3 | 0/? | Pending | - |
+| 12. Core Semantic Detection | v1.3 | 0/3 | Planned | - |
 | 13. Field Importance & Grouping Analysis | v1.3 | 0/? | Pending | - |
 | 14. Smart Component Selection | v1.3 | 0/? | Pending | - |
 | 15. Smart Grouping & Visual Hierarchy | v1.3 | 0/? | Pending | - |
 | 16. Context-Aware Components | v1.3 | 0/? | Pending | - |
 
 ---
-*Last updated: 2026-02-07 after v1.3 roadmap creation*
+*Last updated: 2026-02-07 after Phase 12 planning*
