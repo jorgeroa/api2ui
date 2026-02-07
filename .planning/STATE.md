@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-05)
 ## Current Position
 
 Phase: 11 of 11 (Rich Input Components & UX Polish) - IN PROGRESS
-Plan: 6 of 7 complete (11-06)
-Status: Wave 3 advancing - Hybrid re-fetch and error toasts complete
-Last activity: 2026-02-07 - Completed 11-06-PLAN.md (Hybrid Re-fetch & Error Toasts)
+Plan: 6 of 7 complete (11-05, 11-06)
+Status: Wave 3 advancing - Parameter input integration and hybrid re-fetch complete
+Last activity: 2026-02-07 - Completed 11-05-PLAN.md (Parameter Input Integration) and 11-06-PLAN.md (Hybrid Re-fetch & Error Toasts)
 
 Progress: [████████████░░] 126% (39/31 total plans across all milestones)
 
@@ -20,8 +20,8 @@ Progress: [████████████░░] 126% (39/31 total plans a
 
 **Velocity:**
 - Total plans completed: 39 (13 v1.0 + 10 v1.1 + 16 v1.2)
-- Average duration: 3.1 min
-- Total execution time: ~123 min
+- Average duration: 3.0 min
+- Total execution time: ~130 min
 
 **By Phase:**
 
@@ -37,7 +37,7 @@ Progress: [████████████░░] 126% (39/31 total plans a
 | 8 | 2/2 | 5 min | 2.5 min |
 | 9 | 7/7 | 23 min | 3.3 min |
 | 10 | 5/5 | 8 min | 1.6 min |
-| 11 | 6/7 | 13.3 min | 2.2 min |
+| 11 | 6/7 | 20.3 min | 3.4 min |
 
 ## Milestone History
 
@@ -120,6 +120,10 @@ Progress: [████████████░░] 126% (39/31 total plans a
 | AppliedFilters hidden when no active filters | Cleaner UI, bar only appears when needed | 11-04 |
 | URLPreview toggle hidden by default | Power-user feature, don't clutter default view | 11-04 |
 | Copy button copies full URL | Display truncates for readability, copy sends complete URL for sharing | 11-04 |
+| Validation triggers on blur, not change | Validation should not interrupt typing flow per UX guidance | 11-05 |
+| Error clears when typing resumes | Immediate feedback when user starts fixing validation issue | 11-05 |
+| Priority order for component selection | Most specific checks first: enum arrays → arrays → sliders → dates → generic | 11-05 |
+| Type assertions for extended schema | Current ParsedParameter type doesn't include items/maxItems for arrays | 11-05 |
 | Enum/boolean inputs trigger auto-fetch | Quick inputs with constrained values auto-fetch with debounce | 11-06 |
 | Text inputs require Apply button | Manual inputs need explicit submission to prevent API spam | 11-06 |
 | 300ms debounce for quick inputs | Balances responsiveness with API call throttling | 11-06 |
@@ -145,8 +149,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Completed 11-06-PLAN.md (Hybrid Re-fetch & Error Toasts) - Phase 11 Wave 3 in progress
+Stopped at: Completed 11-05-PLAN.md (Parameter Input Integration) - Phase 11 Wave 3 advancing
 Resume file: None
 
 ---
-*Last updated: 2026-02-07 after 11-06 execution*
+*Last updated: 2026-02-07 after 11-05 execution*
