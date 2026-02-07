@@ -15,6 +15,7 @@ import { Sidebar } from './components/navigation/Sidebar'
 import { LayoutContainer } from './components/layout/LayoutContainer'
 import { parseUrlParameters, reconstructQueryString } from './services/urlParser/parser'
 import { Toaster } from '@/components/ui/sonner'
+import { toast } from 'sonner'
 import 'react-loading-skeleton/dist/skeleton.css'
 
 function App() {
@@ -47,6 +48,16 @@ function App() {
       fetchAndInfer(url)
     }
   }
+
+  // Show toast notification on error
+  useEffect(() => {
+    if (error) {
+      toast.error('Failed to fetch data', {
+        description: String(error),
+        duration: 5000,
+      })
+    }
+  }, [error])
 
   // Derive selected operation
   const selectedOperation = parsedSpec?.operations[selectedOperationIndex]
