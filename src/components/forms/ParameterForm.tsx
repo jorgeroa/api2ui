@@ -61,23 +61,44 @@ export function ParameterForm({
   const persistedValues = endpoint ? getValues(endpoint) : {}
 
   // Initialize state with defaults merged with persisted values
-  const [values, setValues] = useState<Record<string, string>>(() => ({
-    ...getDefaultValues(effectiveParams),
-    ...persistedValues,
-  }))
+  // For Direct API URLs (rawUrl provided), URL values take precedence over persisted
+  // For OpenAPI endpoints, persisted values take precedence (user's previous inputs)
+  const [values, setValues] = useState<Record<string, string>>(() => {
+    const defaults = getDefaultValues(effectiveParams)
+    if (rawUrl) {
+      // Direct API URL: URL values override persisted (URL is source of truth)
+      return { ...persistedValues, ...defaults }
+    }
+    // OpenAPI endpoint: persisted values override defaults
+    return { ...defaults, ...persistedValues }
+  })
 
   // Re-initialize values when effectiveParams changes (e.g., new URL pasted)
   useEffect(() => {
-    setValues((prevValues) => ({
-      ...getDefaultValues(effectiveParams),
-      ...persistedValues,
-      // Keep any user-entered values that exist in new params
-      ...Object.fromEntries(
+    setValues((prevValues) => {
+      const defaults = getDefaultValues(effectiveParams)
+      const userEnteredValues = Object.fromEntries(
         Object.entries(prevValues).filter(([key]) =>
           effectiveParams.some((p) => p.name === key)
         )
-      ),
-    }))
+      )
+
+      if (rawUrl) {
+        // Direct API URL: URL values are source of truth, override everything
+        // Only keep user-entered values for params that DON'T have URL values
+        return {
+          ...persistedValues,
+          ...userEnteredValues,
+          ...defaults,  // URL values override last
+        }
+      }
+      // OpenAPI endpoint: persisted/user values take precedence
+      return {
+        ...defaults,
+        ...persistedValues,
+        ...userEnteredValues,
+      }
+    })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveParams])
 
