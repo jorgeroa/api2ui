@@ -1,5 +1,3 @@
-import { Badge } from '@/components/ui/badge'
-
 interface AppliedFiltersProps {
   filters: Record<string, string>
   onRemove: (key: string) => void
@@ -28,18 +26,20 @@ export function AppliedFilters({
       </span>
 
       {activeFilters.map(([key, value]) => (
-        <Badge key={key} variant="secondary" className="gap-1 max-w-[200px]">
-          <span className="truncate">
-            {key}: {value}
-          </span>
+        <span
+          key={key}
+          className="inline-flex items-center gap-1.5 max-w-[220px] px-2.5 py-1 text-sm bg-gray-100 text-gray-700 rounded-md border border-gray-200 hover:bg-gray-150 transition-colors"
+        >
+          <span className="font-medium text-gray-500 truncate">{key}:</span>
+          <span className="truncate">{value}</span>
           <button
             type="button"
             onClick={() => onRemove(key)}
-            className="ml-0.5 rounded-full hover:bg-gray-300 p-0.5 shrink-0"
+            className="ml-0.5 rounded-full hover:bg-gray-300 p-0.5 shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
             aria-label={`Remove filter ${key}`}
           >
             <svg
-              className="h-3 w-3"
+              className="h-3.5 w-3.5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -52,7 +52,7 @@ export function AppliedFilters({
               />
             </svg>
           </button>
-        </Badge>
+        </span>
       ))}
 
       <button
