@@ -123,4 +123,4 @@
 
 ---
 *Requirements defined: 2026-02-07*
-*Last updated: 2026-02-07 after initial definition*
+*Last updated: 2026-02-07 after v1.3 roadmap creation*
