@@ -108,6 +108,10 @@ Progress: [████████████░░] 119% (37/31 total plans a
 | FAB for drawer trigger on mobile | Fixed bottom-right button provides persistent access to parameters | 10-04 |
 | Root tsconfig.json requires path alias | shadcn CLI validates by checking root tsconfig.json, not tsconfig.app.json | 11-01 |
 | new-york style over default | Cleaner, more modern aesthetic selected by shadcn defaults | 11-01 |
+| Type-only imports for React types | verbatimModuleSyntax requires `type KeyboardEvent` syntax | 11-02 |
+| ISO string format for DateTimePicker | Simplifies serialization and ParameterForm integration | 11-02 |
+| Time preservation on date change | Better UX - changing date keeps existing hours/minutes | 11-02 |
+| Backspace removes last tag | Matches power user expectations from other tag inputs | 11-02 |
 | RangeSlider only when min/max explicit | Sliders only appear when both minimum and maximum are defined in schema | 11-03 |
 | Current value badge above slider | Provides immediate visual feedback without cluttering slider track | 11-03 |
 | Native checkboxes for EnumCheckboxGroup | Simpler than shadcn Checkbox for this use case | 11-03 |
