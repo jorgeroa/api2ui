@@ -1,11 +1,17 @@
 import { useState } from 'react'
 import type { ParsedParameter } from '../../services/openapi/types'
 import { TypeIcon } from './TypeIcon'
+import { DateTimePicker } from './DateTimePicker'
+import { TagInput } from './TagInput'
+import { RangeSlider, shouldUseSlider } from './RangeSlider'
+import { EnumCheckboxGroup, shouldUseEnumCheckboxGroup, getEnumOptions } from './EnumCheckboxGroup'
 
 interface ParameterInputProps {
   parameter: ParsedParameter
-  value: string
+  value: string                    // Keep for single values
+  arrayValue?: string[]            // New: for array parameters
   onChange: (value: string) => void
+  onArrayChange?: (values: string[]) => void  // New: for array parameters
   inferredType?: string // Type from inference
   typeOverride?: string // User's override (from store)
   onTypeOverride?: (type: string) => void // Callback for override
@@ -16,7 +22,9 @@ interface ParameterInputProps {
 export function ParameterInput({
   parameter,
   value,
+  arrayValue,
   onChange,
+  onArrayChange,
   inferredType,
   typeOverride,
   onTypeOverride,
@@ -62,6 +70,72 @@ export function ParameterInput({
     const defaultHint = schema.default !== undefined ? String(schema.default) : undefined
     const placeholder = exampleHint ?? defaultHint
 
+    // 1. Enum array → EnumCheckboxGroup
+    // Check if schema has items.enum (for OpenAPI array of enum values)
+    if (shouldUseEnumCheckboxGroup(schema as any) && onArrayChange) {
+      return (
+        <EnumCheckboxGroup
+          value={arrayValue ?? []}
+          onChange={onArrayChange}
+          options={getEnumOptions(schema as any)}
+          label={name}
+        />
+      )
+    }
+
+    // 2. Array type → TagInput
+    if ((schema.type === 'array' || parameter.isArray) && onArrayChange) {
+      return (
+        <TagInput
+          value={arrayValue ?? []}
+          onChange={onArrayChange}
+          maxItems={(schema as any).maxItems}
+          placeholder={`Add ${name}...`}
+        />
+      )
+    }
+
+    // 3. Numeric with min/max → RangeSlider
+    if (shouldUseSlider(schema)) {
+      const numValue = value ? parseFloat(value) : schema.minimum ?? 0
+      return (
+        <RangeSlider
+          value={numValue}
+          onChange={(v) => onChange(String(v))}
+          min={schema.minimum!}
+          max={schema.maximum!}
+          step={schema.type === 'integer' ? 1 : 0.1}
+          label={name}
+        />
+      )
+    }
+
+    // 4. Date format → DateTimePicker (without time)
+    if (schema.format === 'date' || effectiveType === 'date') {
+      return (
+        <DateTimePicker
+          value={value}
+          onChange={onChange}
+          includeTime={false}
+          placeholder={`Select ${name}`}
+          required={required}
+        />
+      )
+    }
+
+    // 5. DateTime format → DateTimePicker (with time)
+    if (schema.format === 'date-time') {
+      return (
+        <DateTimePicker
+          value={value}
+          onChange={onChange}
+          includeTime={true}
+          placeholder={`Select ${name}`}
+          required={required}
+        />
+      )
+    }
+
     // Enum → select dropdown (schema takes precedence)
     if (schema.enum && schema.enum.length > 0) {
       return (
@@ -103,19 +177,6 @@ export function ParameterInput({
               onBlur={handleBlur}
               min={schema.minimum}
               max={schema.maximum}
-              placeholder={placeholder}
-              className={`${baseClasses} ${errorClasses}`}
-              required={required}
-            />
-          )
-
-        case 'date':
-          return (
-            <input
-              type="date"
-              value={value}
-              onChange={(e) => handleChange(e.target.value)}
-              onBlur={handleBlur}
               placeholder={placeholder}
               className={`${baseClasses} ${errorClasses}`}
               required={required}
@@ -216,35 +277,6 @@ export function ParameterInput({
           onBlur={handleBlur}
           min={schema.minimum}
           max={schema.maximum}
-          placeholder={placeholder}
-          className={`${baseClasses} ${errorClasses}`}
-          required={required}
-        />
-      )
-    }
-
-    // Date/DateTime → date/datetime-local input
-    if (schema.format === 'date') {
-      return (
-        <input
-          type="date"
-          value={value}
-          onChange={(e) => handleChange(e.target.value)}
-          onBlur={handleBlur}
-          placeholder={placeholder}
-          className={`${baseClasses} ${errorClasses}`}
-          required={required}
-        />
-      )
-    }
-
-    if (schema.format === 'date-time') {
-      return (
-        <input
-          type="datetime-local"
-          value={value}
-          onChange={(e) => handleChange(e.target.value)}
-          onBlur={handleBlur}
           placeholder={placeholder}
           className={`${baseClasses} ${errorClasses}`}
           required={required}
