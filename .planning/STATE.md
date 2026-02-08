@@ -6,22 +6,22 @@
 
 **Current Milestone:** v1.3 Smart Default Selection — Make the rendering engine smarter about picking default components through semantic field analysis.
 
-**Current Focus:** Phase 13 in progress - Field Importance & Grouping Analysis (Plan 01 complete)
+**Current Focus:** Phase 13 complete - Field Importance & Grouping Analysis. Ready for Phase 14.
 
 ## Current Position
 
 **Milestone:** v1.3 Smart Default Selection
 **Phase:** 13 - Field Importance & Grouping Analysis
-**Plan:** 1/2 complete
-**Status:** In progress
-**Last activity:** 2026-02-08 - Completed 13-01-PLAN.md
+**Plan:** 2/2 complete
+**Status:** Phase complete
+**Last activity:** 2026-02-08 - Completed 13-02-PLAN.md
 
 **Progress:**
 ```
-v1.3 Progress: [========            ] 40% (4/10 plans estimated)
+v1.3 Progress: [==========          ] 50% (5/10 plans estimated)
 
 Phase 12: [Complete] Core Semantic Detection (3/3 plans)
-Phase 13: [In Progress] Field Importance & Grouping Analysis (1/2 plans)
+Phase 13: [Complete] Field Importance & Grouping Analysis (2/2 plans)
 Phase 14: [Pending] Smart Component Selection
 Phase 15: [Pending] Smart Grouping & Visual Hierarchy
 Phase 16: [Pending] Context-Aware Components
@@ -42,12 +42,12 @@ Phase 16: [Pending] Context-Aware Components
 - Coverage: 100% (28/28 requirements mapped)
 
 **v1.3 Progress:**
-- Plans completed: 4 (12-01, 12-02, 12-03, 13-01)
+- Plans completed: 5 (12-01, 12-02, 12-03, 13-01, 13-02)
 - Average duration: 4.5 min
 
 **Historical Velocity:**
-- Total plans completed: 46 (13 v1.0 + 10 v1.1 + 19 v1.2 + 4 v1.3)
-- Average duration: 3.1 min
+- Total plans completed: 47 (13 v1.0 + 10 v1.1 + 19 v1.2 + 5 v1.3)
+- Average duration: 3.2 min
 - Total execution time: ~147 min
 
 ## Milestone History
@@ -107,6 +107,9 @@ Phase 16: [Pending] Context-Aware Components
 | Tier thresholds: 80%/50% | >=80% primary, 50-79% secondary, <50% tertiary | 13-01 |
 | Metadata fields forced tertiary | id, _prefix, foreign keys, timestamps de-emphasized always | 13-01 |
 | Position uses logarithmic decay | Early fields slightly favored without over-weighting | 13-01 |
+| Hybrid grouping: prefix first, semantic second | Avoids conflict where contact_* fields would be both prefix AND semantic grouped | 13-02 |
+| Orphan prevention skips grouping | 1-2 ungrouped fields triggers no grouping (better UX than lonely orphans) | 13-02 |
+| Group labels strip common suffixes | billing_info_ → "Billing" (info/details/data/config suffixes removed) | 13-02 |
 
 ### Key Decisions from v1.2
 
@@ -138,10 +141,11 @@ Phase 16: [Pending] Context-Aware Components
 
 ### Blockers/Concerns
 
-**Active concerns from Plan 13-01:**
+**Active concerns for Phase 14:**
 1. **Tier threshold validation needed:** 80%/50% thresholds not tested with real API responses yet. May need adjustment based on user testing in Phase 14.
-2. **Visual richness mapping incomplete:** Only 9 of 22 semantic categories mapped to richness scores. Need to complete mapping in Plan 13-02.
+2. **Visual richness mapping incomplete:** Only 9 of 22 semantic categories mapped to richness scores. Consider completing in Phase 14 if needed.
 3. **Position weight tuning:** 15% weight may need adjustment based on real-world API response quality.
+4. **Grouping threshold validation:** 8+ fields threshold and 3+ fields per group not validated with real data yet.
 
 ### Quick Tasks Completed
 
@@ -154,38 +158,48 @@ Phase 16: [Pending] Context-Aware Components
 ## Session Continuity
 
 **Last Session (2026-02-08):**
-- Completed Plan 13-01: Field Importance Scoring Foundation
-- Created importance scorer with 4 weighted signals (40/25/20/15)
-- Added metadata override (forces id, _prefix, foreign keys, timestamps to tertiary)
-- 43 comprehensive tests covering all signals and edge cases
-- Fixed primary indicator pattern to match compound names (product_title)
+- Completed Plan 13-02: Grouping Detection & Public API
+- Implemented hybrid grouping (prefix matching + semantic clustering)
+- Added orphan prevention (skip grouping when 1-2 fields orphaned)
+- Created public API: analyzeFields() combining importance + grouping
+- 32 comprehensive grouping tests (75 total analysis tests)
 
 **This Session:**
-- Executed 13-01-PLAN.md
+- Executed 13-02-PLAN.md
 - 3 tasks completed, 3 commits
-- Duration: 5 min 38 sec
+- Duration: 4 min 27 sec
 
 **Phase 13 Progress:**
 - Plan 01: ✅ Importance scoring foundation (types, config, scorer, 43 tests)
-- Plan 02: ⏳ Grouping detection (prefix matching + semantic clustering)
+- Plan 02: ✅ Grouping detection & public API (grouping, 32 tests, index.ts)
+
+**Phase 13 Complete!**
+Analysis layer ready:
+- ✅ Importance scoring (primary/secondary/tertiary tiers)
+- ✅ Grouping detection (prefix + semantic clusters)
+- ✅ Public API (analyzeFields exported)
+- ✅ 75 tests passing
 
 **Next Steps:**
-1. Execute Plan 13-02 to add grouping detection
-2. Then Plan 14-01 integrates smart selection with DynamicRenderer
-3. Monitor tier distribution in Phase 14 for threshold tuning
+1. Execute Phase 14 to integrate smart selection with DynamicRenderer
+2. Monitor tier distribution and grouping quality for threshold tuning
+3. Consider completing visual richness mapping if needed
 
 **Quick Start Commands:**
 ```bash
-# Run importance scoring tests
-npm test src/services/analysis/importance.test.ts
+# Run all analysis tests
+npm test src/services/analysis
 
-# Test importance scorer manually
-npx tsx -e "import { calculateImportance } from './src/services/analysis/importance'; import type { FieldInfo } from './src/services/analysis/types'; const field: FieldInfo = { path: 'product.title', name: 'title', semanticCategory: 'title', sampleValues: ['Product A'], position: 0, totalFields: 10 }; console.log(calculateImportance(field))"
+# Test analyzeFields API manually
+npx tsx -e "import { analyzeFields } from './src/services/analysis'; import type { FieldInfo } from './src/services/analysis/types'; const fields: FieldInfo[] = [{ path: 'billing_address', name: 'billing_address', semanticCategory: 'address', sampleValues: ['123 Main St'], position: 0, totalFields: 10 }, { path: 'billing_city', name: 'billing_city', semanticCategory: null, sampleValues: ['NYC'], position: 1, totalFields: 10 }, { path: 'billing_zip', name: 'billing_zip', semanticCategory: null, sampleValues: ['10001'], position: 2, totalFields: 10 }]; const result = analyzeFields(fields); console.log(JSON.stringify({ groups: result.grouping.groups.length, ungrouped: result.grouping.ungrouped.length }, null, 2))"
 
-# Check config weights sum to 1.0
-npx tsx -e "import { IMPORTANCE_CONFIG } from './src/services/analysis/config'; console.log(Object.values(IMPORTANCE_CONFIG.weights).reduce((a,b)=>a+b,0))"
+# Check importance scoring
+npx tsx -e "import { calculateImportance } from './src/services/analysis'; import type { FieldInfo } from './src/services/analysis/types'; const field: FieldInfo = { path: 'product.title', name: 'title', semanticCategory: 'title', sampleValues: ['Product A'], position: 0, totalFields: 10 }; console.log(calculateImportance(field))"
+
+# Check grouping detection
+npx tsx -e "import { analyzeGrouping } from './src/services/analysis'; import type { FieldInfo } from './src/services/analysis/types'; const fields: FieldInfo[] = Array(8).fill(null).map((_, i) => ({ path: \`billing_field\${i}\`, name: \`billing_field\${i}\`, semanticCategory: null, sampleValues: ['val'], position: i, totalFields: 8 })); console.log(analyzeGrouping(fields))"
 ```
 
 ---
-*State updated: 2026-02-08 after Plan 13-01 completion*
-*Next: Execute Plan 13-02 for grouping detection*
+*State updated: 2026-02-08 after Plan 13-02 completion*
+*Next: Execute Phase 14 for smart component selection*
