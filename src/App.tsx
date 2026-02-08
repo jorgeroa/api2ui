@@ -3,6 +3,7 @@ import { useAppStore } from './store/appStore'
 import { useConfigStore } from './store/configStore'
 import { useParameterStore } from './store/parameterStore'
 import { useAPIFetch } from './hooks/useAPIFetch'
+import { useSchemaAnalysis } from './hooks/useSchemaAnalysis'
 import { URLInput } from './components/URLInput'
 import { DynamicRenderer } from './components/DynamicRenderer'
 import { ErrorDisplay } from './components/error/ErrorDisplay'
@@ -35,6 +36,9 @@ function App() {
   const { mode, setMode, clearFieldConfigs } = useConfigStore()
   const { getValues, clearValue, clearEndpoint } = useParameterStore()
   const { fetchAndInfer, fetchOperation } = useAPIFetch()
+
+  // Run semantic analysis pipeline when schema/data changes
+  useSchemaAnalysis(schema, data)
 
   // Read api param from URL and auto-fetch on load
   useEffect(() => {

@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { RendererProps } from '../../types/components'
-import type { ImportanceScore } from '../../services/analysis/types'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DetailModal } from '../detail/DetailModal'
 import { DetailPanel } from '../detail/DetailPanel'
@@ -12,17 +11,12 @@ import { useConfigStore } from '../../store/configStore'
 import { usePagination } from '../../hooks/usePagination'
 import { PaginationControls } from '../pagination/PaginationControls'
 
-interface CardListRendererProps extends RendererProps {
-  /** Optional importance scores for tier-aware field filtering */
-  importance?: Map<string, ImportanceScore>
-}
-
 /**
  * CardListRenderer displays arrays of objects as a responsive grid of cards.
  * Each card shows fields filtered by importance tier (primary + secondary only).
  * Click on a card to open the DetailModal.
  */
-export function CardListRenderer({ data, schema, path, depth, importance }: CardListRendererProps) {
+export function CardListRenderer({ data, schema, path, depth, importance }: RendererProps) {
   const [selectedItem, setSelectedItem] = useState<unknown | null>(null)
   const [popoverState, setPopoverState] = useState<{
     fieldPath: string

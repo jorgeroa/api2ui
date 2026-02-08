@@ -135,7 +135,6 @@ export function DynamicRenderer({
   const Component = getComponent(activeSchema, override || undefined)
 
   // Determine component types for badge
-  const defaultType = getDefaultTypeName(activeSchema)
   const availableTypes = getAvailableTypes(activeSchema)
 
   // Show badge on any renderer with alternatives
@@ -190,6 +189,7 @@ export function DynamicRenderer({
         schema={activeSchema}
         path={activePath}
         depth={depth}
+        importance={getAnalysisCache(activePath)?.importance}
       />
       {depth === 0 && data != null && <OnboardingTooltip />}
     </div>

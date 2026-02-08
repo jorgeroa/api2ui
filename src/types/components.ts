@@ -1,4 +1,5 @@
 import type { TypeSignature } from './schema'
+import type { ImportanceScore } from '../services/analysis/types'
 
 /** Available component types for rendering */
 export type ComponentType =
@@ -22,4 +23,6 @@ export interface RendererProps {
   schema: TypeSignature
   path: string
   depth: number
+  /** Optional importance scores for tier-aware field filtering */
+  importance?: Map<string, ImportanceScore>
 }

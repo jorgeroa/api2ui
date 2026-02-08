@@ -128,9 +128,10 @@
 **Goal**: Arrays and objects render with context-appropriate components based on semantic analysis
 **Dependencies**: Phase 13 (field importance & grouping)
 **Requirements**: ARR-01, ARR-02, ARR-03, ARR-04, ARR-05, ARR-06, INT-01, INT-05
-**Plans**: 2 plans
-- [ ] 14-01-PLAN.md -- Selection service foundation with heuristics and tests
-- [ ] 14-02-PLAN.md -- DynamicRenderer integration and CardListRenderer tier filtering
+**Plans**: 3 plans
+- [x] 14-01-PLAN.md -- Selection service foundation with heuristics and tests
+- [x] 14-02-PLAN.md -- DynamicRenderer integration and CardListRenderer tier filtering
+- [x] 14-03-PLAN.md -- Gap closure: Wire analysis pipeline and populate cache
 
 **Success Criteria:**
 1. Arrays with review/comment semantics default to card layout instead of table
@@ -194,7 +195,7 @@ Phases execute in numeric order: 12 → 13 → 14 → 15 → 16
 | 11. Rich Input Components & UX Polish | v1.2 | 7/7 | Complete | 2026-02-07 |
 | 12. Core Semantic Detection | v1.3 | 3/3 | Complete | 2026-02-07 |
 | 13. Field Importance & Grouping Analysis | v1.3 | 2/2 | Complete | 2026-02-08 |
-| 14. Smart Component Selection | v1.3 | 0/2 | Planned | - |
+| 14. Smart Component Selection | v1.3 | 3/3 | Complete | 2026-02-08 |
 | 15. Smart Grouping & Visual Hierarchy | v1.3 | 0/? | Pending | - |
 | 16. Context-Aware Components | v1.3 | 0/? | Pending | - |
 

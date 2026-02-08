@@ -12,7 +12,7 @@ import type { ComponentSelection, SelectionContext } from './types'
 function getArrayItemFields(schema: TypeSignature): Array<[string, TypeSignature]> | null {
   if (schema.kind !== 'array') return null
   if (schema.items.kind !== 'object') return null
-  return Array.from(schema.items.fields.entries())
+  return Array.from(schema.items.fields.entries()).map(([name, def]) => [name, def.type])
 }
 
 /**

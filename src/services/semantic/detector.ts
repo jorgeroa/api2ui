@@ -272,7 +272,7 @@ export function getBestMatch(results: ConfidenceResult[]): ConfidenceResult | nu
 
   const best = results[0]
   // Only return if it meets the high threshold (smart default threshold)
-  if (best.level === 'high') {
+  if (best && best.level === 'high') {
     return best
   }
 
