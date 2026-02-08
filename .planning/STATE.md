@@ -11,18 +11,18 @@
 ## Current Position
 
 **Milestone:** v1.3 Smart Default Selection
-**Phase:** 13 - Field Importance & Grouping Analysis
-**Plan:** 2/2 complete
-**Status:** Phase verified ✓
-**Last activity:** 2026-02-08 - Completed 13-02-PLAN.md
+**Phase:** 14 - Smart Component Selection
+**Plan:** 1 of 2 complete
+**Status:** In progress
+**Last activity:** 2026-02-08 - Completed 14-01-PLAN.md
 
 **Progress:**
 ```
-v1.3 Progress: [==========          ] 50% (5/10 plans estimated)
+v1.3 Progress: [============        ] 60% (6/10 plans estimated)
 
 Phase 12: [Complete] Core Semantic Detection (3/3 plans)
 Phase 13: [Complete] Field Importance & Grouping Analysis (2/2 plans)
-Phase 14: [Pending] Smart Component Selection
+Phase 14: [In Progress] Smart Component Selection (1/2 plans)
 Phase 15: [Pending] Smart Grouping & Visual Hierarchy
 Phase 16: [Pending] Context-Aware Components
 ```
@@ -42,13 +42,13 @@ Phase 16: [Pending] Context-Aware Components
 - Coverage: 100% (28/28 requirements mapped)
 
 **v1.3 Progress:**
-- Plans completed: 5 (12-01, 12-02, 12-03, 13-01, 13-02)
-- Average duration: 4.5 min
+- Plans completed: 6 (12-01, 12-02, 12-03, 13-01, 13-02, 14-01)
+- Average duration: 4.3 min
 
 **Historical Velocity:**
-- Total plans completed: 47 (13 v1.0 + 10 v1.1 + 19 v1.2 + 5 v1.3)
-- Average duration: 3.2 min
-- Total execution time: ~147 min
+- Total plans completed: 48 (13 v1.0 + 10 v1.1 + 19 v1.2 + 6 v1.3)
+- Average duration: 3.3 min
+- Total execution time: ~152 min
 
 ## Milestone History
 
@@ -110,6 +110,11 @@ Phase 16: [Pending] Context-Aware Components
 | Hybrid grouping: prefix first, semantic second | Avoids conflict where contact_* fields would be both prefix AND semantic grouped | 13-02 |
 | Orphan prevention skips grouping | 1-2 ungrouped fields triggers no grouping (better UX than lonely orphans) | 13-02 |
 | Group labels strip common suffixes | billing_info_ → "Billing" (info/details/data/config suffixes removed) | 13-02 |
+| Priority order: review > gallery > timeline > card-vs-table | Specific patterns checked before general heuristics | 14-01 |
+| Confidence threshold 0.75 for smart defaults | Only high-confidence selections trigger smart component choice | 14-01 |
+| Content richness trumps field count | Rich content (description/reviews/image/title) favors cards even with higher field count | 14-01 |
+| Visible field count excludes tertiary | Only primary + secondary tiers counted for card vs table decision | 14-01 |
+| Timeline requires event semantics | Date + title/description needed, not just chronological data | 14-01 |
 
 ### Key Decisions from v1.2
 
@@ -158,32 +163,31 @@ Phase 16: [Pending] Context-Aware Components
 ## Session Continuity
 
 **Last Session (2026-02-08):**
-- Completed Plan 13-02: Grouping Detection & Public API
-- Implemented hybrid grouping (prefix matching + semantic clustering)
-- Added orphan prevention (skip grouping when 1-2 fields orphaned)
-- Created public API: analyzeFields() combining importance + grouping
-- 32 comprehensive grouping tests (75 total analysis tests)
+- Completed Plan 14-01: Smart Component Selection Foundation
+- Implemented 4 pattern-detection heuristics (review, image, timeline, card-vs-table)
+- Created selectComponent() public API with confidence scoring
+- Added type-based fallback with getDefaultTypeName()
+- 34 comprehensive tests covering all patterns and edge cases
 
 **This Session:**
-- Executed 13-02-PLAN.md
-- 3 tasks completed, 3 commits
-- Duration: 4 min 27 sec
+- Executed 14-01-PLAN.md
+- 2 tasks completed, 2 commits
+- Duration: 4 min 48 sec
 
-**Phase 13 Progress:**
-- Plan 01: ✅ Importance scoring foundation (types, config, scorer, 43 tests)
-- Plan 02: ✅ Grouping detection & public API (grouping, 32 tests, index.ts)
+**Phase 14 Progress:**
+- Plan 01: ✅ Selection service foundation (heuristics, API, 34 tests)
+- Plan 02: [Pending] DynamicRenderer integration
 
-**Phase 13 Complete!**
-Analysis layer ready:
-- ✅ Importance scoring (primary/secondary/tertiary tiers)
-- ✅ Grouping detection (prefix + semantic clusters)
-- ✅ Public API (analyzeFields exported)
-- ✅ 75 tests passing
+**Selection Service Complete:**
+- ✅ 4 heuristics with confidence scoring (0.75-0.9 range)
+- ✅ Priority-ordered evaluation (review > gallery > timeline > card-vs-table)
+- ✅ Type-based fallback for non-applicable schemas
+- ✅ 34 tests passing
 
 **Next Steps:**
-1. Execute Phase 14 to integrate smart selection with DynamicRenderer
-2. Monitor tier distribution and grouping quality for threshold tuning
-3. Consider completing visual richness mapping if needed
+1. Integrate selectComponent() into DynamicRenderer (Plan 14-02)
+2. Add feature flag for gradual rollout
+3. Monitor confidence score distribution in production
 
 **Quick Start Commands:**
 ```bash
