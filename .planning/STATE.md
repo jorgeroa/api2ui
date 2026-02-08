@@ -12,17 +12,17 @@
 
 **Milestone:** v1.3 Smart Default Selection
 **Phase:** 14 - Smart Component Selection
-**Plan:** 1 of 2 complete
-**Status:** In progress
-**Last activity:** 2026-02-08 - Completed 14-01-PLAN.md
+**Plan:** 2 of 2 complete
+**Status:** Phase complete
+**Last activity:** 2026-02-08 - Completed 14-02-PLAN.md
 
 **Progress:**
 ```
-v1.3 Progress: [============        ] 60% (6/10 plans estimated)
+v1.3 Progress: [==============      ] 70% (7/10 plans estimated)
 
 Phase 12: [Complete] Core Semantic Detection (3/3 plans)
 Phase 13: [Complete] Field Importance & Grouping Analysis (2/2 plans)
-Phase 14: [In Progress] Smart Component Selection (1/2 plans)
+Phase 14: [Complete] Smart Component Selection (2/2 plans)
 Phase 15: [Pending] Smart Grouping & Visual Hierarchy
 Phase 16: [Pending] Context-Aware Components
 ```
@@ -42,13 +42,13 @@ Phase 16: [Pending] Context-Aware Components
 - Coverage: 100% (28/28 requirements mapped)
 
 **v1.3 Progress:**
-- Plans completed: 6 (12-01, 12-02, 12-03, 13-01, 13-02, 14-01)
-- Average duration: 4.3 min
+- Plans completed: 7 (12-01, 12-02, 12-03, 13-01, 13-02, 14-01, 14-02)
+- Average duration: 4.1 min
 
 **Historical Velocity:**
-- Total plans completed: 48 (13 v1.0 + 10 v1.1 + 19 v1.2 + 6 v1.3)
+- Total plans completed: 49 (13 v1.0 + 10 v1.1 + 19 v1.2 + 7 v1.3)
 - Average duration: 3.3 min
-- Total execution time: ~152 min
+- Total execution time: ~155 min
 
 ## Milestone History
 
@@ -115,6 +115,10 @@ Phase 16: [Pending] Context-Aware Components
 | Content richness trumps field count | Rich content (description/reviews/image/title) favors cards even with higher field count | 14-01 |
 | Visible field count excludes tertiary | Only primary + secondary tiers counted for card vs table decision | 14-01 |
 | Timeline requires event semantics | Date + title/description needed, not just chronological data | 14-01 |
+| Three-tier precedence: override > smart > fallback | User override always wins, smart defaults require 0.75 confidence | 14-02 |
+| CardListRenderer tier filtering | Primary + secondary fields shown in cards, tertiary hidden | 14-02 |
+| Analysis cache stored per path | ComponentSelection + SemanticMetadata + ImportanceScore cached by path | 14-02 |
+| Hero image uses all fields | Image detection unaffected by tier filtering | 14-02 |
 
 ### Key Decisions from v1.2
 
@@ -163,31 +167,30 @@ Phase 16: [Pending] Context-Aware Components
 ## Session Continuity
 
 **Last Session (2026-02-08):**
-- Completed Plan 14-01: Smart Component Selection Foundation
-- Implemented 4 pattern-detection heuristics (review, image, timeline, card-vs-table)
-- Created selectComponent() public API with confidence scoring
-- Added type-based fallback with getDefaultTypeName()
-- 34 comprehensive tests covering all patterns and edge cases
+- Completed Phase 14: Smart Component Selection
+- Plan 01: Selection service foundation (4 heuristics, 34 tests)
+- Plan 02: DynamicRenderer integration with three-tier precedence
 
 **This Session:**
-- Executed 14-01-PLAN.md
+- Executed 14-02-PLAN.md
 - 2 tasks completed, 2 commits
-- Duration: 4 min 48 sec
+- Duration: 3 min 6 sec
 
-**Phase 14 Progress:**
+**Phase 14 Complete:**
 - Plan 01: ✅ Selection service foundation (heuristics, API, 34 tests)
-- Plan 02: [Pending] DynamicRenderer integration
+- Plan 02: ✅ DynamicRenderer integration and tier-aware CardListRenderer
 
-**Selection Service Complete:**
-- ✅ 4 heuristics with confidence scoring (0.75-0.9 range)
-- ✅ Priority-ordered evaluation (review > gallery > timeline > card-vs-table)
-- ✅ Type-based fallback for non-applicable schemas
-- ✅ 34 tests passing
+**Integration Complete:**
+- ✅ Analysis cache in appStore (ComponentSelection + SemanticMetadata + ImportanceScore)
+- ✅ Three-tier component selection: override → smart (>=0.75) → fallback
+- ✅ CardListRenderer filters primary + secondary tier fields
+- ✅ v1.2 behavior preserved (graceful cache miss handling)
+- ✅ Component switcher still works (user overrides)
 
 **Next Steps:**
-1. Integrate selectComponent() into DynamicRenderer (Plan 14-02)
-2. Add feature flag for gradual rollout
-3. Monitor confidence score distribution in production
+1. Populate analysis cache in App.tsx when API data fetched
+2. Phase 15: Smart Grouping UI with accordion/tabs
+3. Add feature flag for gradual rollout if needed
 
 **Quick Start Commands:**
 ```bash
@@ -205,5 +208,5 @@ npx tsx -e "import { analyzeGrouping } from './src/services/analysis'; import ty
 ```
 
 ---
-*State updated: 2026-02-08 after Phase 13 verification*
-*Next: /gsd:discuss-phase 14 or /gsd:plan-phase 14*
+*State updated: 2026-02-08 after Phase 14 completion*
+*Next: /gsd:discuss-phase 15 or /gsd:plan-phase 15*
