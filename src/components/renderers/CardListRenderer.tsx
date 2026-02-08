@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import type { RendererProps } from '../../types/components'
+import type { ImportanceScore } from '../../services/analysis/types'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DetailModal } from '../detail/DetailModal'
 import { DetailPanel } from '../detail/DetailPanel'
@@ -11,12 +12,17 @@ import { useConfigStore } from '../../store/configStore'
 import { usePagination } from '../../hooks/usePagination'
 import { PaginationControls } from '../pagination/PaginationControls'
 
+interface CardListRendererProps extends RendererProps {
+  /** Optional importance scores for tier-aware field filtering */
+  importance?: Map<string, ImportanceScore>
+}
+
 /**
  * CardListRenderer displays arrays of objects as a responsive grid of cards.
- * Each card shows the first 4-5 fields as key-value pairs.
+ * Each card shows fields filtered by importance tier (primary + secondary only).
  * Click on a card to open the DetailModal.
  */
-export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
+export function CardListRenderer({ data, schema, path, depth, importance }: CardListRendererProps) {
   const [selectedItem, setSelectedItem] = useState<unknown | null>(null)
   const [popoverState, setPopoverState] = useState<{
     fieldPath: string
@@ -100,6 +106,21 @@ export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
 
   const fields = Array.from(schema.items.fields.entries())
 
+  // Filter fields by importance tier (primary + secondary only)
+  const fieldsToDisplay = useMemo(() => {
+    if (!importance) {
+      // No importance data - show all fields (v1.2 behavior preserved)
+      return fields
+    }
+
+    return fields.filter(([fieldName]) => {
+      const fieldPath = `${path}[].${fieldName}`
+      const score = importance.get(fieldPath)
+      // Show primary and secondary, hide tertiary
+      return !score || score.tier === 'primary' || score.tier === 'secondary'
+    })
+  }, [fields, importance, path])
+
   return (
     <div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -108,11 +129,11 @@ export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
           const globalIndex = pagination.firstIndex + paginatedIndex
           const title = getItemLabel(item)
 
-          // Detect hero image from first image-URL field
+          // Detect hero image from first image-URL field (use all fields for detection)
           const heroImage = getHeroImageField(obj, fields)
 
-          // Show first 4-5 fields
-          const displayFields = fields.slice(0, 5)
+          // Show filtered fields (primary + secondary tier only), limited to first 5
+          const displayFields = fieldsToDisplay.slice(0, 5)
 
           return (
             <div
@@ -207,9 +228,9 @@ export function CardListRenderer({ data, schema, path, depth }: RendererProps) {
                       </div>
                     )
                   })}
-                  {fields.length > 5 && (
+                  {fieldsToDisplay.length > 5 && (
                     <div className="text-xs text-gray-400 italic">
-                      +{fields.length - 5} more fields
+                      +{fieldsToDisplay.length - 5} more fields
                     </div>
                   )}
                 </div>
