@@ -4,12 +4,14 @@ import type { NavStackEntry } from '../types/navigation'
 import { getComponent } from './registry/ComponentRegistry'
 import { JsonFallback } from './renderers/JsonFallback'
 import { useConfigStore } from '../store/configStore'
+import { useAppStore } from '../store/appStore'
 import { NavigationProvider } from '../contexts/NavigationContext'
 import { ComponentPicker } from './config/ComponentPicker'
 import { ViewModeBadge } from './config/ViewModeBadge'
 import { OnboardingTooltip } from './config/OnboardingTooltip'
 import { Breadcrumb } from './navigation/Breadcrumb'
 import { DrilldownModeToggle } from './navigation/DrilldownModeToggle'
+import { getDefaultTypeName } from '../services/selection'
 
 interface DynamicRendererProps {
   data: unknown
@@ -19,15 +21,6 @@ interface DynamicRendererProps {
 }
 
 const MAX_DEPTH = 5
-
-/** Derive the default component type name from schema shape */
-function getDefaultTypeName(schema: TypeSignature): string {
-  if (schema.kind === 'array' && schema.items.kind === 'object') return 'table'
-  if (schema.kind === 'array' && schema.items.kind === 'primitive') return 'primitive-list'
-  if (schema.kind === 'object') return 'detail'
-  if (schema.kind === 'primitive') return 'primitive'
-  return 'json'
-}
 
 /** Get the list of alternative component types for a given schema */
 function getAvailableTypes(schema: TypeSignature): string[] {
@@ -50,6 +43,7 @@ export function DynamicRenderer({
   depth = 0,
 }: DynamicRendererProps) {
   const { fieldConfigs, setFieldComponentType, drilldownMode } = useConfigStore()
+  const { getAnalysisCache } = useAppStore()
   const [showPicker, setShowPicker] = useState(false)
 
   // Navigation stack — only meaningful at depth=0
@@ -120,12 +114,28 @@ export function DynamicRenderer({
   const config = fieldConfigs[activePath]
   const override = config?.componentType
 
+  // Determine current component type with precedence: User override > Smart default > Type-based default
+  let currentType: string
+  if (override) {
+    // User override always wins (INT-01, INT-05)
+    currentType = override
+  } else {
+    // Try smart selection from cache
+    const cached = getAnalysisCache(activePath)
+    if (cached?.selection && cached.selection.confidence >= 0.75) {
+      // High-confidence smart default
+      currentType = cached.selection.componentType
+    } else {
+      // Fall back to type-based default (v1.2 behavior preserved)
+      currentType = getDefaultTypeName(activeSchema)
+    }
+  }
+
   // Get the appropriate component from the registry
-  const Component = getComponent(activeSchema, override)
+  const Component = getComponent(activeSchema, override || undefined)
 
   // Determine component types for badge
   const defaultType = getDefaultTypeName(activeSchema)
-  const currentType = override || defaultType
   const availableTypes = getAvailableTypes(activeSchema)
 
   // Show badge on any renderer with alternatives

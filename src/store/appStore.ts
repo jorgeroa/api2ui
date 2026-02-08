@@ -1,6 +1,14 @@
 import { create } from 'zustand'
-import type { UnifiedSchema } from '../types/schema'
+import type { UnifiedSchema, SemanticMetadata } from '../types/schema'
 import type { ParsedSpec } from '../services/openapi/types'
+import type { ImportanceScore } from '../services/analysis/types'
+import type { ComponentSelection } from '../services/selection/types'
+
+interface AnalysisCacheEntry {
+  semantics: Map<string, SemanticMetadata>
+  importance: Map<string, ImportanceScore>
+  selection: ComponentSelection | null
+}
 
 interface AppState {
   // Input
@@ -18,6 +26,12 @@ interface AppState {
   selectedOperationIndex: number
   parameterValues: Record<string, string>
 
+  // Analysis cache (run once per API response)
+  analysisCache: Map<string, AnalysisCacheEntry>
+  setAnalysisCache: (path: string, data: AnalysisCacheEntry) => void
+  getAnalysisCache: (path: string) => AnalysisCacheEntry | null
+  clearAnalysisCache: () => void
+
   // Actions
   startFetch: () => void
   fetchSuccess: (data: unknown, schema: UnifiedSchema) => void
@@ -32,7 +46,7 @@ interface AppState {
   clearParameters: () => void
 }
 
-export const useAppStore = create<AppState>()((set) => ({
+export const useAppStore = create<AppState>()((set, get) => ({
   url: '',
   loading: false,
   error: null,
@@ -41,6 +55,7 @@ export const useAppStore = create<AppState>()((set) => ({
   parsedSpec: null,
   selectedOperationIndex: 0,
   parameterValues: {},
+  analysisCache: new Map(),
 
   setUrl: (url) => set({ url }),
   startFetch: () => set({ loading: true, error: null, data: null, schema: null }),
@@ -54,8 +69,21 @@ export const useAppStore = create<AppState>()((set) => ({
     schema: null,
     parsedSpec: null,
     selectedOperationIndex: 0,
-    parameterValues: {}
+    parameterValues: {},
+    analysisCache: new Map()
   }),
+
+  // Analysis cache actions
+  setAnalysisCache: (path, data) => set((state) => {
+    const newCache = new Map(state.analysisCache)
+    newCache.set(path, data)
+    return { analysisCache: newCache }
+  }),
+  getAnalysisCache: (path) => {
+    const cache = get().analysisCache
+    return cache.get(path) ?? null
+  },
+  clearAnalysisCache: () => set({ analysisCache: new Map() }),
 
   // OpenAPI actions
   clearSpec: () => set({
