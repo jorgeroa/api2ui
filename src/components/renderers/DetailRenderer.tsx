@@ -9,7 +9,6 @@ import { FieldConfigPopover } from '../config/FieldConfigPopover'
 import { SortableFieldList } from '../config/SortableFieldList'
 import { DraggableField } from '../config/DraggableField'
 import { isImageUrl, getHeroImageField } from '../../utils/imageDetection'
-import { HorizontalCardScroller } from './HorizontalCardScroller'
 
 /** Detect primary fields (name, title, label, heading, subject) for typography hierarchy */
 function isPrimaryField(fieldName: string): boolean {
@@ -297,7 +296,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
       .replace(/\b\w/g, (char) => char.toUpperCase())
     const displayLabel = config?.label || defaultLabel
 
-    // In view mode, use HorizontalCardScroller for arrays of objects
+    // In view mode, use DynamicRenderer for arrays of objects (enables smart selection + click handling)
     if (
       !isConfigureMode &&
       fieldDef.type.kind === 'array' &&
@@ -307,12 +306,14 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
     ) {
       return (
         <div key={fieldName}>
-          <HorizontalCardScroller
-            items={value as unknown[]}
-            schema={fieldDef.type.items}
+          <div className="text-sm text-gray-500 mb-2">
+            {displayLabel} ({value.length})
+          </div>
+          <DynamicRenderer
+            data={value}
+            schema={fieldDef.type}
             path={fieldPath}
             depth={depth + 1}
-            label={displayLabel}
           />
         </div>
       )

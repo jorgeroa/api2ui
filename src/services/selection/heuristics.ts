@@ -28,23 +28,28 @@ export function checkReviewPattern(
   const fields = getArrayItemFields(schema)
   if (!fields) return null
 
-  // Check for rating field
-  const hasRating = fields.some(([name]) => {
-    const semantic = context.semantics.get(`$[].${name}`)
-    return semantic?.detectedCategory === 'rating'
-  })
+  // Check for rating field - iterate over semantics map since paths vary
+  const hasRating = Array.from(context.semantics.values()).some(
+    semantic => semantic.detectedCategory === 'rating'
+  )
 
   // Check for comment/review/description field with primary or secondary tier
+  // Look for semantic category OR field name pattern
   const hasReview = fields.some(([name]) => {
-    const semantic = context.semantics.get(`$[].${name}`)
-    const importance = context.importance.get(`$[].${name}`)
-    const tier = importance?.tier
+    // Check semantic category from any matching path
+    const hasDescSemantic = Array.from(context.semantics.values()).some(
+      semantic => semantic.detectedCategory === 'reviews' || semantic.detectedCategory === 'description'
+    )
+
+    // Check importance tier for this field (find by name suffix)
+    const importanceEntry = Array.from(context.importance.entries()).find(([path]) =>
+      path.endsWith(`].${name}`)
+    )
+    const tier = importanceEntry?.[1]?.tier
 
     return (
-      (semantic?.detectedCategory === 'reviews' ||
-        semantic?.detectedCategory === 'description' ||
-        /comment|review|text|body/i.test(name)) &&
-      (tier === 'primary' || tier === 'secondary')
+      (hasDescSemantic || /comment|review|text|body/i.test(name)) &&
+      (tier === 'primary' || tier === 'secondary' || !importanceEntry)
     )
   })
 
@@ -73,17 +78,13 @@ export function checkImageGalleryPattern(
   const fields = getArrayItemFields(schema)
   if (!fields) return null
 
-  // Count image fields
-  const imageFields = fields.filter(([name]) => {
-    const semantic = context.semantics.get(`$[].${name}`)
-    return (
-      semantic?.detectedCategory === 'image' ||
-      semantic?.detectedCategory === 'thumbnail' ||
-      semantic?.detectedCategory === 'avatar'
-    )
-  })
+  // Count image fields - check by semantic category
+  const imageCategories = new Set(['image', 'thumbnail', 'avatar'])
+  const imageFieldCount = Array.from(context.semantics.values()).filter(
+    semantic => imageCategories.has(semantic.detectedCategory ?? '')
+  ).length
 
-  if (imageFields.length === 0) return null
+  if (imageFieldCount === 0) return null
 
   // Pure gallery: image fields with <=4 total fields
   if (fields.length <= 4) {
@@ -116,22 +117,16 @@ export function checkTimelinePattern(
   if (!fields) return null
 
   // Check for date/timestamp field
-  const hasDate = fields.some(([name]) => {
-    const semantic = context.semantics.get(`$[].${name}`)
-    return (
-      semantic?.detectedCategory === 'date' ||
-      semantic?.detectedCategory === 'timestamp'
-    )
-  })
+  const dateCategories = new Set(['date', 'timestamp'])
+  const hasDate = Array.from(context.semantics.values()).some(
+    semantic => dateCategories.has(semantic.detectedCategory ?? '')
+  )
 
   // Check for title OR description field (event-like semantics)
-  const hasNarrative = fields.some(([name]) => {
-    const semantic = context.semantics.get(`$[].${name}`)
-    return (
-      semantic?.detectedCategory === 'title' ||
-      semantic?.detectedCategory === 'description'
-    )
-  })
+  const narrativeCategories = new Set(['title', 'description'])
+  const hasNarrative = Array.from(context.semantics.values()).some(
+    semantic => narrativeCategories.has(semantic.detectedCategory ?? '')
+  )
 
   if (hasDate && hasNarrative) {
     return {
@@ -169,27 +164,23 @@ export function selectCardOrTable(
 
   // Count primary + secondary tier fields (ignore tertiary for visible field count)
   let visibleFieldCount = 0
-  let hasRichContent = false
-
   for (const [name] of fields) {
-    const fieldPath = `$[].${name}`
-    const tier = context.importance.get(fieldPath)?.tier
-    const semantic = context.semantics.get(fieldPath)
+    // Find importance entry by field name suffix
+    const importanceEntry = Array.from(context.importance.entries()).find(([path]) =>
+      path.endsWith(`].${name}`)
+    )
+    const tier = importanceEntry?.[1]?.tier
 
     if (tier === 'primary' || tier === 'secondary') {
       visibleFieldCount++
     }
-
-    // Check for rich content types
-    if (
-      semantic?.detectedCategory === 'description' ||
-      semantic?.detectedCategory === 'reviews' ||
-      semantic?.detectedCategory === 'image' ||
-      semantic?.detectedCategory === 'title'
-    ) {
-      hasRichContent = true
-    }
   }
+
+  // Check for rich content types from semantics
+  const richCategories = new Set(['description', 'reviews', 'image', 'title'])
+  const hasRichContent = Array.from(context.semantics.values()).some(
+    semantic => richCategories.has(semantic.detectedCategory ?? '')
+  )
 
   // User decision: Content richness trumps field count
   if (hasRichContent && visibleFieldCount <= 8) {

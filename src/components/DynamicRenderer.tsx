@@ -131,8 +131,8 @@ export function DynamicRenderer({
     }
   }
 
-  // Get the appropriate component from the registry
-  const Component = getComponent(activeSchema, override || undefined)
+  // Get the appropriate component from the registry - use currentType which includes smart selection
+  const Component = getComponent(activeSchema, currentType)
 
   // Determine component types for badge
   const availableTypes = getAvailableTypes(activeSchema)
