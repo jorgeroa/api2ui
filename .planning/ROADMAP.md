@@ -105,13 +105,13 @@
 4. Confidence scoring determines fallback behavior: >=75% confidence applies smart default, <75% falls back to type-based default
 5. Classification runs once per API response with <100ms overhead
 
-### Phase 13: Field Importance & Grouping Analysis
+### Phase 13: Field Importance & Grouping Analysis ✅
 **Goal**: System identifies primary fields, de-emphasizes metadata, and detects logical groupings
 **Dependencies**: Phase 12 (semantic detection)
 **Requirements**: SEM-05, IMP-01, IMP-02, IMP-03, IMP-04, GRP-01, GRP-04, INT-02, INT-03, INT-04
 **Plans**: 2 plans
-- [ ] 13-01-PLAN.md -- Foundation types, config, importance scoring algorithm with tests
-- [ ] 13-02-PLAN.md -- Grouping detection (prefix + semantic clustering) with public API
+- [x] 13-01-PLAN.md -- Foundation types, config, importance scoring algorithm with tests
+- [x] 13-02-PLAN.md -- Grouping detection (prefix + semantic clustering) with public API
 
 **Success Criteria:**
 1. Primary fields (name, title, headline) automatically detected and flagged for prominent display
@@ -191,10 +191,10 @@ Phases execute in numeric order: 12 → 13 → 14 → 15 → 16
 | 10. Layout System & Parameter Grouping | v1.2 | 5/5 | Complete | 2026-02-07 |
 | 11. Rich Input Components & UX Polish | v1.2 | 7/7 | Complete | 2026-02-07 |
 | 12. Core Semantic Detection | v1.3 | 3/3 | Complete | 2026-02-07 |
-| 13. Field Importance & Grouping Analysis | v1.3 | 0/2 | Planned | - |
+| 13. Field Importance & Grouping Analysis | v1.3 | 2/2 | Complete | 2026-02-08 |
 | 14. Smart Component Selection | v1.3 | 0/? | Pending | - |
 | 15. Smart Grouping & Visual Hierarchy | v1.3 | 0/? | Pending | - |
 | 16. Context-Aware Components | v1.3 | 0/? | Pending | - |
 
 ---
-*Last updated: 2026-02-07 after Phase 13 planning*
+*Last updated: 2026-02-08 after Phase 13 completion*
