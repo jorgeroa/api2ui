@@ -6,22 +6,22 @@
 
 **Current Milestone:** v1.3 Smart Default Selection — Make the rendering engine smarter about picking default components through semantic field analysis.
 
-**Current Focus:** Phase 12 complete and verified, ready for Phase 13 planning
+**Current Focus:** Phase 13 in progress - Field Importance & Grouping Analysis (Plan 01 complete)
 
 ## Current Position
 
 **Milestone:** v1.3 Smart Default Selection
-**Phase:** 12 - Core Semantic Detection
-**Plan:** 3/3 complete
-**Status:** Phase verified ✓
-**Last activity:** 2026-02-07 - Completed 12-03-PLAN.md
+**Phase:** 13 - Field Importance & Grouping Analysis
+**Plan:** 1/2 complete
+**Status:** In progress
+**Last activity:** 2026-02-08 - Completed 13-01-PLAN.md
 
 **Progress:**
 ```
-v1.3 Progress: [======              ] 30% (3/10 plans estimated)
+v1.3 Progress: [========            ] 40% (4/10 plans estimated)
 
 Phase 12: [Complete] Core Semantic Detection (3/3 plans)
-Phase 13: [Pending] Field Importance & Grouping Analysis
+Phase 13: [In Progress] Field Importance & Grouping Analysis (1/2 plans)
 Phase 14: [Pending] Smart Component Selection
 Phase 15: [Pending] Smart Grouping & Visual Hierarchy
 Phase 16: [Pending] Context-Aware Components
@@ -42,13 +42,13 @@ Phase 16: [Pending] Context-Aware Components
 - Coverage: 100% (28/28 requirements mapped)
 
 **v1.3 Progress:**
-- Plans completed: 3 (12-01, 12-02, 12-03)
-- Average duration: 4 min
+- Plans completed: 4 (12-01, 12-02, 12-03, 13-01)
+- Average duration: 4.5 min
 
 **Historical Velocity:**
-- Total plans completed: 45 (13 v1.0 + 10 v1.1 + 19 v1.2 + 3 v1.3)
-- Average duration: 3.0 min
-- Total execution time: ~141 min
+- Total plans completed: 46 (13 v1.0 + 10 v1.1 + 19 v1.2 + 4 v1.3)
+- Average duration: 3.1 min
+- Total execution time: ~147 min
 
 ## Milestone History
 
@@ -102,6 +102,11 @@ Phase 16: [Pending] Context-Aware Components
 | reviewsPattern uses CompositePattern | requiredFields for rating+comment structure detection | 12-02 |
 | UUIDv4 format required for high confidence | Arbitrary UUID-like strings don't pass validation | 12-03 |
 | Word boundary patterns are strict | product_price doesn't match price pattern (intentional) | 12-03 |
+| Importance weights: 40/25/20/15 | namePattern > visualRichness > dataPresence > position | 13-01 |
+| Primary indicator pattern contains-match | Match product_title not just word boundaries (underscore is word char) | 13-01 |
+| Tier thresholds: 80%/50% | >=80% primary, 50-79% secondary, <50% tertiary | 13-01 |
+| Metadata fields forced tertiary | id, _prefix, foreign keys, timestamps de-emphasized always | 13-01 |
+| Position uses logarithmic decay | Early fields slightly favored without over-weighting | 13-01 |
 
 ### Key Decisions from v1.2
 
@@ -133,7 +138,10 @@ Phase 16: [Pending] Context-Aware Components
 
 ### Blockers/Concerns
 
-**None currently.** Phase 12 complete, ready for Phase 13 planning.
+**Active concerns from Plan 13-01:**
+1. **Tier threshold validation needed:** 80%/50% thresholds not tested with real API responses yet. May need adjustment based on user testing in Phase 14.
+2. **Visual richness mapping incomplete:** Only 9 of 22 semantic categories mapped to richness scores. Need to complete mapping in Plan 13-02.
+3. **Position weight tuning:** 15% weight may need adjustment based on real-world API response quality.
 
 ### Quick Tasks Completed
 
@@ -145,39 +153,39 @@ Phase 16: [Pending] Context-Aware Components
 
 ## Session Continuity
 
-**Last Session (2026-02-07):**
-- Completed Plan 12-03: Semantic Detection Test Suite
-- Created 98 comprehensive tests (21 scorer + 77 detector)
-- Validated all detection patterns work correctly
-- Performance confirmed: 100 fields in <100ms
+**Last Session (2026-02-08):**
+- Completed Plan 13-01: Field Importance Scoring Foundation
+- Created importance scorer with 4 weighted signals (40/25/20/15)
+- Added metadata override (forces id, _prefix, foreign keys, timestamps to tertiary)
+- 43 comprehensive tests covering all signals and edge cases
+- Fixed primary indicator pattern to match compound names (product_title)
 
 **This Session:**
-- Executed 12-03-PLAN.md
-- 2 tasks completed, 2 commits
-- Duration: 5 min
+- Executed 13-01-PLAN.md
+- 3 tasks completed, 3 commits
+- Duration: 5 min 38 sec
 
-**Phase 12 Complete Summary:**
-- Plan 01: Types, scorer, cache foundation
-- Plan 02: 22 patterns across 5 categories, detection engine
-- Plan 03: 98 tests validating accuracy and performance
+**Phase 13 Progress:**
+- Plan 01: ✅ Importance scoring foundation (types, config, scorer, 43 tests)
+- Plan 02: ⏳ Grouping detection (prefix matching + semantic clustering)
 
 **Next Steps:**
-1. Run `/gsd:plan-phase 13` to plan Field Importance & Grouping Analysis
-2. Phase 13 will add importance scoring and grouping analysis
-3. Then Phase 14 integrates with DynamicRenderer
+1. Execute Plan 13-02 to add grouping detection
+2. Then Plan 14-01 integrates smart selection with DynamicRenderer
+3. Monitor tier distribution in Phase 14 for threshold tuning
 
 **Quick Start Commands:**
 ```bash
-# Plan Phase 13
-/gsd:plan-phase 13
+# Run importance scoring tests
+npm test src/services/analysis/importance.test.ts
 
-# Run semantic detection tests
-npm test src/services/semantic
+# Test importance scorer manually
+npx tsx -e "import { calculateImportance } from './src/services/analysis/importance'; import type { FieldInfo } from './src/services/analysis/types'; const field: FieldInfo = { path: 'product.title', name: 'title', semanticCategory: 'title', sampleValues: ['Product A'], position: 0, totalFields: 10 }; console.log(calculateImportance(field))"
 
-# Test detection engine manually
-npx tsx -e "import { detectSemantics } from './src/services/semantic'; console.log(detectSemantics('test.price', 'price', 'number', [19.99]))"
+# Check config weights sum to 1.0
+npx tsx -e "import { IMPORTANCE_CONFIG } from './src/services/analysis/config'; console.log(Object.values(IMPORTANCE_CONFIG.weights).reduce((a,b)=>a+b,0))"
 ```
 
 ---
-*State updated: 2026-02-07 after Phase 12 verification*
-*Next: /gsd:discuss-phase 13 or /gsd:plan-phase 13*
+*State updated: 2026-02-08 after Plan 13-01 completion*
+*Next: Execute Plan 13-02 for grouping detection*
