@@ -44,9 +44,10 @@ export const ANALYSIS_CONFIG = {
     /**
      * Primary indicator patterns (name patterns that boost importance).
      * User decision: name, title, headline are primary indicators.
+     * Matches fields containing these terms (e.g., product_title, user_name).
      */
     primaryIndicators: [
-      /\b(name|title|headline|heading|label|summary)\b/i,
+      /(name|title|headline|heading|label|summary)/i,
     ],
   },
   grouping: {
