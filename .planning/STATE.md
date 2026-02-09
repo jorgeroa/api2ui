@@ -12,18 +12,18 @@
 
 **Milestone:** v1.3 Smart Default Selection
 **Phase:** 14.1 - Smart Object & Primitive Selection
-**Plan:** 1 of 1 complete
+**Plan:** 2 of 2 complete
 **Status:** Phase complete
-**Last activity:** 2026-02-08 - Completed 14.1-01-PLAN.md
+**Last activity:** 2026-02-08 - Completed 14.1-02-PLAN.md
 
 **Progress:**
 ```
-v1.3 Progress: [===============     ] 75% (8/10 plans estimated)
+v1.3 Progress: [================    ] 82% (9/11 plans estimated)
 
 Phase 12: [Complete] Core Semantic Detection (3/3 plans)
 Phase 13: [Complete] Field Importance & Grouping Analysis (2/2 plans)
 Phase 14: [Complete] Smart Component Selection (2/2 plans)
-Phase 14.1: [Complete] Smart Object & Primitive Selection (1/1 plans)
+Phase 14.1: [Complete] Smart Object & Primitive Selection (2/2 plans)
 Phase 15: [Pending] Smart Grouping & Visual Hierarchy
 Phase 16: [Pending] Context-Aware Components
 ```
@@ -43,11 +43,11 @@ Phase 16: [Pending] Context-Aware Components
 - Coverage: 100% (28/28 requirements mapped)
 
 **v1.3 Progress:**
-- Plans completed: 8 (12-01, 12-02, 12-03, 13-01, 13-02, 14-01, 14-02, 14.1-01)
-- Average duration: 4.0 min
+- Plans completed: 9 (12-01, 12-02, 12-03, 13-01, 13-02, 14-01, 14-02, 14.1-01, 14.1-02)
+- Average duration: 3.9 min
 
 **Historical Velocity:**
-- Total plans completed: 50 (13 v1.0 + 10 v1.1 + 19 v1.2 + 8 v1.3)
+- Total plans completed: 51 (13 v1.0 + 10 v1.1 + 19 v1.2 + 9 v1.3)
 - Average duration: 3.3 min
 - Total execution time: ~159 min
 
@@ -129,6 +129,9 @@ Phase 16: [Pending] Context-Aware Components
 | Split pattern requires exactly 1 primary content | Multiple primary content fields suggest different layout (cards/tabs) | 14.1-01 |
 | Chips pattern uses data-driven value analysis | Semantic tags/status (0.9), value length heuristics (0.8) fallback | 14.1-01 |
 | Object field semantics use $.fieldName path | Consistent with JSON path conventions ($[].fieldName for array items) | 14.1-01 |
+| Root path $ skipped for object analysis | Root-level object typically wrapper/container, not meaningful entity | 14.1-02 |
+| Primitive arrays analyzed at parent path | Array semantics detected on array itself ($.tags) not items | 14.1-02 |
+| Object sample values from single instance | Object data is plain object, not array like array-of-objects | 14.1-02 |
 
 ### Key Decisions from v1.2
 
@@ -177,28 +180,30 @@ Phase 16: [Pending] Context-Aware Components
 ## Session Continuity
 
 **Last Session (2026-02-08):**
-- Completed Phase 14.1: Smart Object & Primitive Selection
-- Plan 01: Object and primitive array selection heuristics (TDD, 32 new tests)
+- Completed Phase 14.1 Plan 02: Schema analysis integration
+- Extended useSchemaAnalysis to analyze objects and primitive arrays
+- All tests pass (415), build succeeds
 
 **This Session:**
-- Executed 14.1-01-PLAN.md
-- 2 tasks completed (RED → GREEN), 2 commits
-- Duration: 3 min 37 sec
+- Executed 14.1-02-PLAN.md
+- 2 tasks completed, 2 commits (feat + fix)
+- Duration: 2 min 37 sec
 
 **Phase 14.1 Complete:**
 - Plan 01: ✅ Object and primitive array heuristics (profile, complex, split, chips patterns)
+- Plan 02: ✅ useSchemaAnalysis integration (discovers and analyzes all schema kinds)
 
-**Selection Service Now Complete:**
-- ✅ Array-of-objects heuristics (review, gallery, timeline, card-vs-table)
-- ✅ Object heuristics (profile, complex nested, split)
-- ✅ Primitive array heuristics (chips)
-- ✅ Three public selector functions: selectComponent, selectObjectComponent, selectPrimitiveArrayComponent
-- ✅ 66 comprehensive tests (34 existing + 32 new)
+**Smart Selection System Now Complete:**
+- ✅ Semantic detection (22 patterns covering all categories)
+- ✅ Field importance scoring (4 signals: name, richness, presence, position)
+- ✅ Grouping analysis (hybrid prefix + semantic with orphan prevention)
+- ✅ Component selection heuristics (8 patterns: review, gallery, timeline, card-vs-table, profile, complex, split, chips)
+- ✅ Analysis pipeline integration (useSchemaAnalysis populates cache for all schema kinds)
+- ✅ Three-tier precedence rendering (override > smart > fallback)
 
-**Next Steps:**
-1. Integrate object and primitive array selectors with useSchemaAnalysis hook
-2. Phase 15: Smart Grouping UI with accordion/tabs
-3. Consider feature flag for gradual rollout
+**Ready for Phase 15:**
+- Smart grouping UI with accordion/tabs components
+- Visual hierarchy implementation
 
 **Quick Start Commands:**
 ```bash
