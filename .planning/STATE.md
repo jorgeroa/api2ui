@@ -11,18 +11,19 @@
 ## Current Position
 
 **Milestone:** v1.3 Smart Default Selection
-**Phase:** 14 - Smart Component Selection
-**Plan:** 2 of 2 complete
+**Phase:** 14.1 - Smart Object & Primitive Selection
+**Plan:** 1 of 1 complete
 **Status:** Phase complete
-**Last activity:** 2026-02-08 - Completed 14-02-PLAN.md
+**Last activity:** 2026-02-08 - Completed 14.1-01-PLAN.md
 
 **Progress:**
 ```
-v1.3 Progress: [==============      ] 70% (7/10 plans estimated)
+v1.3 Progress: [===============     ] 75% (8/10 plans estimated)
 
 Phase 12: [Complete] Core Semantic Detection (3/3 plans)
 Phase 13: [Complete] Field Importance & Grouping Analysis (2/2 plans)
 Phase 14: [Complete] Smart Component Selection (2/2 plans)
+Phase 14.1: [Complete] Smart Object & Primitive Selection (1/1 plans)
 Phase 15: [Pending] Smart Grouping & Visual Hierarchy
 Phase 16: [Pending] Context-Aware Components
 ```
@@ -42,13 +43,13 @@ Phase 16: [Pending] Context-Aware Components
 - Coverage: 100% (28/28 requirements mapped)
 
 **v1.3 Progress:**
-- Plans completed: 7 (12-01, 12-02, 12-03, 13-01, 13-02, 14-01, 14-02)
-- Average duration: 4.1 min
+- Plans completed: 8 (12-01, 12-02, 12-03, 13-01, 13-02, 14-01, 14-02, 14.1-01)
+- Average duration: 4.0 min
 
 **Historical Velocity:**
-- Total plans completed: 49 (13 v1.0 + 10 v1.1 + 19 v1.2 + 7 v1.3)
+- Total plans completed: 50 (13 v1.0 + 10 v1.1 + 19 v1.2 + 8 v1.3)
 - Average duration: 3.3 min
-- Total execution time: ~155 min
+- Total execution time: ~159 min
 
 ## Milestone History
 
@@ -123,6 +124,11 @@ Phase 16: [Pending] Context-Aware Components
 | CardListRenderer tier filtering | Primary + secondary fields shown in cards, tertiary hidden | 14-02 |
 | Analysis cache stored per path | ComponentSelection + SemanticMetadata + ImportanceScore cached by path | 14-02 |
 | Hero image uses all fields | Image detection unaffected by tier filtering | 14-02 |
+| Profile pattern requires name + 2+ contacts | Single contact too ambiguous, 2+ ensures high confidence hero selection | 14.1-01 |
+| Complex pattern threshold at 3+ nested | 2 nested structures normal, 3+ indicates intentional complexity for tabs | 14.1-01 |
+| Split pattern requires exactly 1 primary content | Multiple primary content fields suggest different layout (cards/tabs) | 14.1-01 |
+| Chips pattern uses data-driven value analysis | Semantic tags/status (0.9), value length heuristics (0.8) fallback | 14.1-01 |
+| Object field semantics use $.fieldName path | Consistent with JSON path conventions ($[].fieldName for array items) | 14.1-01 |
 
 ### Key Decisions from v1.2
 
@@ -171,30 +177,28 @@ Phase 16: [Pending] Context-Aware Components
 ## Session Continuity
 
 **Last Session (2026-02-08):**
-- Completed Phase 14: Smart Component Selection
-- Plan 01: Selection service foundation (4 heuristics, 34 tests)
-- Plan 02: DynamicRenderer integration with three-tier precedence
+- Completed Phase 14.1: Smart Object & Primitive Selection
+- Plan 01: Object and primitive array selection heuristics (TDD, 32 new tests)
 
 **This Session:**
-- Executed 14-02-PLAN.md
-- 2 tasks completed, 2 commits
-- Duration: 3 min 6 sec
+- Executed 14.1-01-PLAN.md
+- 2 tasks completed (RED → GREEN), 2 commits
+- Duration: 3 min 37 sec
 
-**Phase 14 Complete:**
-- Plan 01: ✅ Selection service foundation (heuristics, API, 34 tests)
-- Plan 02: ✅ DynamicRenderer integration and tier-aware CardListRenderer
+**Phase 14.1 Complete:**
+- Plan 01: ✅ Object and primitive array heuristics (profile, complex, split, chips patterns)
 
-**Integration Complete:**
-- ✅ Analysis cache in appStore (ComponentSelection + SemanticMetadata + ImportanceScore)
-- ✅ Three-tier component selection: override → smart (>=0.75) → fallback
-- ✅ CardListRenderer filters primary + secondary tier fields
-- ✅ v1.2 behavior preserved (graceful cache miss handling)
-- ✅ Component switcher still works (user overrides)
+**Selection Service Now Complete:**
+- ✅ Array-of-objects heuristics (review, gallery, timeline, card-vs-table)
+- ✅ Object heuristics (profile, complex nested, split)
+- ✅ Primitive array heuristics (chips)
+- ✅ Three public selector functions: selectComponent, selectObjectComponent, selectPrimitiveArrayComponent
+- ✅ 66 comprehensive tests (34 existing + 32 new)
 
 **Next Steps:**
-1. Populate analysis cache in App.tsx when API data fetched
+1. Integrate object and primitive array selectors with useSchemaAnalysis hook
 2. Phase 15: Smart Grouping UI with accordion/tabs
-3. Add feature flag for gradual rollout if needed
+3. Consider feature flag for gradual rollout
 
 **Quick Start Commands:**
 ```bash
