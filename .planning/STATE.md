@@ -12,19 +12,19 @@
 
 **Milestone:** v1.3 Smart Default Selection
 **Phase:** 15 - Smart Grouping & Visual Hierarchy
-**Plan:** 1 of 2 complete
-**Status:** In progress
-**Last activity:** 2026-02-08 - Completed 15-01-PLAN.md
+**Plan:** 2 of 2 complete
+**Status:** Phase complete
+**Last activity:** 2026-02-09 - Completed 15-02-PLAN.md
 
 **Progress:**
 ```
-v1.3 Progress: [=================   ] 91% (10/11 plans estimated)
+v1.3 Progress: [=================== ] 100% (11/11 plans estimated)
 
 Phase 12: [Complete] Core Semantic Detection (3/3 plans)
 Phase 13: [Complete] Field Importance & Grouping Analysis (2/2 plans)
 Phase 14: [Complete] Smart Component Selection (3/3 plans)
 Phase 14.1: [Complete] Smart Object & Primitive Selection (2/2 plans)
-Phase 15: [In Progress] Smart Grouping & Visual Hierarchy (1/2 plans)
+Phase 15: [Complete] Smart Grouping & Visual Hierarchy (2/2 plans)
 Phase 16: [Pending] Context-Aware Components
 ```
 
@@ -43,13 +43,13 @@ Phase 16: [Pending] Context-Aware Components
 - Coverage: 100% (28/28 requirements mapped)
 
 **v1.3 Progress:**
-- Plans completed: 10 (12-01, 12-02, 12-03, 13-01, 13-02, 14-01, 14-02, 14.1-01, 14.1-02, 15-01)
+- Plans completed: 11 (12-01, 12-02, 12-03, 13-01, 13-02, 14-01, 14-02, 14.1-01, 14.1-02, 15-01, 15-02)
 - Average duration: 3.8 min
 
 **Historical Velocity:**
-- Total plans completed: 52 (13 v1.0 + 10 v1.1 + 19 v1.2 + 10 v1.3)
+- Total plans completed: 53 (13 v1.0 + 10 v1.1 + 19 v1.2 + 11 v1.3)
 - Average duration: 3.3 min
-- Total execution time: ~159 min
+- Total execution time: ~163 min
 
 ## Milestone History
 
@@ -139,6 +139,11 @@ Phase 16: [Pending] Context-Aware Components
 | Grouping results cached in analysis pipeline | analyzeFields() grouping now persisted alongside semantics/importance/selection | 15-01 |
 | Three-tier visual hierarchy for fields | Primary (large/bold), secondary (normal), tertiary (small/muted) styling | 15-01 |
 | FieldRow handles primitives only | Nested/image fields continue using existing DetailRenderer logic | 15-01 |
+| Grouped view only triggers when >8 fields AND groups detected AND not in configure mode | Conservative threshold prevents over-grouping simple data; configure mode must remain drag-and-drop friendly | 15-02 |
+| Accordion sections use defaultOpen={true} | All sections start expanded - avoids hiding information and provides predictable initial state | 15-02 |
+| Overview section shows primary+secondary ungrouped fields in two-column grid | Fields don't belong to semantic groups but are important enough to show prominently above the fold | 15-02 |
+| "Additional Information" section collects ungrouped tertiary fields | Keeps metadata/IDs/timestamps visible but de-emphasized | 15-02 |
+| Toggle between grouped/ungrouped is local React state (not persisted) | Grouping preference is contextual per API response, not a global user setting | 15-02 |
 
 ### Key Decisions from v1.2
 
@@ -192,15 +197,18 @@ Phase 16: [Pending] Context-Aware Components
 - Created FieldRow component with three-tier visual hierarchy
 - All tests pass (415), build succeeds
 
-**This Session:**
-- Phase 15 Plan 01 execution: 2 tasks, 2 commits (fdf3d4c, 8ab2885)
-- Duration: 3 minutes
-- Zero deviations - straightforward wiring change
+**This Session (2026-02-09):**
+- Phase 15 Plan 02 execution: 2 tasks + checkpoint, 2 commits (b290821, f0e2acf)
+- Duration: 4 minutes
+- Zero deviations - clean execution
+- Checkpoint verified via Playwright browser testing
 
-**Phase 15 Plan 01 Complete:**
-- ✅ Grouping data cached alongside semantics/importance/selection
-- ✅ FieldRow component with tier-based styling (primary/secondary/tertiary)
-- ✅ getFieldStyles helper for Plan 02 consumption
+**Phase 15 Complete:**
+- ✅ Grouping data cached alongside semantics/importance/selection (Plan 01)
+- ✅ FieldRow component with tier-based styling (Plan 01)
+- ✅ DetailRendererGrouped with Hero + Overview + Accordion Sections layout (Plan 02)
+- ✅ Conditional grouped/ungrouped rendering in DetailRenderer (Plan 02)
+- ✅ User toggle between grouped and flat views (Plan 02)
 
 **Smart Selection System Status:**
 - ✅ Semantic detection (22 patterns covering all categories)
@@ -210,13 +218,15 @@ Phase 16: [Pending] Context-Aware Components
 - ✅ Analysis pipeline integration (useSchemaAnalysis populates cache for all schema kinds)
 - ✅ Three-tier precedence rendering (override > smart > fallback)
 - ✅ Drill-down path normalization (indexed → generic for cache lookup)
-- ✅ **NEW: Grouping results cached in analysis pipeline**
-- ✅ **NEW: Three-tier visual hierarchy foundation (FieldRow component)**
+- ✅ Grouping results cached in analysis pipeline
+- ✅ Three-tier visual hierarchy (primary/secondary/tertiary styling)
+- ✅ **NEW: Hero + Overview + Accordion Sections layout for complex detail views**
+- ✅ **NEW: User toggle for grouped/ungrouped modes with escape hatch**
 
-**Ready for Phase 15 Plan 02:**
-- Grouped accordion rendering with cached grouping data
-- FieldRow component ready for field rendering within groups
-- Visual hierarchy styling available via getFieldStyles
+**Ready for Phase 16 (Context-Aware Components):**
+- Visual hierarchy foundation complete
+- Grouped detail view provides structure for context-aware enhancements
+- FieldRow component extensible for context-specific rendering
 
 **Quick Start Commands:**
 ```bash
@@ -234,5 +244,5 @@ npx tsx -e "import { analyzeGrouping } from './src/services/analysis'; import ty
 ```
 
 ---
-*State updated: 2026-02-08 after Phase 15 Plan 01 completion*
-*Next: /gsd:execute-phase 15 02 (grouped accordion rendering)*
+*State updated: 2026-02-09 after Phase 15 Plan 02 completion*
+*Next: /gsd:plan-phase 16 (context-aware components) - Phase 15 complete*
