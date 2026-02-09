@@ -164,7 +164,10 @@
 **Goal**: Detail views organize into visual sections with hero layout and accordion-based grouping
 **Dependencies**: Phase 14.1 (smart object & primitive selection)
 **Requirements**: IMP-05, GRP-02, GRP-03, GRP-05, GRP-06
-**Plans**: Pending
+**Plans**: 2 plans
+Plans:
+- [ ] 15-01-PLAN.md -- Grouping cache + shared FieldRow with visual hierarchy
+- [ ] 15-02-PLAN.md -- Grouped detail view with accordions, Hero+Overview+Sections layout, escape hatch
 
 **Success Criteria:**
 1. Detail views apply visual hierarchy with primary/secondary/tertiary styling based on importance scores
@@ -213,7 +216,7 @@ Phases execute in numeric order: 12 → 13 → 14 → 14.1 → 15 → 16
 | 13. Field Importance & Grouping Analysis | v1.3 | 2/2 | Complete | 2026-02-08 |
 | 14. Smart Component Selection | v1.3 | 3/3 | Complete | 2026-02-08 |
 | 14.1 Smart Object & Primitive Selection | v1.3 | 2/2 | Complete | 2026-02-08 |
-| 15. Smart Grouping & Visual Hierarchy | v1.3 | 0/? | Pending | - |
+| 15. Smart Grouping & Visual Hierarchy | v1.3 | 0/2 | Planned | - |
 | 16. Context-Aware Components | v1.3 | 0/? | Pending | - |
 
 ---
