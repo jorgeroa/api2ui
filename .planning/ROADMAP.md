@@ -181,7 +181,10 @@ Plans:
 **Goal**: Specialized components render for detected semantic types with proper formatting
 **Dependencies**: Phase 15 (smart grouping)
 **Requirements**: CTX-01, CTX-02, CTX-03, CTX-04, CTX-05
-**Plans**: Pending
+**Plans**: 2 plans
+Plans:
+- [ ] 16-01-PLAN.md -- Semantic components (StatusBadge, StarRating, CurrencyValue, FormattedDate, TagChips) + Badge variants
+- [ ] 16-02-PLAN.md -- PrimitiveRenderer + ChipsRenderer integration with semantic-aware rendering
 
 **Success Criteria:**
 1. Status/state fields render as colored badges with appropriate color semantics
@@ -217,7 +220,7 @@ Phases execute in numeric order: 12 → 13 → 14 → 14.1 → 15 → 16
 | 14. Smart Component Selection | v1.3 | 3/3 | Complete | 2026-02-08 |
 | 14.1 Smart Object & Primitive Selection | v1.3 | 2/2 | Complete | 2026-02-08 |
 | 15. Smart Grouping & Visual Hierarchy | v1.3 | 2/2 | Complete | 2026-02-09 |
-| 16. Context-Aware Components | v1.3 | 0/? | Pending | - |
+| 16. Context-Aware Components | v1.3 | 0/2 | Pending | - |
 
 ---
 *Last updated: 2026-02-09 after Phase 15 completion*
