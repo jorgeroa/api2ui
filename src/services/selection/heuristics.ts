@@ -5,6 +5,7 @@
 
 import type { TypeSignature } from '@/types/schema'
 import type { ComponentSelection, SelectionContext } from './types'
+import { isImageUrl } from '@/utils/imageDetection'
 
 /**
  * Helper to extract field entries from array-of-objects schema.
@@ -431,6 +432,43 @@ export function checkChipsPattern(
       componentType: 'chips',
       confidence: 0.8,
       reason: 'short-enum-like-values',
+    }
+  }
+
+  return null
+}
+
+/**
+ * Detects primitive arrays of image URLs for grid display.
+ *
+ * @returns grid with 0.85 confidence when majority of values are image URLs
+ * @returns null when not an image array
+ */
+export function checkImageGridPattern(
+  data: unknown,
+  schema: TypeSignature
+): ComponentSelection | null {
+  // Must be array of primitive strings
+  if (schema.kind !== 'array') return null
+  if (schema.items.kind !== 'primitive') return null
+  if (schema.items.type !== 'string') return null
+
+  if (!Array.isArray(data) || data.length === 0) return null
+
+  // Check if majority of values are image URLs
+  let imageCount = 0
+  for (const item of data) {
+    if (typeof item === 'string' && isImageUrl(item)) {
+      imageCount++
+    }
+  }
+
+  // At least 50% must be image URLs (handles mixed arrays gracefully)
+  if (imageCount / data.length >= 0.5) {
+    return {
+      componentType: 'grid',
+      confidence: 0.85,
+      reason: 'image-url-array',
     }
   }
 

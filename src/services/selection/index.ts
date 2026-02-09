@@ -19,6 +19,7 @@ import {
   checkComplexObjectPattern,
   checkSplitPattern,
   checkChipsPattern,
+  checkImageGridPattern,
 } from './heuristics'
 
 /**
@@ -158,6 +159,12 @@ export function selectPrimitiveArrayComponent(
       confidence: 0,
       reason: 'no-data',
     }
+  }
+
+  // Try image grid pattern (check before chips — image URLs are long strings)
+  const gridResult = checkImageGridPattern(data, schema)
+  if (gridResult && gridResult.confidence >= 0.75) {
+    return gridResult
   }
 
   // Try chips pattern
