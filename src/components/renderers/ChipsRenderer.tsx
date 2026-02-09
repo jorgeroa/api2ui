@@ -1,4 +1,5 @@
 import type { RendererProps } from '../../types/components'
+import { TagChips } from './semantic/TagChips'
 
 const chipColors = [
   'bg-blue-100 text-blue-800',
@@ -25,6 +26,15 @@ export function ChipsRenderer({ data, schema }: RendererProps) {
     return <span className="text-gray-500 text-xs">[0 items]</span>
   }
 
+  // Check if all items are strings (tag-like arrays)
+  const isStringArray = data.every((item) => typeof item === 'string')
+
+  if (isStringArray) {
+    // Use TagChips for string arrays (monochrome, copy-on-click, truncation)
+    return <TagChips tags={data as string[]} maxVisible={8} />
+  }
+
+  // Keep existing colorful chip rendering for non-string arrays (numbers, mixed types)
   return (
     <div className="flex flex-wrap gap-2">
       {data.map((item, index) => (

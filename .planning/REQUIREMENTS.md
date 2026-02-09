@@ -11,16 +11,16 @@
 - [x] **SEM-02**: Multi-signal detection requires name + type + values to agree for HIGH confidence classification
 - [x] **SEM-03**: OpenAPI hints (description, format, title) inform semantic classification when available
 - [x] **SEM-04**: Confidence scoring determines when to apply smart defaults vs fall back to type-based defaults
-- [ ] **SEM-05**: User overrides always take precedence over smart defaults (explicit beats implicit)
+- [x] **SEM-05**: User overrides always take precedence over smart defaults (explicit beats implicit)
 
 ### Array Rendering Intelligence
 
-- [ ] **ARR-01**: Arrays with review/comment semantics default to card layout instead of table
-- [ ] **ARR-02**: Arrays with specification/attribute semantics default to key-value pairs
-- [ ] **ARR-03**: Arrays of image URLs default to gallery/grid view
-- [ ] **ARR-04**: Table vs cards heuristic: <8 fields + rich content → cards; 10+ fields → table
-- [ ] **ARR-05**: Rating pattern detection: arrays with rating + comment fields → cards with star ratings
-- [ ] **ARR-06**: Timeline detection: arrays with date/timestamp progression → timeline view
+- [x] **ARR-01**: Arrays with review/comment semantics default to card layout instead of table
+- [x] **ARR-02**: Arrays with specification/attribute semantics default to key-value pairs
+- [x] **ARR-03**: Arrays of image URLs default to gallery/grid view
+- [x] **ARR-04**: Table vs cards heuristic: <8 fields + rich content → cards; 10+ fields → table
+- [x] **ARR-05**: Rating pattern detection: arrays with rating + comment fields → cards with star ratings
+- [x] **ARR-06**: Timeline detection: arrays with date/timestamp progression → timeline view
 
 ### Field Importance & Hierarchy
 
@@ -41,19 +41,19 @@
 
 ### Context-Aware Components
 
-- [ ] **CTX-01**: Status/state fields render as colored badges
-- [ ] **CTX-02**: Tags/categories arrays render as tag chips (pill-shaped labels)
-- [ ] **CTX-03**: Rating fields render as star rating display
-- [ ] **CTX-04**: Price fields render with currency formatting (Intl.NumberFormat)
-- [ ] **CTX-05**: Date fields render as relative or formatted display ("2 days ago" or localized date)
+- [x] **CTX-01**: Status/state fields render as colored badges
+- [x] **CTX-02**: Tags/categories arrays render as tag chips (pill-shaped labels)
+- [x] **CTX-03**: Rating fields render as star rating display
+- [x] **CTX-04**: Price fields render with currency formatting (Intl.NumberFormat)
+- [x] **CTX-05**: Date fields render as formatted display with localization (absolute only per user decision)
 
 ### Integration & Safety
 
-- [ ] **INT-01**: Smart defaults integrate with existing DynamicRenderer without breaking current behavior
-- [ ] **INT-02**: Feature flag allows gradual rollout and kill switch
-- [ ] **INT-03**: v1.2 configurations preserved during upgrade (config versioning/migration)
-- [ ] **INT-04**: Analysis runs once per API response, cached in appStore (performance <100ms overhead)
-- [ ] **INT-05**: Component switcher (v1.1) continues to work for user overrides
+- [x] **INT-01**: Smart defaults integrate with existing DynamicRenderer without breaking current behavior
+- [x] **INT-02**: Feature flag allows gradual rollout and kill switch
+- [x] **INT-03**: v1.2 configurations preserved during upgrade (config versioning/migration)
+- [x] **INT-04**: Analysis runs once per API response, cached in appStore (performance <100ms overhead)
+- [x] **INT-05**: Component switcher (v1.1) continues to work for user overrides
 
 ## Future Requirements (v1.4+)
 
@@ -87,13 +87,13 @@
 | SEM-02 | Phase 12 | Complete |
 | SEM-03 | Phase 12 | Complete |
 | SEM-04 | Phase 12 | Complete |
-| SEM-05 | Phase 13 | Pending |
-| ARR-01 | Phase 14 | Pending |
-| ARR-02 | Phase 14 | Pending |
-| ARR-03 | Phase 14 | Pending |
-| ARR-04 | Phase 14 | Pending |
-| ARR-05 | Phase 14 | Pending |
-| ARR-06 | Phase 14 | Pending |
+| SEM-05 | Phase 13 | Complete |
+| ARR-01 | Phase 14 | Complete |
+| ARR-02 | Phase 14 | Complete |
+| ARR-03 | Phase 14 | Complete |
+| ARR-04 | Phase 14 | Complete |
+| ARR-05 | Phase 14 | Complete |
+| ARR-06 | Phase 14 | Complete |
 | IMP-01 | Phase 13 | Complete |
 | IMP-02 | Phase 13 | Complete |
 | IMP-03 | Phase 13 | Complete |
@@ -105,16 +105,16 @@
 | GRP-04 | Phase 13 | Complete |
 | GRP-05 | Phase 15 | Complete |
 | GRP-06 | Phase 15 | Complete |
-| CTX-01 | Phase 16 | Pending |
-| CTX-02 | Phase 16 | Pending |
-| CTX-03 | Phase 16 | Pending |
-| CTX-04 | Phase 16 | Pending |
-| CTX-05 | Phase 16 | Pending |
-| INT-01 | Phase 14 | Pending |
-| INT-02 | Phase 13 | Pending |
-| INT-03 | Phase 13 | Pending |
-| INT-04 | Phase 13 | Pending |
-| INT-05 | Phase 14 | Pending |
+| CTX-01 | Phase 16 | Complete |
+| CTX-02 | Phase 16 | Complete |
+| CTX-03 | Phase 16 | Complete |
+| CTX-04 | Phase 16 | Complete |
+| CTX-05 | Phase 16 | Complete |
+| INT-01 | Phase 14 | Complete |
+| INT-02 | Phase 13 | Complete |
+| INT-03 | Phase 13 | Complete |
+| INT-04 | Phase 13 | Complete |
+| INT-05 | Phase 14 | Complete |
 
 **Coverage:**
 - v1.3 requirements: 28 total
@@ -123,4 +123,4 @@
 
 ---
 *Requirements defined: 2026-02-07*
-*Last updated: 2026-02-09 after Phase 15 completion*
+*Last updated: 2026-02-09 after Phase 16 completion — all 28 requirements complete*
