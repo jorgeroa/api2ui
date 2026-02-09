@@ -13,7 +13,7 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 **Milestone:** None active
 **Phase:** None
 **Status:** Ready for `/gsd:new-milestone`
-**Last activity:** 2026-02-09 — v1.3 milestone archived
+**Last activity:** 2026-02-09 — Completed quick task 004: Hide null fields with show all toggle
 
 ## Milestone History
 
@@ -36,6 +36,12 @@ See: .planning/PROJECT.md (updated 2026-02-09)
 - Average duration: 3.2 min
 - Total execution time: ~170 min
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 004 | Hide null fields with show all toggle | 2026-02-09 | 7316825 | [004-hide-null-fields-with-show-all-toggle](./quick/004-hide-null-fields-with-show-all-toggle/) |
+
 ---
-*State updated: 2026-02-09 after v1.3 milestone completion*
+*State updated: 2026-02-09 after quick task 004*
 *Next: /gsd:new-milestone*
