@@ -47,6 +47,12 @@ export function HeroRenderer({ data, schema, path, depth }: RendererProps) {
   )
 
   const titleField = allFields.find(([name]) => isPrimaryField(name))
+    // Fallback: first string field containing "name" in the key
+    ?? allFields.find(([name, def]) =>
+      def.type.kind === 'primitive' && def.type.type === 'string'
+      && /name/i.test(name) && name !== imageField?.[0]
+      && typeof obj[name] === 'string' && obj[name] !== null
+    )
   const subtitleField = allFields.find(([name, def]) =>
     def.type.kind === 'primitive' &&
     name !== titleField?.[0] &&
@@ -76,8 +82,9 @@ export function HeroRenderer({ data, schema, path, depth }: RendererProps) {
     def.type.kind !== 'primitive'
   )
 
-  const title = titleField ? String(obj[titleField[0]] ?? 'Untitled') : 'Untitled'
+  const title = titleField ? String(obj[titleField[0]] ?? '') : ''
   const subtitle = subtitleField ? String(obj[subtitleField[0]] ?? '') : ''
+  const hasHeader = title || subtitle || imageField
 
   // Null-field filtering
   const [showNullFields, setShowNullFields] = useState(false)
@@ -104,23 +111,25 @@ export function HeroRenderer({ data, schema, path, depth }: RendererProps) {
   return (
     <div className="border border-border rounded-lg overflow-hidden">
       {/* Hero header */}
-      <div className="flex items-center gap-6 p-6 bg-gray-50">
-        {imageField && (
-          <img
-            src={obj[imageField[0]] as string}
-            alt={title}
-            loading="lazy"
-            className="w-24 h-24 rounded-full object-cover border-2 border-white shadow shrink-0"
-            onError={(e) => { e.currentTarget.style.display = 'none' }}
-          />
-        )}
-        <div className="min-w-0">
-          <h2 className="text-2xl font-bold text-text truncate">{title}</h2>
-          {subtitle && (
-            <p className="text-gray-600 mt-1 line-clamp-2">{subtitle}</p>
+      {hasHeader && (
+        <div className="flex items-center gap-6 p-6 bg-gray-50">
+          {imageField && (
+            <img
+              src={obj[imageField[0]] as string}
+              alt={title || 'Image'}
+              loading="lazy"
+              className="w-24 h-24 rounded-full object-cover border-2 border-white shadow shrink-0"
+              onError={(e) => { e.currentTarget.style.display = 'none' }}
+            />
           )}
+          <div className="min-w-0">
+            {title && <h2 className="text-2xl font-bold text-text truncate">{title}</h2>}
+            {subtitle && (
+              <p className="text-gray-600 mt-1 line-clamp-2">{subtitle}</p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Null fields toggle */}
       {nullFieldCount > 0 && (
