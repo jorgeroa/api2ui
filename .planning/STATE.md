@@ -64,6 +64,10 @@ Phase 16: [Pending] Context-Aware Components
 
 ## Accumulated Context
 
+### Roadmap Evolution
+
+- Phase 14.1 inserted after Phase 14: Smart Object & Primitive Selection (URGENT) — Phase 14 only implemented smart selection for arrays of objects. Objects always default to "detail" and primitive arrays always default to "primitive-list" regardless of semantic content. Discovered during Phase 14 UAT when user profiles rendered as flat detail views instead of hero/profile layout.
+
 ### Architecture Decisions
 
 **v1.3 Smart Defaults Approach:**

@@ -144,9 +144,26 @@
 8. Component switcher continues to work for user overrides (INT-05)
 9. Analysis falls back to type-based defaults when confidence <75%
 
+### Phase 14.1: Smart Object & Primitive Selection (INSERTED)
+**Goal**: Objects and primitive arrays render with context-appropriate components based on semantic analysis
+**Dependencies**: Phase 14 (smart component selection)
+**Plans**: Pending
+
+**Success Criteria:**
+1. Objects with profile-like semantics (name + email/phone/address) default to hero (Profile) instead of detail
+2. Objects with many nested objects/arrays default to tabs instead of detail
+3. Objects with clear primary content + metadata split default to split view
+4. Primitive arrays with short enum-like values default to chips
+5. Smart defaults integrate with existing useSchemaAnalysis hook and analysis cache
+6. User overrides via component switcher still take precedence
+7. Fallback to detail (objects) or primitive-list (arrays) when confidence <75%
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 14.1 to break down)
+
 ### Phase 15: Smart Grouping & Visual Hierarchy
 **Goal**: Detail views organize into visual sections with hero layout and accordion-based grouping
-**Dependencies**: Phase 14 (smart component selection)
+**Dependencies**: Phase 14.1 (smart object & primitive selection)
 **Requirements**: IMP-05, GRP-02, GRP-03, GRP-05, GRP-06
 **Plans**: Pending
 
@@ -178,7 +195,7 @@
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 12 → 13 → 14 → 15 → 16
+Phases execute in numeric order: 12 → 13 → 14 → 14.1 → 15 → 16
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -196,6 +213,7 @@ Phases execute in numeric order: 12 → 13 → 14 → 15 → 16
 | 12. Core Semantic Detection | v1.3 | 3/3 | Complete | 2026-02-07 |
 | 13. Field Importance & Grouping Analysis | v1.3 | 2/2 | Complete | 2026-02-08 |
 | 14. Smart Component Selection | v1.3 | 3/3 | Complete | 2026-02-08 |
+| 14.1 Smart Object & Primitive Selection | v1.3 | 0/? | Pending | - |
 | 15. Smart Grouping & Visual Hierarchy | v1.3 | 0/? | Pending | - |
 | 16. Context-Aware Components | v1.3 | 0/? | Pending | - |
 
