@@ -11,8 +11,12 @@ import {
   checkImageGalleryPattern,
   checkTimelinePattern,
   selectCardOrTable,
+  checkProfilePattern,
+  checkComplexObjectPattern,
+  checkSplitPattern,
+  checkChipsPattern,
 } from './heuristics'
-import { selectComponent } from './index'
+import { selectComponent, selectObjectComponent, selectPrimitiveArrayComponent } from './index'
 import type { SelectionContext } from './types'
 
 // ============================================================================
@@ -767,5 +771,677 @@ describe('edge cases', () => {
     expect(imageResult).toBeNull()
     expect(timelineResult).toBeNull()
     expect(cardTableResult.componentType).toBe('table')
+  })
+})
+
+// ============================================================================
+// Object Heuristics (Phase 14.1)
+// ============================================================================
+
+/**
+ * Create mock object schema for testing object heuristics
+ */
+function createMockObjectSchema(
+  fields: Array<{ name: string; type: TypeSignature }>
+): TypeSignature {
+  const fieldMap = new Map<string, any>()
+  for (const field of fields) {
+    fieldMap.set(field.name, {
+      name: field.name,
+      type: field.type,
+      optional: false,
+      nullable: false,
+      confidence: 'high' as const,
+      sampleValues: [],
+    })
+  }
+  return { kind: 'object', fields: fieldMap }
+}
+
+/**
+ * Create mock primitive array schema for testing primitive array heuristics
+ */
+function createMockPrimitiveArraySchema(primitiveType: string): TypeSignature {
+  return {
+    kind: 'array',
+    items: {
+      kind: 'primitive',
+      type: primitiveType as 'string' | 'number' | 'boolean',
+    },
+  }
+}
+
+describe('Object Heuristics', () => {
+  describe('checkProfilePattern', () => {
+    it('returns hero when name + 2+ contact fields present', () => {
+      const schema = createMockObjectSchema([
+        { name: 'name', type: { kind: 'primitive', type: 'string' } },
+        { name: 'email', type: { kind: 'primitive', type: 'string' } },
+        { name: 'phone', type: { kind: 'primitive', type: 'string' } },
+        { name: 'bio', type: { kind: 'primitive', type: 'string' } },
+      ])
+
+      const context = createMockContext([
+        { path: '$.name', category: 'name', confidence: 0.9 },
+        { path: '$.email', category: 'email', confidence: 0.9 },
+        { path: '$.phone', category: 'phone', confidence: 0.85 },
+      ])
+
+      const result = checkProfilePattern(schema, context)
+
+      expect(result).not.toBeNull()
+      expect(result?.componentType).toBe('hero')
+      expect(result?.confidence).toBe(0.85)
+      expect(result?.reason).toBe('profile-pattern-detected')
+    })
+
+    it('returns hero when name + 3 contact fields (email, address, url)', () => {
+      const schema = createMockObjectSchema([
+        { name: 'full_name', type: { kind: 'primitive', type: 'string' } },
+        { name: 'email', type: { kind: 'primitive', type: 'string' } },
+        { name: 'address', type: { kind: 'primitive', type: 'string' } },
+        { name: 'website', type: { kind: 'primitive', type: 'string' } },
+      ])
+
+      const context = createMockContext([
+        { path: '$.email', category: 'email', confidence: 0.9 },
+        { path: '$.address', category: 'address', confidence: 0.85 },
+        { path: '$.website', category: 'url', confidence: 0.8 },
+      ])
+
+      const result = checkProfilePattern(schema, context)
+
+      expect(result).not.toBeNull()
+      expect(result?.componentType).toBe('hero')
+      expect(result?.confidence).toBe(0.85)
+    })
+
+    it('returns null when name + only 1 contact field (below threshold)', () => {
+      const schema = createMockObjectSchema([
+        { name: 'name', type: { kind: 'primitive', type: 'string' } },
+        { name: 'email', type: { kind: 'primitive', type: 'string' } },
+        { name: 'bio', type: { kind: 'primitive', type: 'string' } },
+      ])
+
+      const context = createMockContext([
+        { path: '$.name', category: 'name', confidence: 0.9 },
+        { path: '$.email', category: 'email', confidence: 0.9 },
+      ])
+
+      const result = checkProfilePattern(schema, context)
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null when no name field', () => {
+      const schema = createMockObjectSchema([
+        { name: 'email', type: { kind: 'primitive', type: 'string' } },
+        { name: 'phone', type: { kind: 'primitive', type: 'string' } },
+        { name: 'address', type: { kind: 'primitive', type: 'string' } },
+      ])
+
+      const context = createMockContext([
+        { path: '$.email', category: 'email', confidence: 0.9 },
+        { path: '$.phone', category: 'phone', confidence: 0.85 },
+        { path: '$.address', category: 'address', confidence: 0.85 },
+      ])
+
+      const result = checkProfilePattern(schema, context)
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for non-object schema', () => {
+      const schema: TypeSignature = {
+        kind: 'array',
+        items: { kind: 'primitive', type: 'string' },
+      }
+
+      const context = createMockContext()
+
+      const result = checkProfilePattern(schema, context)
+
+      expect(result).toBeNull()
+    })
+
+    it('detects name field from field name regex when no semantic', () => {
+      const schema = createMockObjectSchema([
+        { name: 'title', type: { kind: 'primitive', type: 'string' } },
+        { name: 'email', type: { kind: 'primitive', type: 'string' } },
+        { name: 'phone', type: { kind: 'primitive', type: 'string' } },
+      ])
+
+      const context = createMockContext([
+        { path: '$.email', category: 'email', confidence: 0.9 },
+        { path: '$.phone', category: 'phone', confidence: 0.85 },
+      ])
+
+      const result = checkProfilePattern(schema, context)
+
+      expect(result).not.toBeNull()
+      expect(result?.componentType).toBe('hero')
+    })
+  })
+
+  describe('checkComplexObjectPattern', () => {
+    it('returns tabs when 3+ nested object/array fields', () => {
+      const schema = createMockObjectSchema([
+        { name: 'name', type: { kind: 'primitive', type: 'string' } },
+        {
+          name: 'orders',
+          type: {
+            kind: 'array',
+            items: { kind: 'primitive', type: 'string' },
+          },
+        },
+        {
+          name: 'profile',
+          type: { kind: 'object', fields: new Map() },
+        },
+        {
+          name: 'preferences',
+          type: { kind: 'object', fields: new Map() },
+        },
+      ])
+
+      const context = createMockContext()
+
+      const result = checkComplexObjectPattern(schema, context)
+
+      expect(result).not.toBeNull()
+      expect(result?.componentType).toBe('tabs')
+      expect(result?.confidence).toBe(0.8)
+      expect(result?.reason).toBe('complex-nested-structure')
+    })
+
+    it('returns null when only 2 nested fields (below threshold)', () => {
+      const schema = createMockObjectSchema([
+        { name: 'name', type: { kind: 'primitive', type: 'string' } },
+        {
+          name: 'orders',
+          type: {
+            kind: 'array',
+            items: { kind: 'primitive', type: 'string' },
+          },
+        },
+        {
+          name: 'profile',
+          type: { kind: 'object', fields: new Map() },
+        },
+      ])
+
+      const context = createMockContext()
+
+      const result = checkComplexObjectPattern(schema, context)
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for non-object schema', () => {
+      const schema: TypeSignature = {
+        kind: 'primitive',
+        type: 'string',
+      }
+
+      const context = createMockContext()
+
+      const result = checkComplexObjectPattern(schema, context)
+
+      expect(result).toBeNull()
+    })
+
+    it('counts mixed nested types (objects and arrays)', () => {
+      const schema = createMockObjectSchema([
+        {
+          name: 'metadata',
+          type: { kind: 'object', fields: new Map() },
+        },
+        {
+          name: 'tags',
+          type: {
+            kind: 'array',
+            items: { kind: 'primitive', type: 'string' },
+          },
+        },
+        {
+          name: 'related',
+          type: {
+            kind: 'array',
+            items: { kind: 'object', fields: new Map() },
+          },
+        },
+      ])
+
+      const context = createMockContext()
+
+      const result = checkComplexObjectPattern(schema, context)
+
+      expect(result).not.toBeNull()
+      expect(result?.componentType).toBe('tabs')
+    })
+  })
+
+  describe('checkSplitPattern', () => {
+    it('returns split when 1 primary content + 3+ metadata fields + 5+ total', () => {
+      const schema = createMockObjectSchema([
+        { name: 'description', type: { kind: 'primitive', type: 'string' } },
+        { name: 'name', type: { kind: 'primitive', type: 'string' } },
+        { name: 'id', type: { kind: 'primitive', type: 'string' } },
+        { name: 'created_at', type: { kind: 'primitive', type: 'string' } },
+        { name: 'updated_at', type: { kind: 'primitive', type: 'string' } },
+        { name: '_version', type: { kind: 'primitive', type: 'number' } },
+      ])
+
+      const context = createMockContext(
+        [{ path: '$.description', category: 'description', confidence: 0.9 }],
+        [
+          { path: '$.description', tier: 'primary', score: 0.85 },
+          { path: '$.name', tier: 'secondary', score: 0.7 },
+          { path: '$.id', tier: 'tertiary', score: 0.3 },
+          { path: '$.created_at', tier: 'tertiary', score: 0.25 },
+          { path: '$.updated_at', tier: 'tertiary', score: 0.2 },
+          { path: '$._version', tier: 'tertiary', score: 0.15 },
+        ]
+      )
+
+      const result = checkSplitPattern(schema, context)
+
+      expect(result).not.toBeNull()
+      expect(result?.componentType).toBe('split')
+      expect(result?.confidence).toBe(0.75)
+      expect(result?.reason).toBe('content-metadata-split-detected')
+    })
+
+    it('detects content field from name regex (body, summary, text)', () => {
+      const schema = createMockObjectSchema([
+        { name: 'body', type: { kind: 'primitive', type: 'string' } },
+        { name: 'title', type: { kind: 'primitive', type: 'string' } },
+        { name: 'id', type: { kind: 'primitive', type: 'string' } },
+        { name: 'timestamp', type: { kind: 'primitive', type: 'number' } },
+        { name: 'created', type: { kind: 'primitive', type: 'string' } },
+        { name: 'updated', type: { kind: 'primitive', type: 'string' } },
+      ])
+
+      const context = createMockContext([], [
+        { path: '$.body', tier: 'primary', score: 0.9 },
+        { path: '$.title', tier: 'secondary', score: 0.7 },
+        { path: '$.id', tier: 'tertiary', score: 0.3 },
+        { path: '$.timestamp', tier: 'tertiary', score: 0.25 },
+        { path: '$.created', tier: 'tertiary', score: 0.2 },
+        { path: '$.updated', tier: 'tertiary', score: 0.15 },
+      ])
+
+      const result = checkSplitPattern(schema, context)
+
+      expect(result).not.toBeNull()
+      expect(result?.componentType).toBe('split')
+    })
+
+    it('returns null when no primary content field', () => {
+      const schema = createMockObjectSchema([
+        { name: 'name', type: { kind: 'primitive', type: 'string' } },
+        { name: 'value', type: { kind: 'primitive', type: 'string' } },
+        { name: 'id', type: { kind: 'primitive', type: 'string' } },
+        { name: 'created_at', type: { kind: 'primitive', type: 'string' } },
+        { name: 'updated_at', type: { kind: 'primitive', type: 'string' } },
+      ])
+
+      const context = createMockContext([], [
+        { path: '$.name', tier: 'secondary', score: 0.7 },
+        { path: '$.value', tier: 'secondary', score: 0.65 },
+        { path: '$.id', tier: 'tertiary', score: 0.3 },
+        { path: '$.created_at', tier: 'tertiary', score: 0.25 },
+        { path: '$.updated_at', tier: 'tertiary', score: 0.2 },
+      ])
+
+      const result = checkSplitPattern(schema, context)
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null when <3 metadata fields', () => {
+      const schema = createMockObjectSchema([
+        { name: 'description', type: { kind: 'primitive', type: 'string' } },
+        { name: 'name', type: { kind: 'primitive', type: 'string' } },
+        { name: 'id', type: { kind: 'primitive', type: 'string' } },
+        { name: 'created_at', type: { kind: 'primitive', type: 'string' } },
+      ])
+
+      const context = createMockContext(
+        [{ path: '$.description', category: 'description', confidence: 0.9 }],
+        [
+          { path: '$.description', tier: 'primary', score: 0.85 },
+          { path: '$.name', tier: 'secondary', score: 0.7 },
+          { path: '$.id', tier: 'tertiary', score: 0.3 },
+          { path: '$.created_at', tier: 'tertiary', score: 0.25 },
+        ]
+      )
+
+      const result = checkSplitPattern(schema, context)
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null when <5 total fields', () => {
+      const schema = createMockObjectSchema([
+        { name: 'description', type: { kind: 'primitive', type: 'string' } },
+        { name: 'id', type: { kind: 'primitive', type: 'string' } },
+        { name: 'created', type: { kind: 'primitive', type: 'string' } },
+        { name: 'updated', type: { kind: 'primitive', type: 'string' } },
+      ])
+
+      const context = createMockContext(
+        [{ path: '$.description', category: 'description', confidence: 0.9 }],
+        [
+          { path: '$.description', tier: 'primary', score: 0.85 },
+          { path: '$.id', tier: 'tertiary', score: 0.3 },
+          { path: '$.created', tier: 'tertiary', score: 0.25 },
+          { path: '$.updated', tier: 'tertiary', score: 0.2 },
+        ]
+      )
+
+      const result = checkSplitPattern(schema, context)
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for non-object schema', () => {
+      const schema: TypeSignature = {
+        kind: 'array',
+        items: { kind: 'primitive', type: 'string' },
+      }
+
+      const context = createMockContext()
+
+      const result = checkSplitPattern(schema, context)
+
+      expect(result).toBeNull()
+    })
+  })
+
+  describe('selectObjectComponent', () => {
+    it('profile pattern wins over tabs when both match', () => {
+      const schema = createMockObjectSchema([
+        { name: 'name', type: { kind: 'primitive', type: 'string' } },
+        { name: 'email', type: { kind: 'primitive', type: 'string' } },
+        { name: 'phone', type: { kind: 'primitive', type: 'string' } },
+        {
+          name: 'orders',
+          type: {
+            kind: 'array',
+            items: { kind: 'primitive', type: 'string' },
+          },
+        },
+        {
+          name: 'profile',
+          type: { kind: 'object', fields: new Map() },
+        },
+        {
+          name: 'preferences',
+          type: { kind: 'object', fields: new Map() },
+        },
+      ])
+
+      const context = createMockContext([
+        { path: '$.name', category: 'name', confidence: 0.9 },
+        { path: '$.email', category: 'email', confidence: 0.9 },
+        { path: '$.phone', category: 'phone', confidence: 0.85 },
+      ])
+
+      const result = selectObjectComponent(schema, context)
+
+      // Profile should win (higher priority)
+      expect(result.componentType).toBe('hero')
+      expect(result.reason).toBe('profile-pattern-detected')
+    })
+
+    it('returns tabs when complex pattern matches', () => {
+      const schema = createMockObjectSchema([
+        { name: 'name', type: { kind: 'primitive', type: 'string' } },
+        {
+          name: 'orders',
+          type: {
+            kind: 'array',
+            items: { kind: 'primitive', type: 'string' },
+          },
+        },
+        {
+          name: 'profile',
+          type: { kind: 'object', fields: new Map() },
+        },
+        {
+          name: 'preferences',
+          type: { kind: 'object', fields: new Map() },
+        },
+      ])
+
+      const context = createMockContext()
+
+      const result = selectObjectComponent(schema, context)
+
+      expect(result.componentType).toBe('tabs')
+      expect(result.reason).toBe('complex-nested-structure')
+    })
+
+    it('returns split when split pattern matches', () => {
+      const schema = createMockObjectSchema([
+        { name: 'description', type: { kind: 'primitive', type: 'string' } },
+        { name: 'name', type: { kind: 'primitive', type: 'string' } },
+        { name: 'id', type: { kind: 'primitive', type: 'string' } },
+        { name: 'created_at', type: { kind: 'primitive', type: 'string' } },
+        { name: 'updated_at', type: { kind: 'primitive', type: 'string' } },
+        { name: '_version', type: { kind: 'primitive', type: 'number' } },
+      ])
+
+      const context = createMockContext(
+        [{ path: '$.description', category: 'description', confidence: 0.9 }],
+        [
+          { path: '$.description', tier: 'primary', score: 0.85 },
+          { path: '$.name', tier: 'secondary', score: 0.7 },
+          { path: '$.id', tier: 'tertiary', score: 0.3 },
+          { path: '$.created_at', tier: 'tertiary', score: 0.25 },
+          { path: '$.updated_at', tier: 'tertiary', score: 0.2 },
+          { path: '$._version', tier: 'tertiary', score: 0.15 },
+        ]
+      )
+
+      const result = selectObjectComponent(schema, context)
+
+      expect(result.componentType).toBe('split')
+      expect(result.reason).toBe('content-metadata-split-detected')
+    })
+
+    it('returns detail fallback when no pattern matches', () => {
+      const schema = createMockObjectSchema([
+        { name: 'field1', type: { kind: 'primitive', type: 'string' } },
+        { name: 'field2', type: { kind: 'primitive', type: 'string' } },
+      ])
+
+      const context = createMockContext()
+
+      const result = selectObjectComponent(schema, context)
+
+      expect(result.componentType).toBe('detail')
+      expect(result.confidence).toBe(0)
+      expect(result.reason).toBe('fallback-to-default')
+    })
+
+    it('returns detail fallback for non-object schema', () => {
+      const schema: TypeSignature = {
+        kind: 'array',
+        items: { kind: 'primitive', type: 'string' },
+      }
+
+      const context = createMockContext()
+
+      const result = selectObjectComponent(schema, context)
+
+      expect(result.componentType).toBe('detail')
+      expect(result.confidence).toBe(0)
+      expect(result.reason).toBe('fallback-to-default')
+    })
+  })
+})
+
+// ============================================================================
+// Primitive Array Heuristics (Phase 14.1)
+// ============================================================================
+
+describe('Primitive Array Heuristics', () => {
+  describe('checkChipsPattern', () => {
+    it('returns chips with 0.9 confidence for semantic tags category', () => {
+      const schema = createMockPrimitiveArraySchema('string')
+      const data = ['react', 'typescript', 'nextjs']
+
+      const context = createMockContext([
+        { path: '$.tags', category: 'tags', confidence: 0.9 },
+      ])
+
+      const result = checkChipsPattern(data, schema, context)
+
+      expect(result).not.toBeNull()
+      expect(result?.componentType).toBe('chips')
+      expect(result?.confidence).toBe(0.9)
+      expect(result?.reason).toBe('semantic-tags-or-status')
+    })
+
+    it('returns chips with 0.9 confidence for semantic status category', () => {
+      const schema = createMockPrimitiveArraySchema('string')
+      const data = ['active', 'pending', 'completed']
+
+      const context = createMockContext([
+        { path: '$.statuses', category: 'status', confidence: 0.85 },
+      ])
+
+      const result = checkChipsPattern(data, schema, context)
+
+      expect(result).not.toBeNull()
+      expect(result?.componentType).toBe('chips')
+      expect(result?.confidence).toBe(0.9)
+      expect(result?.reason).toBe('semantic-tags-or-status')
+    })
+
+    it('returns chips with 0.8 confidence for short enum-like values', () => {
+      const schema = createMockPrimitiveArraySchema('string')
+      const data = ['Small', 'Medium', 'Large', 'XL']
+
+      const context = createMockContext()
+
+      const result = checkChipsPattern(data, schema, context)
+
+      expect(result).not.toBeNull()
+      expect(result?.componentType).toBe('chips')
+      expect(result?.confidence).toBe(0.8)
+      expect(result?.reason).toBe('short-enum-like-values')
+    })
+
+    it('returns null for long values (avg >20 or max >30)', () => {
+      const schema = createMockPrimitiveArraySchema('string')
+      const data = [
+        'This is a very long description that exceeds the maximum length',
+        'Another long description',
+      ]
+
+      const context = createMockContext()
+
+      const result = checkChipsPattern(data, schema, context)
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for non-string primitive arrays', () => {
+      const schema = createMockPrimitiveArraySchema('number')
+      const data = [1, 2, 3, 4, 5]
+
+      const context = createMockContext()
+
+      const result = checkChipsPattern(data, schema, context)
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for empty data', () => {
+      const schema = createMockPrimitiveArraySchema('string')
+      const data: string[] = []
+
+      const context = createMockContext()
+
+      const result = checkChipsPattern(data, schema, context)
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null when array length >10', () => {
+      const schema = createMockPrimitiveArraySchema('string')
+      const data = Array(11).fill('tag')
+
+      const context = createMockContext()
+
+      const result = checkChipsPattern(data, schema, context)
+
+      expect(result).toBeNull()
+    })
+  })
+
+  describe('selectPrimitiveArrayComponent', () => {
+    it('returns chips when chips pattern matches', () => {
+      const schema = createMockPrimitiveArraySchema('string')
+      const data = ['react', 'vue', 'angular']
+
+      const context = createMockContext([
+        { path: '$.frameworks', category: 'tags', confidence: 0.9 },
+      ])
+
+      const result = selectPrimitiveArrayComponent(schema, data, context)
+
+      expect(result.componentType).toBe('chips')
+      expect(result.confidence).toBe(0.9)
+      expect(result.reason).toBe('semantic-tags-or-status')
+    })
+
+    it('returns primitive-list fallback when chips pattern fails', () => {
+      const schema = createMockPrimitiveArraySchema('string')
+      const data = [
+        'This is a very long description that exceeds thirty characters',
+        'Another long item',
+      ]
+
+      const context = createMockContext()
+
+      const result = selectPrimitiveArrayComponent(schema, data, context)
+
+      expect(result.componentType).toBe('primitive-list')
+      expect(result.confidence).toBe(0)
+      expect(result.reason).toBe('fallback-to-default')
+    })
+
+    it('returns primitive-list with no-data reason when data is empty', () => {
+      const schema = createMockPrimitiveArraySchema('string')
+      const data: string[] = []
+
+      const context = createMockContext()
+
+      const result = selectPrimitiveArrayComponent(schema, data, context)
+
+      expect(result.componentType).toBe('primitive-list')
+      expect(result.confidence).toBe(0)
+      expect(result.reason).toBe('no-data')
+    })
+
+    it('returns primitive-list fallback for non-primitive-array schema', () => {
+      const schema: TypeSignature = {
+        kind: 'array',
+        items: { kind: 'object', fields: new Map() },
+      }
+      const data: unknown[] = []
+
+      const context = createMockContext()
+
+      const result = selectPrimitiveArrayComponent(schema, data, context)
+
+      expect(result.componentType).toBe('primitive-list')
+      expect(result.confidence).toBe(0)
+      expect(result.reason).toBe('fallback-to-default')
+    })
   })
 })
