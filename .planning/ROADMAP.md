@@ -147,7 +147,7 @@
 ### Phase 14.1: Smart Object & Primitive Selection (INSERTED)
 **Goal**: Objects and primitive arrays render with context-appropriate components based on semantic analysis
 **Dependencies**: Phase 14 (smart component selection)
-**Plans**: Pending
+**Plans**: 2 plans
 
 **Success Criteria:**
 1. Objects with profile-like semantics (name + email/phone/address) default to hero (Profile) instead of detail
@@ -159,7 +159,8 @@
 7. Fallback to detail (objects) or primitive-list (arrays) when confidence <75%
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 14.1 to break down)
+- [ ] 14.1-01-PLAN.md -- Object & primitive array selection heuristics (TDD)
+- [ ] 14.1-02-PLAN.md -- useSchemaAnalysis integration for objects & primitive arrays
 
 ### Phase 15: Smart Grouping & Visual Hierarchy
 **Goal**: Detail views organize into visual sections with hero layout and accordion-based grouping
@@ -213,7 +214,7 @@ Phases execute in numeric order: 12 → 13 → 14 → 14.1 → 15 → 16
 | 12. Core Semantic Detection | v1.3 | 3/3 | Complete | 2026-02-07 |
 | 13. Field Importance & Grouping Analysis | v1.3 | 2/2 | Complete | 2026-02-08 |
 | 14. Smart Component Selection | v1.3 | 3/3 | Complete | 2026-02-08 |
-| 14.1 Smart Object & Primitive Selection | v1.3 | 0/? | Pending | - |
+| 14.1 Smart Object & Primitive Selection | v1.3 | 0/2 | Planned | - |
 | 15. Smart Grouping & Visual Hierarchy | v1.3 | 0/? | Pending | - |
 | 16. Context-Aware Components | v1.3 | 0/? | Pending | - |
 
