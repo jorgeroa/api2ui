@@ -274,7 +274,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
           src={value as string}
           alt={displayLabel}
           loading="lazy"
-          className="w-full max-h-96 object-contain rounded-lg border border-gray-200 bg-gray-50"
+          className="max-w-full max-h-64 object-contain rounded-lg border border-gray-200 bg-gray-50"
           onError={(e) => { e.currentTarget.style.display = 'none' }}
         />
       </div>
@@ -383,7 +383,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
                 src={value as string}
                 alt={displayLabel}
                 loading="lazy"
-                className="w-full max-h-96 object-contain rounded-lg border border-gray-200 bg-gray-50"
+                className="max-w-full max-h-64 object-contain rounded-lg border border-gray-200 bg-gray-50"
                 onError={(e) => { e.currentTarget.style.display = 'none' }}
               />
             </div>
@@ -560,7 +560,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
             src={heroImage.url}
             alt="Detail hero"
             loading="lazy"
-            className="w-full max-h-96 object-cover rounded-lg border border-gray-200"
+            className="max-w-full max-h-64 object-contain rounded-lg border border-gray-200"
             onError={(e) => { e.currentTarget.style.display = 'none' }}
           />
         </div>
