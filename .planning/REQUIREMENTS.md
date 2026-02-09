@@ -28,16 +28,16 @@
 - [x] **IMP-02**: Secondary fields (description, content) rendered at normal weight
 - [x] **IMP-03**: Metadata fields (IDs, timestamps, internal fields) de-emphasized with smaller/muted styling
 - [x] **IMP-04**: Importance scoring algorithm combines: name pattern (40%), visual richness (25%), data presence (20%), position (15%)
-- [ ] **IMP-05**: Detail views apply visual hierarchy (primary/secondary/tertiary styling)
+- [x] **IMP-05**: Detail views apply visual hierarchy (primary/secondary/tertiary styling)
 
 ### Auto-Grouping & Organization
 
 - [x] **GRP-01**: Prefix-based grouping detects common prefixes (billing*, shipping*, contact*) and creates sections
-- [ ] **GRP-02**: Sections use vertical accordions (not horizontal tabs) per UX research
-- [ ] **GRP-03**: "Show all (ungrouped)" escape hatch always available
+- [x] **GRP-02**: Sections use vertical accordions (not horizontal tabs) per UX research
+- [x] **GRP-03**: "Show all (ungrouped)" escape hatch always available
 - [x] **GRP-04**: Semantic clustering groups related fields (email + phone + address → "Contact") even without shared prefix
-- [ ] **GRP-05**: Detail views use Hero + Overview + Sections layout pattern
-- [ ] **GRP-06**: Maximum two-level grouping to prevent over-nesting
+- [x] **GRP-05**: Detail views use Hero + Overview + Sections layout pattern
+- [x] **GRP-06**: Maximum two-level grouping to prevent over-nesting
 
 ### Context-Aware Components
 
@@ -98,13 +98,13 @@
 | IMP-02 | Phase 13 | Complete |
 | IMP-03 | Phase 13 | Complete |
 | IMP-04 | Phase 13 | Complete |
-| IMP-05 | Phase 15 | Pending |
+| IMP-05 | Phase 15 | Complete |
 | GRP-01 | Phase 13 | Complete |
-| GRP-02 | Phase 15 | Pending |
-| GRP-03 | Phase 15 | Pending |
+| GRP-02 | Phase 15 | Complete |
+| GRP-03 | Phase 15 | Complete |
 | GRP-04 | Phase 13 | Complete |
-| GRP-05 | Phase 15 | Pending |
-| GRP-06 | Phase 15 | Pending |
+| GRP-05 | Phase 15 | Complete |
+| GRP-06 | Phase 15 | Complete |
 | CTX-01 | Phase 16 | Pending |
 | CTX-02 | Phase 16 | Pending |
 | CTX-03 | Phase 16 | Pending |
@@ -123,4 +123,4 @@
 
 ---
 *Requirements defined: 2026-02-07*
-*Last updated: 2026-02-08 after Phase 13 completion*
+*Last updated: 2026-02-09 after Phase 15 completion*
