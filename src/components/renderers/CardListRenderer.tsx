@@ -107,12 +107,16 @@ export function CardListRenderer({ data, schema, path, depth, importance }: Rend
       return fields
     }
 
-    return fields.filter(([fieldName]) => {
+    const filtered = fields.filter(([fieldName]) => {
       const fieldPath = `${path}[].${fieldName}`
       const score = importance.get(fieldPath)
       // Show primary and secondary, hide tertiary
       return !score || score.tier === 'primary' || score.tier === 'secondary'
     })
+
+    // Safety fallback: if tier filtering removes all fields, show all fields
+    // This prevents empty cards when all fields score as tertiary
+    return filtered.length > 0 ? filtered : fields
   }, [fields, importance, path])
 
   return (

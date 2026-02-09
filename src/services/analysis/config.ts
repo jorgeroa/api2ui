@@ -44,10 +44,18 @@ export const ANALYSIS_CONFIG = {
     /**
      * Primary indicator patterns (name patterns that boost importance).
      * User decision: name, title, headline are primary indicators.
+     * Extended: content, pricing, and classification fields also boost importance
+     * so they appear on cards instead of being filtered as tertiary.
      * Matches fields containing these terms (e.g., product_title, user_name).
      */
     primaryIndicators: [
       /(name|title|headline|heading|label|summary)/i,
+      /(body|description|content|text|message|comment|review|note|bio|about)/i,
+      /(price|amount|cost|total|value|salary|budget)/i,
+      /(category|type|status|role|tag|brand|company)/i,
+      /(email|phone|address|website|url)/i,
+      /(image|photo|avatar|thumbnail|picture|logo)/i,
+      /(rating|score|count|quantity|stock)/i,
     ],
   },
   grouping: {

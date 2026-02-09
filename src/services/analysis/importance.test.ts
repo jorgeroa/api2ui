@@ -281,9 +281,9 @@ describe('calculateImportance', () => {
     })
 
     it('should return secondary tier for score 0.50-0.79', () => {
-      // Create field with moderate signals: no name match, medium visual, full data, mid position
+      // Create field with moderate signals: no name match, high visual, full data, mid position
       const field = createFieldInfo({
-        name: 'photo',  // No primary indicator match (0%)
+        name: 'field_abc',  // No primary indicator match (0%)
         semanticCategory: 'image',  // High richness 1.0 (1.0 * 25% = 25%)
         sampleValues: ['val1', 'val2'],  // Full data (20%)
         position: 4,  // Mid position (~7-8%)
@@ -492,12 +492,13 @@ describe('calculateImportance', () => {
       // title: primary (name pattern + title category + full data + early position)
       expect(results[1].tier).toBe('primary')
 
-      // price: tertiary (no name match, default richness 0.4, full data, mid position)
-      // Total: 0 + 0.1 + 0.2 + ~0.09 = ~0.39 < 0.50
-      expect(results[2].tier).toBe('tertiary')
+      // price: secondary (name matches price indicator, default richness, full data, mid position)
+      // Total: 0.40 + 0.10 + 0.20 + ~0.10 = ~0.80
+      expect(results[2].tier).toBe('secondary')
 
-      // image: secondary (high visual richness + full data + mid position = 0.25+0.2+~0.08 = 0.53)
-      expect(results[3].tier).toBe('secondary')
+      // image: primary (name matches image indicator + high visual richness + full data)
+      // Total: 0.40 + 0.25 + 0.20 + ~0.09 = ~0.94
+      expect(results[3].tier).toBe('primary')
 
       // created_at: forced tertiary (metadata override)
       expect(results[4].tier).toBe('tertiary')
@@ -547,12 +548,13 @@ describe('calculateImportance', () => {
       // name: primary (name pattern + name category + full data)
       expect(results[1].tier).toBe('primary')
 
-      // email: tertiary (no name match, default richness 0.4, full data, mid position)
-      // Total: 0 + 0.1 + 0.2 + ~0.11 = ~0.41 < 0.50
-      expect(results[2].tier).toBe('tertiary')
+      // email: secondary (name matches email indicator, default richness, full data, mid position)
+      // Total: 0.40 + 0.10 + 0.20 + ~0.09 = ~0.79
+      expect(results[2].tier).toBe('secondary')
 
-      // avatar: secondary (high visual richness + full data + mid position = 0.25+0.2+~0.08 = 0.53)
-      expect(results[3].tier).toBe('secondary')
+      // avatar: primary (name matches image/avatar indicator + high visual richness + full data)
+      // Total: 0.40 + 0.25 + 0.20 + ~0.08 = ~0.93
+      expect(results[3].tier).toBe('primary')
     })
 
     it('should have config weights that sum to 1.0', () => {
