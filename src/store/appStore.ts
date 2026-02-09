@@ -1,13 +1,14 @@
 import { create } from 'zustand'
 import type { UnifiedSchema, SemanticMetadata } from '../types/schema'
 import type { ParsedSpec } from '../services/openapi/types'
-import type { ImportanceScore } from '../services/analysis/types'
+import type { ImportanceScore, GroupingResult } from '../services/analysis/types'
 import type { ComponentSelection } from '../services/selection/types'
 
 interface AnalysisCacheEntry {
   semantics: Map<string, SemanticMetadata>
   importance: Map<string, ImportanceScore>
   selection: ComponentSelection | null
+  grouping: GroupingResult | null
 }
 
 interface AppState {

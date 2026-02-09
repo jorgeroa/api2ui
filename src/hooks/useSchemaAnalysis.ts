@@ -287,6 +287,7 @@ export function useSchemaAnalysis(schema: UnifiedSchema | null, data: unknown): 
           semantics: semanticsMap,
           importance: analysisResult.importance,
           selection,
+          grouping: analysisResult.grouping,
         })
       } else if (schemaKind === 'object') {
         // Build field infos and semantic metadata for object
@@ -311,6 +312,7 @@ export function useSchemaAnalysis(schema: UnifiedSchema | null, data: unknown): 
           semantics: semanticsMap,
           importance: analysisResult.importance,
           selection,
+          grouping: analysisResult.grouping,
         })
       } else if (schemaKind === 'primitive-array') {
         // Primitive arrays have minimal field analysis but need data for chips heuristic
@@ -337,7 +339,7 @@ export function useSchemaAnalysis(schema: UnifiedSchema | null, data: unknown): 
         const selection = selectPrimitiveArrayComponent(nodeSchema, nodeData, selectionContext)
 
         // Store in cache
-        setAnalysisCache(path, { semantics: semanticsMap, importance: importanceMap, selection })
+        setAnalysisCache(path, { semantics: semanticsMap, importance: importanceMap, selection, grouping: null })
       }
     }
   }, [schema, data, setAnalysisCache, clearAnalysisCache])
