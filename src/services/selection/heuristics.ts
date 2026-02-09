@@ -234,7 +234,7 @@ export function checkProfilePattern(
   if (!fields) return null
 
   // Check for name field via semantic category or field name regex
-  const hasName = fields.some(([fieldName, fieldDef]) => {
+  const hasName = fields.some(([fieldName]) => {
     // Check semantic category
     const semanticPath = `$.${fieldName}`
     const semantic = context.semantics.get(semanticPath)
@@ -279,7 +279,7 @@ export function checkProfilePattern(
  */
 export function checkComplexObjectPattern(
   schema: TypeSignature,
-  context: SelectionContext
+  _context: SelectionContext
 ): ComponentSelection | null {
   const fields = getObjectFields(schema)
   if (!fields) return null
@@ -334,7 +334,7 @@ export function checkSplitPattern(
   let primaryContentCount = 0
   let metadataCount = 0
 
-  for (const [fieldName, fieldDef] of fields) {
+  for (const [fieldName] of fields) {
     const semanticPath = `$.${fieldName}`
     const semantic = context.semantics.get(semanticPath)
     const importance = context.importance.get(semanticPath)
