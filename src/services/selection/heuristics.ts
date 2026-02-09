@@ -16,6 +16,15 @@ function getArrayItemFields(schema: TypeSignature): Array<[string, TypeSignature
 }
 
 /**
+ * Helper to extract field entries from object schema.
+ * Returns array of [fieldName, FieldDefinition] tuples.
+ */
+function getObjectFields(schema: TypeSignature): Array<[string, import('@/types/schema').FieldDefinition]> | null {
+  if (schema.kind !== 'object') return null
+  return Array.from(schema.fields.entries())
+}
+
+/**
  * Detects review pattern: rating + comment/review fields.
  * User decision: Star ratings as default display.
  *
@@ -206,4 +215,221 @@ export function selectCardOrTable(
     confidence: 0.5,
     reason: 'ambiguous-default-table',
   }
+}
+
+/**
+ * Detects profile/person pattern: name field + 2+ contact fields.
+ * User decision: Hero component for user profiles and contact cards.
+ *
+ * Contact categories: email, phone, address, url
+ *
+ * @returns hero with 0.85 confidence when name + 2+ contacts
+ * @returns null when below threshold or non-object schema
+ */
+export function checkProfilePattern(
+  schema: TypeSignature,
+  context: SelectionContext
+): ComponentSelection | null {
+  const fields = getObjectFields(schema)
+  if (!fields) return null
+
+  // Check for name field via semantic category or field name regex
+  const hasName = fields.some(([fieldName, fieldDef]) => {
+    // Check semantic category
+    const semanticPath = `$.${fieldName}`
+    const semantic = context.semantics.get(semanticPath)
+    if (semantic?.detectedCategory === 'name') return true
+
+    // Fallback to field name regex
+    return /^(name|title|full_?name)$/i.test(fieldName)
+  })
+
+  if (!hasName) return null
+
+  // Count contact fields
+  const contactCategories = new Set(['email', 'phone', 'address', 'url'])
+  let contactCount = 0
+
+  for (const [fieldName] of fields) {
+    const semanticPath = `$.${fieldName}`
+    const semantic = context.semantics.get(semanticPath)
+    if (semantic && contactCategories.has(semantic.detectedCategory ?? '')) {
+      contactCount++
+    }
+  }
+
+  // Need 2+ contact fields for profile pattern
+  if (contactCount >= 2) {
+    return {
+      componentType: 'hero',
+      confidence: 0.85,
+      reason: 'profile-pattern-detected',
+    }
+  }
+
+  return null
+}
+
+/**
+ * Detects complex nested objects with 3+ nested structures.
+ * User decision: Tabs component for organizing nested content.
+ *
+ * @returns tabs with 0.8 confidence when 3+ nested object/array fields
+ * @returns null when below threshold or non-object schema
+ */
+export function checkComplexObjectPattern(
+  schema: TypeSignature,
+  context: SelectionContext
+): ComponentSelection | null {
+  const fields = getObjectFields(schema)
+  if (!fields) return null
+
+  // Count fields whose type is object or array
+  let nestedCount = 0
+
+  for (const [, fieldDef] of fields) {
+    const fieldType = fieldDef.type
+    if (fieldType.kind === 'object' || fieldType.kind === 'array') {
+      nestedCount++
+    }
+  }
+
+  // Need 3+ nested structures for tabs
+  if (nestedCount >= 3) {
+    return {
+      componentType: 'tabs',
+      confidence: 0.8,
+      reason: 'complex-nested-structure',
+    }
+  }
+
+  return null
+}
+
+/**
+ * Detects content + metadata split pattern.
+ * User decision: Split component for content-heavy objects with metadata.
+ *
+ * Requirements:
+ * - Exactly 1 primary-tier content field (description semantic OR name matches content regex)
+ * - 3+ metadata fields (tertiary tier OR name matches metadata regex)
+ * - 5+ total fields
+ *
+ * @returns split with 0.75 confidence when pattern matches
+ * @returns null otherwise
+ */
+export function checkSplitPattern(
+  schema: TypeSignature,
+  context: SelectionContext
+): ComponentSelection | null {
+  const fields = getObjectFields(schema)
+  if (!fields) return null
+
+  // Need 5+ total fields
+  if (fields.length < 5) return null
+
+  const contentNameRegex = /^(description|content|body|summary|text)$/i
+  const metadataNameRegex = /^(id|created|updated|timestamp|_)/
+
+  let primaryContentCount = 0
+  let metadataCount = 0
+
+  for (const [fieldName, fieldDef] of fields) {
+    const semanticPath = `$.${fieldName}`
+    const semantic = context.semantics.get(semanticPath)
+    const importance = context.importance.get(semanticPath)
+
+    // Check for primary content field
+    const isDescriptionSemantic = semantic?.detectedCategory === 'description'
+    const isContentName = contentNameRegex.test(fieldName)
+    const isPrimaryTier = importance?.tier === 'primary'
+
+    if (isPrimaryTier && (isDescriptionSemantic || isContentName)) {
+      primaryContentCount++
+    }
+
+    // Check for metadata field
+    const isTertiaryTier = importance?.tier === 'tertiary'
+    const isMetadataName = metadataNameRegex.test(fieldName)
+
+    if (isTertiaryTier || isMetadataName) {
+      metadataCount++
+    }
+  }
+
+  // Need exactly 1 primary content field and 3+ metadata fields
+  if (primaryContentCount === 1 && metadataCount >= 3) {
+    return {
+      componentType: 'split',
+      confidence: 0.75,
+      reason: 'content-metadata-split-detected',
+    }
+  }
+
+  return null
+}
+
+/**
+ * Detects chips pattern for primitive string arrays.
+ * User decision: Chips component for tags, statuses, and short enum-like values.
+ *
+ * Heuristics:
+ * 1. Semantic category 'tags' or 'status' → 0.9 confidence
+ * 2. String values with avg length <=20, max <=30, array length <=10 → 0.8 confidence
+ *
+ * @param data - The actual array data (needed for value length analysis)
+ * @param schema - Type signature (must be array of primitive strings)
+ * @param context - Selection context with semantic metadata
+ * @returns chips with 0.8-0.9 confidence when pattern matches, null otherwise
+ */
+export function checkChipsPattern(
+  data: unknown,
+  schema: TypeSignature,
+  context: SelectionContext
+): ComponentSelection | null {
+  // Must be array of primitive strings
+  if (schema.kind !== 'array') return null
+  if (schema.items.kind !== 'primitive') return null
+  if (schema.items.type !== 'string') return null
+
+  // Check for semantic tags or status category
+  // Iterate over all semantics since path varies (could be $.tags, $.statuses, etc.)
+  const hasTagsOrStatus = Array.from(context.semantics.values()).some(
+    semantic => semantic.detectedCategory === 'tags' || semantic.detectedCategory === 'status'
+  )
+
+  if (hasTagsOrStatus) {
+    return {
+      componentType: 'chips',
+      confidence: 0.9,
+      reason: 'semantic-tags-or-status',
+    }
+  }
+
+  // Check value-based heuristics
+  if (!Array.isArray(data) || data.length === 0) return null
+  if (data.length > 10) return null
+
+  // Calculate string length statistics
+  let totalLength = 0
+  let maxLength = 0
+
+  for (const item of data) {
+    if (typeof item !== 'string') return null
+    totalLength += item.length
+    maxLength = Math.max(maxLength, item.length)
+  }
+
+  const avgLength = totalLength / data.length
+
+  // Short enum-like values: avg <=20, max <=30
+  if (avgLength <= 20 && maxLength <= 30) {
+    return {
+      componentType: 'chips',
+      confidence: 0.8,
+      reason: 'short-enum-like-values',
+    }
+  }
+
+  return null
 }
