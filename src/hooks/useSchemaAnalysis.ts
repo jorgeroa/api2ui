@@ -64,8 +64,8 @@ function findAnalyzablePaths(
     results.push({ path: basePath, schema, data, schemaKind: 'primitive-array' })
   }
 
-  // Objects (but not the root-level object that wraps the entire schema)
-  if (schema.kind === 'object' && basePath !== '$') {
+  // Objects (including root-level objects for single-object APIs like /users/1)
+  if (schema.kind === 'object') {
     results.push({ path: basePath, schema, data, schemaKind: 'object' })
   }
 

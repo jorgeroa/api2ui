@@ -246,14 +246,17 @@ export function checkProfilePattern(
 
   if (!hasName) return null
 
-  // Count contact fields
+  // Count contact fields (semantic match OR field name fallback)
   const contactCategories = new Set(['email', 'phone', 'address', 'url'])
+  const contactNameRegex = /^(email|e_?mail|phone|tel|telephone|mobile|cell|address|website|url|homepage|web)\b/i
   let contactCount = 0
 
   for (const [fieldName] of fields) {
     const semanticPath = `$.${fieldName}`
     const semantic = context.semantics.get(semanticPath)
     if (semantic && contactCategories.has(semantic.detectedCategory ?? '')) {
+      contactCount++
+    } else if (contactNameRegex.test(fieldName)) {
       contactCount++
     }
   }
