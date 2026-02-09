@@ -11,20 +11,20 @@
 ## Current Position
 
 **Milestone:** v1.3 Smart Default Selection
-**Phase:** 14.1 - Smart Object & Primitive Selection
-**Plan:** 2 of 2 complete
-**Status:** Phase complete, verified (16/16 must-haves)
-**Last activity:** 2026-02-08 - Phase 14.1 verified
+**Phase:** 15 - Smart Grouping & Visual Hierarchy
+**Plan:** 1 of 2 complete
+**Status:** In progress
+**Last activity:** 2026-02-08 - Completed 15-01-PLAN.md
 
 **Progress:**
 ```
-v1.3 Progress: [================    ] 82% (9/11 plans estimated)
+v1.3 Progress: [=================   ] 91% (10/11 plans estimated)
 
 Phase 12: [Complete] Core Semantic Detection (3/3 plans)
 Phase 13: [Complete] Field Importance & Grouping Analysis (2/2 plans)
 Phase 14: [Complete] Smart Component Selection (3/3 plans)
 Phase 14.1: [Complete] Smart Object & Primitive Selection (2/2 plans)
-Phase 15: [Pending] Smart Grouping & Visual Hierarchy
+Phase 15: [In Progress] Smart Grouping & Visual Hierarchy (1/2 plans)
 Phase 16: [Pending] Context-Aware Components
 ```
 
@@ -43,11 +43,11 @@ Phase 16: [Pending] Context-Aware Components
 - Coverage: 100% (28/28 requirements mapped)
 
 **v1.3 Progress:**
-- Plans completed: 9 (12-01, 12-02, 12-03, 13-01, 13-02, 14-01, 14-02, 14.1-01, 14.1-02)
-- Average duration: 3.9 min
+- Plans completed: 10 (12-01, 12-02, 12-03, 13-01, 13-02, 14-01, 14-02, 14.1-01, 14.1-02, 15-01)
+- Average duration: 3.8 min
 
 **Historical Velocity:**
-- Total plans completed: 51 (13 v1.0 + 10 v1.1 + 19 v1.2 + 9 v1.3)
+- Total plans completed: 52 (13 v1.0 + 10 v1.1 + 19 v1.2 + 10 v1.3)
 - Average duration: 3.3 min
 - Total execution time: ~159 min
 
@@ -133,6 +133,12 @@ Phase 16: [Pending] Context-Aware Components
 | Profile contact detection uses field-name fallback | Semantic detection may not reach high confidence for phone extensions or URLs without http | 14.1-fix |
 | Primitive arrays analyzed at parent path | Array semantics detected on array itself ($.tags) not items | 14.1-02 |
 | Object sample values from single instance | Object data is plain object, not array like array-of-objects | 14.1-02 |
+| Drill-down paths normalized for cache lookup | `$[0].tags` → `$[].tags` so indexed paths match generic analysis cache | 14.1-fix |
+| Image grid pattern for primitive URL arrays | 50%+ image URLs → grid at 0.85; checked before chips (URLs are long strings) | 14.1-fix |
+| Meta/barcode improvements deferred to Phase 16 | Split needs 5+ fields (Meta has 4), barcode rendering is context-aware polish | 14.1-fix |
+| Grouping results cached in analysis pipeline | analyzeFields() grouping now persisted alongside semantics/importance/selection | 15-01 |
+| Three-tier visual hierarchy for fields | Primary (large/bold), secondary (normal), tertiary (small/muted) styling | 15-01 |
+| FieldRow handles primitives only | Nested/image fields continue using existing DetailRenderer logic | 15-01 |
 
 ### Key Decisions from v1.2
 
@@ -181,30 +187,36 @@ Phase 16: [Pending] Context-Aware Components
 ## Session Continuity
 
 **Last Session (2026-02-08):**
-- Completed Phase 14.1 Plan 02: Schema analysis integration
-- Extended useSchemaAnalysis to analyze objects and primitive arrays
+- Completed Phase 15 Plan 01: Cache grouping & shared FieldRow
+- Added grouping to analysis cache (was computed but discarded)
+- Created FieldRow component with three-tier visual hierarchy
 - All tests pass (415), build succeeds
 
 **This Session:**
-- Executed 14.1-02-PLAN.md
-- 2 tasks completed, 2 commits (feat + fix)
-- Duration: 2 min 37 sec
+- Phase 15 Plan 01 execution: 2 tasks, 2 commits (fdf3d4c, 8ab2885)
+- Duration: 3 minutes
+- Zero deviations - straightforward wiring change
 
-**Phase 14.1 Complete:**
-- Plan 01: ✅ Object and primitive array heuristics (profile, complex, split, chips patterns)
-- Plan 02: ✅ useSchemaAnalysis integration (discovers and analyzes all schema kinds)
+**Phase 15 Plan 01 Complete:**
+- ✅ Grouping data cached alongside semantics/importance/selection
+- ✅ FieldRow component with tier-based styling (primary/secondary/tertiary)
+- ✅ getFieldStyles helper for Plan 02 consumption
 
-**Smart Selection System Now Complete:**
+**Smart Selection System Status:**
 - ✅ Semantic detection (22 patterns covering all categories)
 - ✅ Field importance scoring (4 signals: name, richness, presence, position)
 - ✅ Grouping analysis (hybrid prefix + semantic with orphan prevention)
-- ✅ Component selection heuristics (8 patterns: review, gallery, timeline, card-vs-table, profile, complex, split, chips)
+- ✅ Component selection heuristics (9 patterns: review, gallery, timeline, card-vs-table, profile, complex, split, chips, image-grid)
 - ✅ Analysis pipeline integration (useSchemaAnalysis populates cache for all schema kinds)
 - ✅ Three-tier precedence rendering (override > smart > fallback)
+- ✅ Drill-down path normalization (indexed → generic for cache lookup)
+- ✅ **NEW: Grouping results cached in analysis pipeline**
+- ✅ **NEW: Three-tier visual hierarchy foundation (FieldRow component)**
 
-**Ready for Phase 15:**
-- Smart grouping UI with accordion/tabs components
-- Visual hierarchy implementation
+**Ready for Phase 15 Plan 02:**
+- Grouped accordion rendering with cached grouping data
+- FieldRow component ready for field rendering within groups
+- Visual hierarchy styling available via getFieldStyles
 
 **Quick Start Commands:**
 ```bash
@@ -222,5 +234,5 @@ npx tsx -e "import { analyzeGrouping } from './src/services/analysis'; import ty
 ```
 
 ---
-*State updated: 2026-02-08 after Phase 14.1 completion*
-*Next: /gsd:discuss-phase 15 or /gsd:plan-phase 15*
+*State updated: 2026-02-08 after Phase 15 Plan 01 completion*
+*Next: /gsd:execute-phase 15 02 (grouped accordion rendering)*
