@@ -129,7 +129,8 @@ Phase 16: [Pending] Context-Aware Components
 | Split pattern requires exactly 1 primary content | Multiple primary content fields suggest different layout (cards/tabs) | 14.1-01 |
 | Chips pattern uses data-driven value analysis | Semantic tags/status (0.9), value length heuristics (0.8) fallback | 14.1-01 |
 | Object field semantics use $.fieldName path | Consistent with JSON path conventions ($[].fieldName for array items) | 14.1-01 |
-| Root path $ skipped for object analysis | Root-level object typically wrapper/container, not meaningful entity | 14.1-02 |
+| Root path $ included in object analysis | Single-object APIs (e.g., /users/1) ARE the meaningful entity, not wrappers | 14.1-fix |
+| Profile contact detection uses field-name fallback | Semantic detection may not reach high confidence for phone extensions or URLs without http | 14.1-fix |
 | Primitive arrays analyzed at parent path | Array semantics detected on array itself ($.tags) not items | 14.1-02 |
 | Object sample values from single instance | Object data is plain object, not array like array-of-objects | 14.1-02 |
 
