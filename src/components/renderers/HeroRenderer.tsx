@@ -1,17 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import type { RendererProps } from '../../types/components'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DynamicRenderer } from '../DynamicRenderer'
 import { isImageUrl } from '../../utils/imageDetection'
 import { formatLabel } from '../../utils/formatLabel'
 
-/** Detect primary fields for the hero title */
-function isPrimaryField(fieldName: string): boolean {
-  const nameLower = fieldName.toLowerCase()
-  const primaryExact = ['name', 'title', 'label', 'heading', 'subject']
-  if (primaryExact.includes(nameLower)) return true
-  const primarySuffixes = ['_name', '_title', '_label', '-name', '-title', '-label', 'Name', 'Title']
-  return primarySuffixes.some(suffix => fieldName.endsWith(suffix))
+/** Exact primary field names (highest priority for title) */
+const PRIMARY_EXACT = new Set(['name', 'title', 'label', 'heading', 'subject'])
+
+/** Detect compound primary fields like provider_name, lastName (lower priority) */
+function isCompoundPrimaryField(fieldName: string): boolean {
+  const suffixes = ['_name', '_title', '_label', '-name', '-title', '-label', 'Name', 'Title']
+  return suffixes.some(suffix => fieldName.endsWith(suffix))
 }
 
 /** Detect subtitle/description fields */
@@ -24,8 +24,23 @@ function isNullOrUndefined(value: unknown): boolean {
   return value === null || value === undefined
 }
 
+/** Helper: field has a usable non-null, non-empty value */
+function hasValue(obj: Record<string, unknown>, name: string): boolean {
+  return obj[name] != null && obj[name] !== ''
+}
+
 /** Renders a single object as a hero/profile layout */
 export function HeroRenderer({ data, schema, path, depth }: RendererProps) {
+  // Hooks must be called before any early returns
+  // Use a data-derived key to reset state when data changes instead of useEffect
+  const dataKey = typeof data === 'object' && data !== null ? Object.keys(data as object).join(',') : ''
+  const [nullFieldState, setNullFieldState] = useState({ key: dataKey, show: false })
+  if (nullFieldState.key !== dataKey) {
+    setNullFieldState({ key: dataKey, show: false })
+  }
+  const showNullFields = nullFieldState.show
+  const setShowNullFields = (fn: (prev: boolean) => boolean) => setNullFieldState(prev => ({ ...prev, show: fn(prev.show) }))
+
   if (schema.kind !== 'object') {
     return <div className="text-red-500">HeroRenderer expects object schema</div>
   }
@@ -46,13 +61,19 @@ export function HeroRenderer({ data, schema, path, depth }: RendererProps) {
     def.type.kind === 'primitive' && typeof obj[name] === 'string' && isImageUrl(obj[name] as string)
   )
 
-  const titleField = allFields.find(([name]) => isPrimaryField(name))
-    // Fallback: first string field containing "name" in the key
+  // Title field detection with priority tiers:
+  // 1. Exact match (name, title, label) with value
+  // 2. Compound match (provider_name, lastName) with value
+  // 3. Any field containing "name" with value
+  const titleField =
+    allFields.find(([name]) => PRIMARY_EXACT.has(name.toLowerCase()) && hasValue(obj, name))
+    ?? allFields.find(([name]) => isCompoundPrimaryField(name) && hasValue(obj, name))
     ?? allFields.find(([name, def]) =>
-      def.type.kind === 'primitive' && def.type.type === 'string'
+      def.type.kind === 'primitive'
       && /name/i.test(name) && name !== imageField?.[0]
-      && typeof obj[name] === 'string' && obj[name] !== null
+      && hasValue(obj, name)
     )
+
   const subtitleField = allFields.find(([name, def]) =>
     def.type.kind === 'primitive' &&
     name !== titleField?.[0] &&
@@ -87,9 +108,6 @@ export function HeroRenderer({ data, schema, path, depth }: RendererProps) {
   const hasHeader = title || subtitle || imageField
 
   // Null-field filtering
-  const [showNullFields, setShowNullFields] = useState(false)
-  useEffect(() => { setShowNullFields(false) }, [data])
-
   const visibleNumberFields = showNullFields
     ? numberFields
     : numberFields.filter(([name]) => !isNullOrUndefined(obj[name]))
