@@ -6,7 +6,12 @@ const NAME_SUFFIXES = ['_name', '_title', '_label', '-name', '-title', '-label',
 
 /** Extract a human-readable label from an item by checking common name fields */
 export function getItemLabel(item: unknown, fallback = 'Item'): string {
-  if (typeof item !== 'object' || item === null) return fallback
+  return findLabel(item, 1) || fallback
+}
+
+/** Search for a label up to maxDepth levels deep */
+function findLabel(item: unknown, maxDepth: number): string {
+  if (typeof item !== 'object' || item === null || Array.isArray(item)) return ''
 
   const obj = item as Record<string, unknown>
   const keys = Object.keys(obj)
@@ -34,10 +39,23 @@ export function getItemLabel(item: unknown, fallback = 'Item'): string {
     }
   }
 
-  // Tier 4: id as last resort
-  const id = obj['id']
-  if (typeof id === 'string' && id.length > 0) return id
-  if (typeof id === 'number') return String(id)
+  // Tier 4: id as last resort (only at top level)
+  if (maxDepth > 0) {
+    const id = obj['id']
+    if (typeof id === 'string' && id.length > 0) return id
+    if (typeof id === 'number') return String(id)
+  }
 
-  return fallback
+  // Tier 5: search one level deep in nested objects
+  if (maxDepth > 0) {
+    for (const key of keys) {
+      const nested = obj[key]
+      if (typeof nested === 'object' && nested !== null && !Array.isArray(nested)) {
+        const nestedLabel = findLabel(nested, maxDepth - 1)
+        if (nestedLabel) return nestedLabel
+      }
+    }
+  }
+
+  return ''
 }
