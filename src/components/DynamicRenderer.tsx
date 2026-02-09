@@ -13,6 +13,12 @@ import { Breadcrumb } from './navigation/Breadcrumb'
 import { DrilldownModeToggle } from './navigation/DrilldownModeToggle'
 import { getDefaultTypeName } from '../services/selection'
 
+/** Normalize indexed array paths to generic paths for cache lookup.
+ *  e.g. "$[0].tags" → "$[].tags", "$[2].reviews[1]" → "$[].reviews[]" */
+function normalizePath(path: string): string {
+  return path.replace(/\[\d+\]/g, '[]')
+}
+
 interface DynamicRendererProps {
   data: unknown
   schema: TypeSignature
@@ -120,8 +126,8 @@ export function DynamicRenderer({
     // User override always wins (INT-01, INT-05)
     currentType = override
   } else {
-    // Try smart selection from cache
-    const cached = getAnalysisCache(activePath)
+    // Try smart selection from cache (normalize indexed paths for drill-down)
+    const cached = getAnalysisCache(activePath) || getAnalysisCache(normalizePath(activePath))
     if (cached?.selection && cached.selection.confidence >= 0.75) {
       // High-confidence smart default
       currentType = cached.selection.componentType
@@ -189,7 +195,7 @@ export function DynamicRenderer({
         schema={activeSchema}
         path={activePath}
         depth={depth}
-        importance={getAnalysisCache(activePath)?.importance}
+        importance={(getAnalysisCache(activePath) || getAnalysisCache(normalizePath(activePath)))?.importance}
       />
       {depth === 0 && data != null && <OnboardingTooltip />}
     </div>
