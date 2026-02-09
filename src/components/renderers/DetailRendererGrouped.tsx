@@ -8,7 +8,6 @@ import type { TypeSignature, FieldDefinition } from '../../types/schema'
 import type { ImportanceScore } from '../../services/analysis/types'
 import type { FieldGroup, FieldInfo } from '../../services/analysis/types'
 import { FieldRow } from './FieldRow'
-import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DynamicRenderer } from '../DynamicRenderer'
 import { isImageUrl } from '../../utils/imageDetection'
 
@@ -68,9 +67,6 @@ export function DetailRendererGrouped({
   if (schema.kind !== 'object') {
     return <div className="text-red-500">DetailRendererGrouped expects object schema</div>
   }
-
-  // Get all field names from schema
-  const allFieldNames = Array.from(schema.fields.keys())
 
   // Build a set of grouped field names for quick lookup
   const groupedFieldNames = new Set<string>()
@@ -278,17 +274,15 @@ export function DetailRendererGrouped({
         <div className="space-y-3">
           {groups.map((group, groupIndex) => (
             <Disclosure key={groupIndex} defaultOpen={true}>
-              {({ open }) => (
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  <DisclosureButton className="w-full px-4 py-3 text-left text-sm font-medium text-gray-900 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors">
-                    <span>{group.label}</span>
-                    <ChevronIcon />
-                  </DisclosureButton>
-                  <DisclosurePanel className="px-4 py-3 space-y-2 bg-white">
-                    {renderGroupFields(group.fields)}
-                  </DisclosurePanel>
-                </div>
-              )}
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <DisclosureButton className="w-full px-4 py-3 text-left text-sm font-medium text-gray-900 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors">
+                  <span>{group.label}</span>
+                  <ChevronIcon />
+                </DisclosureButton>
+                <DisclosurePanel className="px-4 py-3 space-y-2 bg-white">
+                  {renderGroupFields(group.fields)}
+                </DisclosurePanel>
+              </div>
             </Disclosure>
           ))}
         </div>

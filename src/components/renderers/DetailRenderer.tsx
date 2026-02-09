@@ -5,10 +5,18 @@ import type { FieldDefinition } from '../../types/schema'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DynamicRenderer } from '../DynamicRenderer'
 import { useConfigStore } from '../../store/configStore'
+import { useAppStore } from '../../store/appStore'
 import { FieldConfigPopover } from '../config/FieldConfigPopover'
 import { SortableFieldList } from '../config/SortableFieldList'
 import { DraggableField } from '../config/DraggableField'
 import { isImageUrl, getHeroImageField } from '../../utils/imageDetection'
+import { DetailRendererGrouped } from './DetailRendererGrouped'
+import { FieldRow } from './FieldRow'
+
+/** Normalize path for cache lookup (convert indexed paths to generic) */
+function normalizePath(path: string): string {
+  return path.replace(/\[\d+\]/g, '[]')
+}
 
 /** Detect primary fields (name, title, label, heading, subject) for typography hierarchy */
 function isPrimaryField(fieldName: string): boolean {
@@ -58,7 +66,9 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
     fieldValue: unknown
     position: { x: number; y: number }
   } | null>(null)
+  const [showGrouped, setShowGrouped] = useState(true)
   const { mode, fieldConfigs, reorderFields } = useConfigStore()
+  const { getAnalysisCache } = useAppStore()
 
   // Listen for cross-navigation events from ConfigPanel
   useEffect(() => {
@@ -145,6 +155,18 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
   // Detect hero image for view mode
   const heroImage = !isConfigureMode ? getHeroImageField(obj, allFields) : null
 
+  // Read analysis cache for grouping data (in view mode only)
+  const cached = getAnalysisCache(path) || getAnalysisCache(normalizePath(path))
+  const grouping = cached?.grouping ?? null
+  const importance = cached?.importance ?? new Map()
+
+  // Determine if grouped view should apply
+  const shouldGroup = !isConfigureMode &&
+    showGrouped &&
+    grouping !== null &&
+    grouping.groups.length > 0 &&
+    visibleFields.length > 8
+
   // Group fields for structured layout in view mode
   const primaryFields: Array<[string, FieldDefinition]> = []
   const regularFields: Array<[string, FieldDefinition]> = []
@@ -185,7 +207,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
     reorderFields(orderedPaths)
   }
 
-  // Helper to render a primitive field
+  // Helper to render a primitive field (uses FieldRow with tier styling)
   const renderPrimitiveField = (fieldName: string, fieldDef: FieldDefinition, value: unknown) => {
     const fieldPath = `${path}.${fieldName}`
     const config = fieldConfigs[fieldPath]
@@ -193,50 +215,22 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
       .replace(/_/g, ' ')
       .replace(/\b\w/g, (char) => char.toUpperCase())
     const displayLabel = config?.label || defaultLabel
-    const primary = isPrimaryField(fieldName)
 
-    const contextMenuHandlers = {
-      onContextMenu: (e: React.MouseEvent) => handleFieldContextMenu(e, fieldPath, fieldName, value),
-      onTouchStart: (e: React.TouchEvent) => {
-        const touch = e.touches[0]
-        if (!touch) return
-        const touchX = touch.clientX
-        const touchY = touch.clientY
-        const timer = setTimeout(() => {
-          setPopoverState({ fieldPath, fieldName, fieldValue: value, position: { x: touchX, y: touchY } })
-        }, 800)
-        ;(e.currentTarget as HTMLElement).dataset.longPressTimer = String(timer)
-      },
-      onTouchEnd: (e: React.TouchEvent) => {
-        const timer = (e.currentTarget as HTMLElement).dataset.longPressTimer
-        if (timer) clearTimeout(Number(timer))
-      },
-      onTouchMove: (e: React.TouchEvent) => {
-        const timer = (e.currentTarget as HTMLElement).dataset.longPressTimer
-        if (timer) clearTimeout(Number(timer))
-      },
-    }
+    // Use importance tier if available, fallback to isPrimaryField heuristic
+    const tier = importance.get(fieldPath)?.tier ?? (isPrimaryField(fieldName) ? 'primary' : 'secondary')
 
     return (
-      <div key={fieldName} className="grid grid-cols-[auto_1fr] gap-x-3 items-baseline min-w-0" {...contextMenuHandlers}>
-        <div className={primary
-          ? "text-base font-semibold text-gray-700 py-1 whitespace-nowrap"
-          : "text-sm font-medium text-gray-600 py-1 whitespace-nowrap"
-        }>
-          {displayLabel}:
-        </div>
-        <div className={primary
-          ? "py-1 text-lg font-semibold text-gray-900 min-w-0"
-          : "py-1 min-w-0"
-        }>
-          <PrimitiveRenderer
-            data={value}
-            schema={fieldDef.type}
-            path={fieldPath}
-            depth={depth + 1}
-          />
-        </div>
-      </div>
+      <FieldRow
+        key={fieldName}
+        fieldName={fieldName}
+        displayLabel={displayLabel}
+        value={value}
+        fieldDef={fieldDef}
+        fieldPath={fieldPath}
+        tier={tier}
+        depth={depth}
+        onContextMenu={handleFieldContextMenu}
+      />
     )
   }
 
@@ -520,9 +514,46 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
     )
   }
 
-  // View mode: enhanced two-column layout with hero image and field grouping
+  // View mode: conditional grouped/ungrouped rendering
+  if (shouldGroup) {
+    return (
+      <>
+        <DetailRendererGrouped
+          data={obj}
+          schema={schema}
+          path={path}
+          depth={depth}
+          heroImage={heroImage}
+          groups={grouping.groups}
+          ungroupedFields={grouping.ungrouped}
+          importance={importance}
+          fieldConfigs={fieldConfigs}
+          onContextMenu={handleFieldContextMenu}
+          onToggleGrouping={() => setShowGrouped(false)}
+        />
+        {popoverElement}
+      </>
+    )
+  }
+
+  // View mode: flat ungrouped layout (original view mode rendering)
   return (
     <div className="space-y-6 border border-border rounded-lg p-4">
+      {/* Show "Show grouped" toggle if grouping is available but hidden */}
+      {grouping && grouping.groups.length > 0 && !showGrouped && visibleFields.length > 8 && (
+        <div className="flex justify-end -mt-2 -mr-2 mb-2">
+          <button
+            onClick={() => setShowGrouped(true)}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+            title="Switch to grouped view"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+            <span>Show grouped</span>
+          </button>
+        </div>
+      )}
       {heroImage && (
         <div className="w-full">
           <img
