@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A web app that takes an API URL and automatically renders a live, interactive website for that API. Users paste an endpoint URL (or a Swagger/OpenAPI spec URL), and the engine infers the API's structure, maps data types to UI components, and renders an instant default view — no code generation, just runtime rendering. Developers configure the view via a settings panel and inline editing, non-technical users consume the clean rendered interface.
+A web app that takes an API URL and automatically renders a live, interactive website for that API. Users paste an endpoint URL (or a Swagger/OpenAPI spec URL), and the engine infers the API's structure, maps data types to UI components, and renders an instant default view — no code generation, just runtime rendering. The engine uses semantic field analysis to pick context-appropriate components (star ratings for ratings, currency formatting for prices, status badges for states), organizes fields into visual sections, and applies importance-based hierarchy. Developers configure the view via a settings panel and inline editing, non-technical users consume the clean rendered interface.
 
 ## Core Value
 
@@ -40,7 +40,7 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 - Nested arrays render as horizontal card scrollers in detail views — v1.1
 - Breadcrumb navigation for nested detail drill-down — v1.1
 - Raw URL query param parsing with type inference (not just Swagger) — v1.2
-- Parameter grouping by prefix (e.g., ddcFilter[*] → "Filters" section) — v1.2
+- Parameter grouping by prefix (e.g., ddcFilter[*] -> "Filters" section) — v1.2
 - Progressive param reveal: show breakdown first, then make editable — v1.2
 - Smart type inference for params (dates, coordinates, zip codes, emails) — v1.2
 - Richer input components (date pickers, sliders, tag inputs for multi-value) — v1.2
@@ -50,16 +50,16 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 - Parameter value persistence across sessions — v1.2
 - User-selectable page layouts (sidebar, top bar, split view, drawer) — v1.2
 - Polished UX that feels like a real product — v1.2
+- Semantic component selection (reviews -> cards, specs -> key-value, images -> gallery) — v1.3
+- Automatic section organization with accordions for complex objects — v1.3
+- Field importance hierarchy (primary/secondary/tertiary visual tiers) — v1.3
+- Smart defaults for detail views (Hero + Overview + Sections layout) — v1.3
+- Context-aware components (status badges, star ratings, currency, dates, tag chips) — v1.3
+- All existing components remain available via component switcher overrides — v1.3
 
 ### Active
 
-**v1.3 Smart Default Selection** — Make the rendering engine smarter about picking default components.
-
-- [ ] Semantic component selection — Analyze field names/patterns to pick best component (reviews → cards, specs → key-value, images → gallery)
-- [ ] Automatic tab/section organization — Detect logical groupings in complex objects, create tabs when appropriate
-- [ ] Field importance hierarchy — Surface primary fields (name, image, price), de-emphasize secondary (IDs, timestamps, metadata)
-- [ ] Smart defaults for detail views — Drill-down renders like a designed product page, not a data dump
-- [ ] All existing components remain available — User can override any default via component switcher
+(No active milestone — ready for `/gsd:new-milestone`)
 
 ### Out of Scope
 
@@ -70,18 +70,23 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 - Custom/extensible components — start with fixed set
 - Backend for persistence — uses local storage
 - Mobile app — web-first
+- ML/NLP for semantic detection — zero-dependency heuristics sufficient for well-defined patterns
+- Horizontal tabs for field organization — UX research shows 27% overlooked vs 8% for accordions
 
 ## Context
 
 - **Shipped v1.0 MVP** with 6,099 lines of TypeScript/TSX/CSS across 207 files
 - **Shipped v1.1 UX Polish** with smart visual defaults, discoverable component switching, pagination, and enhanced detail views
 - **Shipped v1.2 Smart Parameters & Layout System** with URL parsing, type inference, rich input components, applied filter chips, and user-selectable layouts
+- **Shipped v1.3 Smart Default Selection** with semantic field analysis (22 patterns), importance scoring, auto-grouping (prefix + semantic clustering), smart component selection heuristics, and context-aware rendering components
+- **Current codebase:** 21,773 lines of TypeScript/TSX/CSS, 415 tests
 - **Tech stack:** React 19, TypeScript 5.9, Vite 7, Tailwind CSS 4, Zustand, Headless UI, @dnd-kit, @apidevtools/swagger-parser, shadcn/ui, Sonner
 - The rendering engine has two symmetric sides: input (parameters -> form controls) and output (responses -> data components), both following type-based defaults with developer overrides
+- Smart defaults use three-tier precedence: user override > semantic smart default > type-based fallback
 - Nesting is handled via master-detail: top-level collection (table/cards) -> click item -> detail view (modal/panel) with nested objects as sub-sections and nested arrays as sub-tables
 - Two distinct modes: Configure mode (settings panel + inline editing) for developers, View mode (clean output) for consumers
 - No code is generated — the engine renders at runtime based on configuration
-- Known tech debt: Buffer polyfill for swagger-parser, orphaned SkeletonDetail.tsx, unused react-window dependency
+- Known tech debt: Buffer polyfill for swagger-parser, orphaned SkeletonDetail.tsx, unused react-window dependency, CurrencyValue hardcoded currency field names
 
 ## Constraints
 
@@ -108,6 +113,12 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 | Tailwind CSS 4 with Vite plugin | CSS-first config, no PostCSS needed | Good |
 | TypeScript strict + noUncheckedIndexedAccess | Catches array safety issues at compile time | Good |
 | @apidevtools/swagger-parser | Full $ref resolution for OpenAPI specs | Good, needs Buffer polyfill |
+| Zero-dependency heuristics for semantic detection | ML/NLP overkill for well-defined field patterns, keeps bundle small | Good |
+| 75% confidence threshold for smart defaults | Balances false positives vs detection coverage | Good |
+| Importance scoring: name 40%, richness 25%, presence 20%, position 15% | Weighted by signal reliability, name patterns most predictive | Good |
+| Accordions over tabs for field grouping | UX research: 27% overlooked rate for tabs vs 8% for accordions | Good |
+| Absolute-only date formatting | User decision: relative dates ("2 days ago") add ambiguity | Good |
+| Three-tier precedence (override > smart > fallback) | Preserves user agency while improving defaults | Good |
 
 ---
-*Last updated: 2026-02-07 after starting v1.3 milestone*
+*Last updated: 2026-02-09 after v1.3 milestone completion*

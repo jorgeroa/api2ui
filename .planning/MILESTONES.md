@@ -1,5 +1,34 @@
 # Project Milestones: api2ui
 
+## v1.3 Smart Default Selection (Shipped: 2026-02-09)
+
+**Delivered:** Semantic field analysis with intelligent component selection — the rendering engine now picks context-appropriate components (star ratings, currency formatting, status badges, tag chips, grouped detail views) based on field name patterns, value analysis, and importance scoring.
+
+**Phases completed:** 12-16 (13 plans total)
+
+**Key accomplishments:**
+
+- Semantic detection engine with 22 field patterns and multi-signal confidence scoring
+- Field importance scoring (name 40%, richness 25%, presence 20%, position 15%) with visual hierarchy tiers
+- Smart component selection heuristics for arrays (cards vs table vs timeline vs gallery), objects (profile vs tabs vs split), and primitive arrays (chips vs list)
+- Auto-grouping with prefix detection and semantic clustering, rendered as Hero + Overview + Accordion Sections
+- Context-aware components: StatusBadge, StarRating, CurrencyValue, FormattedDate, TagChips
+- Three-tier rendering precedence: user override > smart default > type-based fallback
+
+**Stats:**
+
+- 92 files changed, 19,181 lines added
+- 21,773 total lines of TypeScript/TSX/CSS
+- 6 phases, 13 plans, 28 requirements
+- 2 days from start to ship (Feb 7 → Feb 9, 2026)
+- 415 tests passing
+
+**Git range:** `b91021c` → `038c258`
+
+**What's next:** TBD — ready for `/gsd:new-milestone`
+
+---
+
 ## v1.2 Smart Parameters & Layout System (Shipped: 2026-02-07)
 
 **Delivered:** Smart URL parsing with type inference, user-switchable layouts (sidebar/topbar/split/drawer), rich input components (date pickers, tag inputs, sliders), applied filter chips, and polished UX with inline re-fetch.
