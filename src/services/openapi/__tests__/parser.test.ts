@@ -21,6 +21,24 @@ const openapi3Fixture = {
   servers: [
     { url: 'https://api.example.com/v1' },
   ],
+  components: {
+    securitySchemes: {
+      ApiKeyAuth: {
+        type: 'apiKey',
+        in: 'header',
+        name: 'X-API-Key',
+        description: 'API key for authentication',
+      },
+      BearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+      },
+      BasicAuth: {
+        type: 'http',
+        scheme: 'basic',
+      },
+    },
+  },
   paths: {
     '/pets': {
       get: {
@@ -174,6 +192,17 @@ const swagger2Fixture = {
   host: 'api.legacy.com',
   basePath: '/api/v2',
   schemes: ['https'],
+  securityDefinitions: {
+    api_key: {
+      type: 'apiKey',
+      in: 'query',
+      name: 'api_key',
+    },
+    basic_auth: {
+      type: 'basic',
+      description: 'HTTP Basic Authentication',
+    },
+  },
   paths: {
     '/items': {
       get: {
@@ -395,5 +424,69 @@ describe('parseOpenAPISpec', () => {
     expect(listPets!.summary).toBe('List all pets')
     expect(listPets!.description).toBe('Returns a list of pets')
     expect(listPets!.tags).toEqual(['pets'])
+  })
+
+  it('extracts security schemes from OpenAPI 3.x spec', async () => {
+    vi.mocked(SwaggerParser.dereference).mockResolvedValue(openapi3Fixture as never)
+
+    const result = await parseOpenAPISpec(openapi3Fixture)
+
+    expect(result.securitySchemes).toHaveLength(3)
+
+    const apiKey = result.securitySchemes.find(s => s.name === 'ApiKeyAuth')
+    expect(apiKey).toEqual({
+      name: 'ApiKeyAuth',
+      authType: 'apiKey',
+      metadata: { headerName: 'X-API-Key' },
+      description: 'API key for authentication',
+    })
+
+    const bearer = result.securitySchemes.find(s => s.name === 'BearerAuth')
+    expect(bearer).toEqual({
+      name: 'BearerAuth',
+      authType: 'bearer',
+      metadata: {},
+      description: 'BearerAuth',
+    })
+
+    const basic = result.securitySchemes.find(s => s.name === 'BasicAuth')
+    expect(basic).toEqual({
+      name: 'BasicAuth',
+      authType: 'basic',
+      metadata: {},
+      description: 'BasicAuth',
+    })
+  })
+
+  it('extracts security definitions from Swagger 2.0 spec', async () => {
+    vi.mocked(SwaggerParser.dereference).mockResolvedValue(swagger2Fixture as never)
+
+    const result = await parseOpenAPISpec(swagger2Fixture)
+
+    expect(result.securitySchemes).toHaveLength(2)
+
+    const apiKey = result.securitySchemes.find(s => s.name === 'api_key')
+    expect(apiKey).toEqual({
+      name: 'api_key',
+      authType: 'queryParam',
+      metadata: { paramName: 'api_key' },
+      description: 'api_key',
+    })
+
+    const basic = result.securitySchemes.find(s => s.name === 'basic_auth')
+    expect(basic).toEqual({
+      name: 'basic_auth',
+      authType: 'basic',
+      metadata: {},
+      description: 'HTTP Basic Authentication',
+    })
+  })
+
+  it('returns empty securitySchemes for specs without security', async () => {
+    vi.mocked(SwaggerParser.dereference).mockResolvedValue(emptySpecFixture as never)
+
+    const result = await parseOpenAPISpec(emptySpecFixture)
+
+    expect(result.securitySchemes).toEqual([])
   })
 })

@@ -1,13 +1,13 @@
 import { useAppStore } from '../store/appStore'
 import { useConfigStore } from '../store/configStore'
-import { fetchAPI } from '../services/api/fetcher'
+import { fetchWithAuth } from '../services/api/fetcher'
 import { inferSchema } from '../services/schema/inferrer'
 import { parseOpenAPISpec } from '../services/openapi/parser'
 import type { ParsedOperation } from '../services/openapi/types'
 
 /**
  * Hook that provides a function to fetch and infer schema from a URL.
- * The function orchestrates: fetchAPI -> inferSchema -> store update.
+ * The function orchestrates: fetchWithAuth -> inferSchema -> store update.
  */
 export function useAPIFetch() {
   const { startFetch, fetchSuccess, fetchError, specSuccess, clearSpec } = useAppStore()
@@ -91,7 +91,7 @@ export function useAPIFetch() {
       }
 
       // Fetch data from the built URL
-      const data = await fetchAPI(fullUrl)
+      const data = await fetchWithAuth(fullUrl)
 
       // Infer schema from response
       const schema = inferSchema(data, fullUrl)
@@ -125,7 +125,7 @@ export function useAPIFetch() {
       startFetch()
 
       // Fetch raw data from API
-      const data = await fetchAPI(url)
+      const data = await fetchWithAuth(url)
 
       // Infer schema from data
       const schema = inferSchema(data, url)

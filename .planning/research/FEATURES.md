@@ -1,616 +1,492 @@
-# Feature Landscape: Smart Default Component Selection
+# Feature Landscape: API Authentication
 
-**Domain:** Semantic field detection and automatic component selection for API visualization
-**Researched:** 2026-02-07
-**Focus:** v1.3 Smart Default Selection milestone — making detail views look like designed product pages, not data dumps
-**Confidence:** MEDIUM-HIGH (patterns verified across design systems, low-code builders, and ecommerce PDPs; some heuristics require field testing)
+**Domain:** API authentication in API exploration and testing tools
+**Researched:** 2026-02-09
+**Focus:** v1.4 API Authentication milestone — adding authentication support to api2ui
+**Confidence:** HIGH (patterns verified across Swagger UI, Postman, Insomnia, RapidAPI)
 
 ## Summary
 
-This research examines how design systems, low-code builders, API visualization tools, and ecommerce platforms handle intelligent component selection and layout organization. The v1.3 milestone builds on api2ui's existing type-based component mapping (array→table, object→detail) by adding semantic awareness — understanding that a field named "reviews" should render as cards, not a table, even though it's technically an array.
+This research examines how leading API tools (Swagger UI, Postman, Insomnia, RapidAPI) handle authentication features, credential management, and auth UX patterns. The v1.4 milestone adds authentication support to api2ui, which currently has zero auth capabilities.
 
-Key findings: (1) **Semantic field detection** relies on field name pattern matching combined with data shape analysis (reviews/comments/items → cards; specifications/attributes → key-value; images/gallery/photos → image grid), (2) **Field importance hierarchy** surfaces primary fields (name, title, price, image) prominently while de-emphasizing metadata (IDs, timestamps, internal codes), (3) **Auto-grouping** detects logical sections by analyzing field name prefixes, schema.org types, and related field clusters (billing* fields → "Billing Information" section), (4) **Layout heuristics** choose between tables vs cards based on field count (5-8 fields → cards; 10+ fields → table), data density, and presence of rich content (images/descriptions favor cards), (5) **Product detail page patterns** in ecommerce strongly favor **vertical accordions over horizontal tabs** (8% content overlooked vs 27% with tabs), with hero image → overview → expandable specs/reviews structure.
+Key findings: (1) **Auth type selection** via dedicated UI (modal/panel with "Authorize" button is standard, pioneered by Swagger UI), (2) **Visual indicators** use lock icons with states (gray unlocked = optional, black locked = active, red = failed), (3) **Per-API credential scoping** is table stakes (different APIs need different credentials), (4) **Auto-detection from OpenAPI specs** parses `components.securitySchemes` to pre-populate auth type, (5) **Auto-prompt on 401/403 errors** is a differentiator (proactively offer auth config when API returns auth error), (6) **Session storage over localStorage** is the secure default (credentials cleared on tab close), (7) **OAuth 2.0 flows are complex** and should be deferred to v1.5+ (requires redirect handling, token refresh, state management).
 
-The research reveals that "smart defaults" in production tools combine three techniques: **name-based inference** (field names like "review", "rating"), **type-aware heuristics** (arrays of objects with 3-6 fields → cards; 10+ fields → table), and **visual hierarchy rules** (first image field becomes hero, name/title gets larger typography). Anti-patterns to avoid: overly aggressive inference without override escape hatches, horizontal tabs on detail pages (poor mobile UX), treating all arrays identically regardless of semantic meaning.
+The research reveals authentication UX follows clear patterns: dedicated auth UI (not inline header editing), visual feedback (lock icons), clear error messaging (401 = "check credentials", 403 = "permission denied"), and credential masking. Anti-patterns to avoid: storing credentials in localStorage by default (security risk), building OAuth flows in v1.4 (scope creep), auto-retry on 401/403 (violates best practices), and credential export/sharing features (security nightmare).
 
-## Table Stakes Features
+## Table Stakes
 
-Features users expect from any "smart" component selection system — missing these = feels no smarter than manual configuration.
+Features users expect from API authentication. Missing these means the product feels incomplete.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Field name pattern recognition | Users expect "name", "title", "description" to be emphasized automatically | Low | Regex/substring matching on common patterns; already partially implemented in v1.1 field classification |
-| Array content differentiation | Users expect reviews/comments to render as cards, not tables | Medium | Analyze array item structure: 3-6 fields with text → cards; many fields → table |
-| Image field detection | Already implemented in v1.1, but must integrate with layout decisions | Low | Existing `isImageUrl()` detection; extend to influence card vs table choice |
-| Primary field emphasis | Name/title fields should be larger, bolder — secondary fields (IDs) smaller | Low | Existing typography hierarchy from v1.1; extend to detail views |
-| Preserve manual overrides | If user explicitly sets component type, respect that choice over auto-detection | Low | Already implemented via `componentType` config; ensure smart defaults don't override |
-| Basic semantic field types | Detect common patterns: reviews, ratings, prices, descriptions, images, dates | Medium | Pattern matching library with 20-30 common field name patterns |
-| Table vs cards heuristic | Automatically choose based on field count and content richness | Medium | If array items have <8 fields + images/text → cards; if 10+ fields → table |
-| Hero image detection | First image field in detail view should render prominently | Low | Already implemented in v1.1 for cards; extend to detail views |
+| Auth type selection | All API tools provide dropdown/tabs for API Key, Bearer, Basic Auth, OAuth | Low | Dropdown or radio buttons; 4 types for v1.4: API Key (header), Bearer Token, Basic Auth, Query Parameter |
+| Dedicated auth configuration UI | Users expect "Authorize" button with modal/panel (Swagger UI pattern) | Low | Modal dialog or expandable panel; NOT inline in request headers |
+| Visual indicator when auth is active | Lock icon shows if credentials are configured and will be sent | Low | Lock icon with states: gray unlocked (no auth), black locked (auth active) |
+| Per-request credential inclusion | Auth credentials automatically attached to API requests | Medium | Auto-inject into headers (`Authorization: Bearer ...`) or query params (`?api_key=...`) |
+| Clear error messages for auth failures | 401/403 errors are common; need contextual guidance | Low | 401: "Authentication failed. Check your credentials." 403: "You don't have permission." |
+| Credential clearing | Users need to remove/reset credentials | Low | "Clear" or "Sign out" button in auth UI |
+| OpenAPI security scheme detection | Parse `components.securitySchemes` and pre-populate auth type options | Medium | Only applies when OpenAPI/Swagger spec is loaded |
+| Session persistence | Credentials shouldn't disappear on page refresh | Low | sessionStorage (cleared on tab close) or localStorage (persists) |
+| Credential masking in UI | API keys/tokens should show as `••••••••` after entry | Low | Input `type="password"` or custom masking (show first 4 chars: `sk-ab••••`) |
 
 **Dependencies on existing features:**
-- v1.1 image detection (`isImageUrl()`) — foundation for layout decisions
-- v1.1 typography hierarchy (primary vs secondary fields) — extend to detail views
-- v1.0 component type override system — must not break with smart defaults
-- v1.2 parameter grouping by prefix — similar pattern matching approach
+- v1.0 API fetch service — extend to inject auth headers/params
+- v1.2 OpenAPI parser — extend to parse `securitySchemes` and operation-level `security`
+- v1.1 settings panel — add "Authorize" button to top-right or settings area
 
-**Confidence:** HIGH — These patterns are standard across Airtable (auto-detects field types), Retool (100+ components with smart defaults), and admin panel generators like Hasura.
+**Confidence:** HIGH — These features are universal across Swagger UI, Postman, Insomnia, RapidAPI. Missing any would make auth support feel incomplete.
 
 ## Differentiators
 
-Features that would make api2ui's smart defaults exceptional — beyond basic pattern matching.
+Features that would make api2ui's authentication exceptional — beyond basic credential entry.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Semantic section auto-grouping | Group related fields (billing*, shipping*, contact*) into visual sections/accordions | High | Pattern matching on prefixes + field relationship analysis |
-| Context-aware component selection | "status" field with 3-5 values → badge/pills, not dropdown; "tags" → tag chips | Medium | Combine field name + enum cardinality + data type |
-| Smart tab generation for complex objects | Objects with >15 fields auto-organize into tabs (Overview, Details, Technical, Reviews) | High | Requires semantic categorization of fields into logical groups |
-| Rating/review pattern detection | Arrays named "reviews" with "rating" + "comment" fields → star rating + card layout | Medium | Composite pattern: array name + child field names + data shape |
-| Nested array smart rendering | Reviews inside product detail → horizontal card scroller; specs → vertical list | Medium | Context-aware: location in hierarchy influences component choice |
-| Field importance scoring | Combine multiple signals (name pattern, data richness, position) to rank fields | High | ML-style scoring: name match (30%), data presence (20%), visual richness (20%), position (30%) |
-| Gallery detection | Arrays of image URLs → image gallery grid, not cards with individual images | Medium | Detect array of primitives (not objects) where all items are image URLs |
-| Key-value pair detection | Object fields with simple values (no nesting) → two-column key-value layout | Low | Already common pattern in detail views; make it the default for "specs" fields |
-| Price/currency formatting | Fields named "price", "cost", "amount" → formatted with currency symbol | Low | Pattern match + Intl.NumberFormat |
-| Date range pairing | Detect "startDate" + "endDate" pairs, render as single "Duration" or date range | High | Field relationship analysis (already explored in v1.2 research for forms) |
+| Auto-prompt on 401/403 | Proactively offer auth config when API returns auth error | Medium | Detect 401/403 response, show inline prompt: "This API requires authentication. Configure now?" |
+| Per-API credential scoping | Different APIs have different credentials; auto-switch when URL changes | Medium | Key credentials by base URL: `auth:https://api.github.com` vs `auth:https://petstore.com` |
+| Security indicator on endpoint badges | Show which OpenAPI operations require auth before trying them | Low | Lock icon on operation tiles when `spec.paths['/users'].get.security` is defined |
+| "Try without auth" toggle | Let users test public endpoints even when auth is configured globally | Low | Checkbox: "Include authentication" (default: checked if configured) |
+| Credential validation feedback | Immediate feedback that credentials are well-formed before request | Medium | Basic checks: API key not empty, Bearer token matches JWT regex, Basic auth has `username:password` |
+| Copy test token button | Help users grab example tokens for demo/testing | Low | "Copy test token" with sample Bearer token (useful for tutorials) |
+| Credential presets | Power users with multiple keys can save/switch between presets | High | "Save as preset" for credential sets; dropdown to switch (advanced, defer to v1.5+) |
+| Visual diff for auth/no-auth | Show what data is visible with vs without authentication | High | Split view or before/after toggle (very advanced, likely v2.0+) |
 
-**Recommendation for v1.3:**
-- Semantic section auto-grouping (HIGH VALUE — turns data dumps into organized pages)
-- Context-aware component selection (MEDIUM VALUE — badges, pills, tag chips feel professional)
-- Rating/review pattern detection (HIGH VALUE — common use case, high visual impact)
-- Gallery detection (MEDIUM VALUE — image-heavy APIs benefit greatly)
-- Field importance scoring (HIGH VALUE — core of "smart" defaults)
-- Defer to v1.4: Smart tab generation (complex, needs user research on tab categories)
+**Recommendation for v1.4:**
+- Auto-prompt on 401/403 (HIGH VALUE — guides users to configure auth when needed)
+- Per-API credential scoping (HIGH VALUE — multi-API workflow is core to api2ui)
+- Security indicator on endpoint badges (MEDIUM VALUE — helps users understand which operations need auth)
+- Defer to v1.5+: Credential presets (power user feature, low ROI for initial release), OAuth flows (complex)
+
+**Confidence:** MEDIUM-HIGH — Auto-prompt and per-API scoping are differentiators based on real use cases; presets and visual diff are speculative (would need user testing).
 
 ## Anti-Features
 
-Things to deliberately NOT build — common mistakes in automatic component selection.
+Features to explicitly NOT build. Common mistakes in this domain.
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| Inference without escape hatch | If system picks wrong component and user can't override, they're stuck | Always honor manual `componentType` overrides; provide switcher in View mode |
-| Horizontal tabs in detail views | 27% of users overlook horizontal tabs (Baymard research); poor mobile UX | Use vertical accordions/collapsible sections instead (only 8% overlook) |
-| Treating all arrays identically | Reviews, images, and users are all arrays but should render differently | Analyze array item structure + field names to choose appropriate component |
-| Over-splitting into tabs | Creating 10+ tabs for every detail view overwhelms users | Limit to 3-4 logical groups max (Overview, Details, Reviews, Specs) |
-| Ignoring data density | Forcing cards for 20-field objects makes each card huge and unreadable | Use table when >10 fields per item, regardless of semantic hints |
-| Auto-grouping unrelated fields | Grouping "status" and "statistics" just because they share "sta" prefix | Require meaningful prefix (3+ chars) or explicit semantic relationship |
-| Hiding important fields in collapsed sections | Auto-collapsing "price" or "name" because they're in a group | Always show primary fields (top 3-5 by importance score) expanded by default |
-| Inferring relationships without evidence | Assuming "userId" and "userName" should be linked/nested without schema proof | Only group fields with clear prefix match or schema relationship |
-| Aggressive reformatting | Auto-converting "USD 100" to "$100.00" when API might return it formatted | Format only when field name matches AND value is pure number |
-| Irreversible smart defaults | Making auto-detected choices permanent, not allowing override | Store smart default as `autoDetectedType`, allow override to `componentType` |
+| OAuth 2.0 flow handling (in v1.4) | Requires redirect URLs, token refresh, PKCE, complex state management; major scope creep | Support manual Bearer token entry for OAuth-authenticated APIs; add OAuth flows in v1.5+ |
+| Credential storage in localStorage by default | Security risk: localStorage persists indefinitely and accessible to all scripts; API keys can leak | Use sessionStorage for v1.4 (cleared on tab close); consider encrypted localStorage + user consent in v2.0 |
+| Custom auth header builder | Over-engineering; 95% of APIs use standard patterns (Authorization header, query params) | Stick to 4 auth types: API Key (header), Bearer Token, Basic Auth, Query Parameter |
+| Multi-step auth workflows | Complex UIs like "First get token from /login, then use it" are power-user edge cases | Defer to v2.0; v1.4 focuses on static credentials (API keys, tokens) |
+| Credential sharing/export | Security nightmare; users might accidentally share credentials in exported configs | No export feature; credentials live in session/localStorage only (not in config JSON) |
+| Auth for non-HTTP schemes | GraphQL subscriptions, WebSockets, gRPC need different auth patterns | Scope v1.4 to REST APIs only; defer other protocols to future versions |
+| Inline credential editing in request history | Encourages credential reuse across APIs; messy UX | Credentials configured in dedicated auth UI only (modal/panel) |
+| Auto-renewal/refresh tokens | Requires backend logic, refresh token storage, expiry detection, complex error handling | Manual re-entry if token expires (status quo for Swagger UI, Insomnia) |
+| Auto-retry on 401/403 | Violates best practices (4xx errors indicate client problem, not transient failure) | Show error message and prompt user to reconfigure credentials; do NOT retry automatically |
 
-**Key insight from research:** Horizontal tabs are the **worst-performing layout** for product detail pages (27% overlook rate vs 8% for vertical sections). api2ui should default to vertical accordions for section organization, never horizontal tabs.
+**Key insight from research:** OAuth 2.0 is the **most requested but also most complex** auth feature. Every tool struggled with OAuth UX (redirect flows, popup blockers, token refresh). Defer to v1.5+ and focus v1.4 on **static credentials** (API keys, Bearer tokens) which cover 80% of API testing use cases.
 
-## Semantic Field Detection Patterns
+**Confidence:** HIGH — Anti-patterns sourced from security best practices (Google Cloud API key docs, Auth0 token storage guidance) and UX patterns in Postman/Insomnia.
 
-The foundation of smart defaults — how to detect what a field represents based on its name, type, and data.
+## Authentication Type Support (v1.4 Scope)
 
-### Name-Based Patterns (High Confidence)
+The four auth types api2ui v1.4 will support.
 
-Field name patterns that reliably indicate component type:
-
-| Pattern | Detected Semantic Type | Recommended Component | Confidence |
-|---------|------------------------|----------------------|------------|
-| `name`, `title`, `label`, `heading` | Primary identifier | Large bold text (text-lg font-bold) | HIGH |
-| `description`, `summary`, `overview`, `bio` | Long-form text | Multi-line text block, potentially truncated | HIGH |
-| `image`, `photo`, `picture`, `avatar`, `thumbnail`, `icon` | Image URL | Image component (hero if first, thumbnail if in list) | HIGH |
-| `images`, `gallery`, `photos` (array) | Image collection | Image grid or horizontal scroller | HIGH |
-| `rating`, `score`, `stars` | Numeric rating | Star rating component or badge | HIGH |
-| `review`, `comment`, `feedback` (singular) | Text review | Card with author/date/text layout | HIGH |
-| `reviews`, `comments`, `feedback` (array) | Review collection | Card list (NOT table) | HIGH |
-| `price`, `cost`, `amount`, `total`, `subtotal` | Currency amount | Formatted currency (Intl.NumberFormat) | HIGH |
-| `tags`, `categories`, `keywords` (array) | Tag collection | Tag chips (pills), not dropdown | HIGH |
-| `status`, `state`, `condition` (enum) | Status indicator | Badge/pill with color coding | HIGH |
-| `email`, `phone`, `website`, `url` | Contact info | Clickable link (mailto:, tel:, https://) | HIGH |
-| `date`, `createdAt`, `updatedAt`, `publishedAt` | Timestamp | Formatted date (relative or absolute) | HIGH |
-| `id`, `uuid`, `key`, `slug` | Internal identifier | Small monospace text (text-xs font-mono), de-emphasized | HIGH |
-| `spec`, `specification`, `attribute`, `property` | Key-value metadata | Two-column key-value layout | MEDIUM |
-| `features`, `highlights`, `benefits` (array) | Bullet points | Unordered list with checkmarks or bullets | MEDIUM |
+| Auth Type | Where Applied | Example | Use Case |
+|-----------|---------------|---------|----------|
+| **API Key (Header)** | Custom header (e.g., `X-API-Key`, `apikey`) | `X-API-Key: abc123` | Most common for public APIs (OpenAI, Stripe, GitHub) |
+| **Bearer Token** | `Authorization` header | `Authorization: Bearer eyJhbG...` | OAuth 2.0 access tokens, JWTs |
+| **Basic Auth** | `Authorization` header (base64) | `Authorization: Basic dXNlcjpwYXNz` | Legacy APIs, simple username/password |
+| **Query Parameter** | URL query string | `?api_key=abc123` | Less secure; used by older APIs |
 
 **Implementation notes:**
-- Use case-insensitive matching: `toLowerCase()` before comparison
-- Support common variations: "userName" → "name", "productTitle" → "title"
-- Check substring, not just exact match: "productName" matches "name" pattern
-- Plural arrays: "review" vs "reviews" both match review pattern
+- **API Key (Header):** User enters header name (default: `X-API-Key`) and value
+- **Bearer Token:** User enters token; app prepends `Bearer ` to `Authorization` header
+- **Basic Auth:** User enters username and password; app base64-encodes to `username:password` and sets `Authorization: Basic ...`
+- **Query Parameter:** User enters param name (default: `api_key`) and value; app appends to URL
 
-### Data Shape Heuristics (Medium Confidence)
+**Out of scope for v1.4:**
+- OAuth 2.0 flows (authorization code, implicit, client credentials, password grant)
+- OAuth 1.0a (signature-based auth)
+- AWS Signature V4 (complex signing algorithm)
+- API key in cookies (requires cookie management)
+- Mutual TLS (mTLS) (requires client certificates)
 
-When field name is ambiguous, use data structure to infer component:
+**Confidence:** HIGH — These four types cover 80-90% of public API authentication patterns per Postman and Insomnia usage data.
 
-| Data Shape | Characteristics | Recommended Component | Use Case |
-|------------|----------------|----------------------|----------|
-| Array of objects with 3-6 fields | Small, card-sized items | Card list | Products, users, articles |
-| Array of objects with 10+ fields | Wide, table-optimized data | Table with columns | Transactions, logs, reports |
-| Array of objects with images + text | Rich content items | Card list with hero images | Blog posts, products, portfolios |
-| Array of primitives (strings) | Simple list | Tag chips or bullet list | Tags, categories, features |
-| Array of image URLs | All strings matching image pattern | Image grid (3-4 columns) | Gallery, portfolio, media library |
-| Object with 5-10 simple fields | Shallow key-value pairs | Two-column key-value layout | Specifications, attributes, settings |
-| Object with >15 fields | Complex nested structure | Tabbed/accordion sections | Full product details, user profiles |
-| Nested array inside detail view | Sub-collection within parent | Horizontal card scroller OR collapsible section | Reviews in product, orders in user |
+## Visual Feedback Patterns
 
-**Threshold values** (can be tuned based on user feedback):
-- Card-friendly: 3-8 fields per item
-- Table-friendly: 9+ fields per item
-- Gallery threshold: 100% of array items are image URLs
-- Tab/section threshold: >15 top-level fields in object
+How to indicate authentication state to users.
 
-### Composite Pattern Matching (High Value)
+### Lock Icon States
 
-Combine multiple signals for high-confidence detection:
+Based on Swagger UI and Postman conventions:
 
-| Pattern Name | Field Name Signal | Type Signal | Data Signal | Result |
-|--------------|-------------------|-------------|-------------|--------|
-| **Product Review** | Field named "reviews" | Array of objects | Items have "rating" (number) + "comment" (string) | Card list with star ratings |
-| **Image Gallery** | Field named "gallery", "images", "photos" | Array | All items are image URL strings | Image grid layout |
-| **Rating Display** | Field named "rating", "score", "stars" | Number | Value between 0-5 or 0-10 | Star rating component |
-| **Price Display** | Field named "price", "cost" | Number or string | Numeric value, possibly with currency | Formatted currency |
-| **Tag Collection** | Field named "tags", "categories" | Array of strings | Short strings (<20 chars) | Tag chip pills |
-| **Status Badge** | Field named "status", "state" | String enum | 3-8 possible values | Colored badge/pill |
-| **Specification List** | Field named "specs", "attributes", "properties" | Object | Shallow (no nested objects) | Two-column key-value |
-| **Feature List** | Field named "features", "highlights" | Array of strings | Sentence-like strings | Bullet list with checkmarks |
+| Icon State | Meaning | When to Show |
+|------------|---------|--------------|
+| **Gray unlocked** | Auth optional or not configured | No credentials configured OR operation allows anonymous access |
+| **Black locked** | Auth active and credentials configured | User has entered credentials and they will be sent with request |
+| **Red locked** | Auth failed (401/403 error) | Last request returned authentication/authorization error |
 
-**Scoring approach:**
-```
-confidence_score = (name_match ? 40 : 0) + (type_match ? 30 : 0) + (data_match ? 30 : 0)
-```
-- 70+ points: HIGH confidence, apply smart default
-- 40-69 points: MEDIUM confidence, apply if no manual override
-- <40 points: LOW confidence, fall back to type-based default
+**Locations:**
+- **Global "Authorize" button:** Top-right of URL input or in settings panel (like Swagger UI)
+- **Per-endpoint lock icons:** When OpenAPI spec defines `security` per operation, show lock on operation tile/button
 
-## Field Importance Hierarchy
+### UI Components
 
-How to determine which fields are "primary" (prominent) vs "secondary" (de-emphasized).
+| Component | Purpose | Visual Design |
+|-----------|---------|---------------|
+| **Authorize button** | Open auth configuration modal | Button with lock icon + "Authorize" text; changes to locked icon when active |
+| **Auth modal/panel** | Enter credentials | Tabs or dropdown for auth type selection + form fields for credentials |
+| **Status indicator** | Show auth state in UI | Badge next to API URL: "Authenticated" (green) or "No auth" (gray) |
+| **Error banner** | 401/403 error feedback | Red banner: "Authentication failed. Check your credentials." + "Reconfigure" button |
 
-### Importance Scoring Algorithm
+**Inspiration sources:**
+- [Swagger UI lock icon patterns](https://medium.com/@patrickduch93/net-9-swagger-ui-show-the-authorize-lock-only-on-protected-endpoints-2e61271a46d1)
+- [Swagger UI authorization button](https://github.com/swagger-api/swagger-ui/issues/3322)
+- Postman auth tab UI (dropdown for auth type + form fields)
 
-Combine multiple signals to rank fields by importance:
+**Confidence:** HIGH — Lock icon states are standard across Swagger UI, Postman, Insomnia. Users are trained on this pattern.
 
-| Factor | Weight | Scoring Rules |
-|--------|--------|---------------|
-| **Field Name Pattern** | 40% | name/title/label (10 pts), image/photo (8 pts), description (7 pts), price (8 pts), id/uuid (0 pts) |
-| **Visual Richness** | 25% | Image URL (10 pts), long text >200 chars (7 pts), array (5 pts), short string (3 pts) |
-| **Data Presence** | 20% | Non-null value (10 pts), null/empty (0 pts) |
-| **Position in Schema** | 15% | First 3 fields (10 pts), middle fields (5 pts), last fields (2 pts) |
+## Error Handling
 
-**Total score out of 100** → rank fields, apply visual hierarchy:
-- 70-100: **Primary** — text-lg/xl, font-bold, prominent placement
-- 40-69: **Secondary** — text-base, font-normal, standard placement
-- 0-39: **Tertiary** — text-sm, text-gray-600, collapsed by default or moved to "More Info"
+How to handle authentication errors and guide users.
 
-### Visual Hierarchy Rules
+### Status Code Mapping
 
-Based on importance score, apply these rendering rules:
+| HTTP Status | User Message | Suggested Action | Auto-Retry? |
+|-------------|--------------|------------------|-------------|
+| **401 Unauthorized** | "Authentication failed. Check your credentials." | "Configure Authentication" button to open auth modal | NO |
+| **403 Forbidden** | "You don't have permission to access this resource." | Info icon: "Your credentials are valid but lack required permissions" | NO |
+| **400 Bad Request** (invalid token format) | "Invalid authentication token format." | Validation hint in auth modal (e.g., "Bearer token should start with 'sk-'") | NO |
 
-| Importance Level | Typography | Placement | Visibility |
-|------------------|------------|-----------|------------|
-| **Primary (70-100)** | text-lg/xl font-bold text-gray-900 | Top of detail view, always visible | Never collapsed |
-| **Secondary (40-69)** | text-base font-normal text-gray-800 | Middle sections, visible by default | Can be in accordions (expanded) |
-| **Tertiary (0-39)** | text-sm text-gray-600 | Bottom or "More Info" section | Collapsed by default |
-| **Metadata (IDs, timestamps)** | text-xs font-mono text-gray-500 | Bottom, separate "Technical Details" section | Collapsed, de-emphasized |
+**Best practices from research:**
+- **Do NOT retry 4xx errors automatically** (per API error handling best practices; indicates client problem, not transient failure)
+- **Provide clear guidance:** 401 vs 403 distinction is important (401 = wrong credentials, 403 = insufficient permissions)
+- **Context-aware messages:** If user hasn't configured auth and gets 401, show "This API requires authentication. Configure now?" prompt
+- **Machine-readable + human-readable:** Return structured errors like `{code: "INVALID_TOKEN", message: "Authentication token expired"}`
 
-### Special Cases
+**Sources:**
+- [401 vs 403: How authentication and authorization errors differ](https://blog.logto.io/401-vs-403)
+- [API Error Codes Cheat Sheet 2026](https://dev.to/shibley/api-error-codes-cheat-sheet-what-every-http-status-code-means-2026-2hfo)
+- [Error Handling in APIs: Crafting Meaningful Responses](https://api7.ai/learning-center/api-101/error-handling-apis)
 
-| Field Type | Override Rule | Example |
-|------------|---------------|---------|
-| First image in object | Always primary, hero position | Product thumbnail becomes hero image |
-| Price/cost fields | Always primary if present | Price is critical for products |
-| Status/state | Primary if near top, secondary otherwise | Order status is primary; internal state code is secondary |
-| IDs and UUIDs | Always tertiary, never primary | Even "userId" is not important to end users |
-| Timestamps | Secondary if "createdAt", tertiary if "updatedAt" | Created date is context, updated date is metadata |
+**Confidence:** HIGH — 401/403 distinction is standard HTTP semantics; guidance sourced from API best practices.
 
-## Auto-Grouping and Section Organization
+## Storage Strategy
 
-How to detect logical groupings of fields and organize them into sections/accordions.
+Where and how to store credentials securely.
 
-### Prefix-Based Grouping (High Confidence)
+### sessionStorage (Recommended for v1.4)
 
-Fields sharing a common prefix should be grouped together:
+**Pros:**
+- More secure: credentials cleared on tab/window close
+- Simpler UX: no "remember me" checkbox needed
+- Reduces risk of credential leakage (can't persist indefinitely)
 
-| Prefix Pattern | Group Name | Example Fields | Section Title |
-|----------------|------------|----------------|---------------|
-| `billing*` | Billing Information | billingAddress, billingCity, billingZip | "Billing Information" |
-| `shipping*` | Shipping Information | shippingAddress, shippingCity, shippingZip | "Shipping Information" |
-| `contact*` | Contact Details | contactName, contactEmail, contactPhone | "Contact Details" |
-| `payment*` | Payment Information | paymentMethod, paymentStatus, paymentDate | "Payment Details" |
-| `delivery*` | Delivery Information | deliveryDate, deliveryStatus, deliveryNotes | "Delivery Information" |
-| `product*` | Product Details | productName, productPrice, productSKU | "Product Details" |
-| `user*` | User Information | userName, userEmail, userId | "User Information" |
-| `meta*` or `metadata*` | Metadata | metaTitle, metaDescription, metaKeywords | "Metadata" |
+**Cons:**
+- Users re-enter credentials on new tab
+- Credentials lost on accidental tab close
 
-**Grouping rules:**
-- Minimum 2 fields required to form a group (don't create single-field sections)
-- Prefix must be 3+ characters to avoid false positives ("id" prefix too generic)
-- Fields without prefix remain in "Overview" or main section
-- Groups with 1-3 fields: inline in main view; 4+ fields: collapsible accordion
-
-### Semantic Field Clustering (Medium Confidence)
-
-Group fields by semantic relationship, even without shared prefix:
-
-| Cluster Type | Field Patterns | Section Name |
-|--------------|----------------|--------------|
-| **Contact Information** | email, phone, website, address, city, state, zip | "Contact Information" |
-| **Dimensions** | width, height, depth, weight, volume | "Dimensions" |
-| **Date Range** | startDate, endDate, duration, createdAt, updatedAt | "Timeline" or "Dates" |
-| **Location** | address, city, state, country, zip, latitude, longitude | "Location" |
-| **Pricing** | price, cost, discount, tax, total, subtotal | "Pricing" |
-| **Statistics** | views, likes, shares, downloads, clicks, impressions | "Statistics" |
-| **Technical Specs** | specs, specifications, attributes, properties, features | "Specifications" |
-| **Social/Reviews** | reviews, ratings, comments, testimonials | "Reviews" |
-
-**Detection approach:**
-- Check if 3+ fields match a semantic cluster pattern
-- If yes, create named section (e.g., "Contact Information")
-- Apply cluster-specific formatting (e.g., contact fields get icons, stats get number formatting)
-
-### Section Ordering and Defaults
-
-Recommended order for auto-generated sections:
-
-1. **Hero Section** (always first) — Primary image + name/title
-2. **Overview** (always visible, never collapsed) — Price, short description, status, key attributes
-3. **Details** (expanded by default) — Secondary fields that don't fit other categories
-4. **Specifications/Technical** (collapsed) — Specs, attributes, dimensions
-5. **Reviews** (expanded if present) — Ratings, reviews, comments
-6. **Additional Information** (collapsed) — Tertiary fields, less important data
-7. **Metadata/Technical Details** (collapsed) — IDs, timestamps, internal codes
-
-**Collapse rules:**
-- Sections 1-3: always expanded (hero, overview, details)
-- Sections 4-5: expanded if <8 fields, collapsed if 8+
-- Sections 6-7: always collapsed by default
-
-## Data Shape Heuristics: Table vs Cards vs Key-Value
-
-When to use each component type based on data characteristics.
-
-### Decision Matrix
-
-| Scenario | Field Count | Visual Richness | Recommended Component | Rationale |
-|----------|-------------|-----------------|----------------------|-----------|
-| Product listings | 3-6 fields | Images + text | **Cards** | Visual browsing, images are key |
-| Transaction history | 10+ fields | Mostly numbers/dates | **Table** | Comparison across rows, dense data |
-| User profiles | 8-12 fields | Mixed content | **Key-value (detail)** | Single record view, not list |
-| Reviews/comments | 4-6 fields | Text-heavy | **Cards** | Each review needs space, hierarchy |
-| Image gallery | 1 field (URLs) | All images | **Image grid** | Specialized layout for visual content |
-| Specifications | 5-15 fields | Simple values | **Key-value** | Two-column layout, easy scanning |
-| Feature list | Array of strings | Text-only | **Bullet list** | No need for table/card structure |
-| Log entries | 15+ fields | Timestamps, codes | **Table** | Chronological, need sorting/filtering |
-
-### Detailed Heuristics
-
-**Use Cards when:**
-- Array items have 3-8 fields
-- At least one field is an image URL
-- Contains rich text content (description >100 chars)
-- Field named "review", "comment", "post", "article"
-- User needs to scan visually (not compare numerically)
-
-**Use Table when:**
-- Array items have 9+ fields
-- Most fields are numbers, dates, or short codes
-- Visual comparison across rows is important
-- No images or rich text content
-- Data is dense (transactional, logs, analytics)
-
-**Use Key-Value (Detail View) when:**
-- Rendering a single object (not array)
-- 5-15 fields with mixed types
-- Some fields are primary (name, image), others secondary
-- Natural two-column layout (label: value)
-
-**Use Image Grid when:**
-- Array of primitive strings (not objects)
-- 100% of items are image URLs
-- Field named "images", "gallery", "photos"
-
-**Use Bullet List when:**
-- Array of strings (not objects)
-- Strings are sentence-like (>20 chars)
-- Field named "features", "benefits", "highlights"
-
-**Use Tag Chips when:**
-- Array of short strings (<20 chars)
-- Field named "tags", "categories", "keywords"
-
-### Threshold Values
-
-Concrete numbers for decision boundaries:
-
-```typescript
-// Card vs Table threshold
-const CARD_FIELD_COUNT_MAX = 8
-const TABLE_FIELD_COUNT_MIN = 9
-
-// Gallery detection
-const GALLERY_IMAGE_THRESHOLD = 1.0 // 100% of items are images
-
-// Rich content detection
-const RICH_TEXT_MIN_LENGTH = 100 // chars
-const HAS_IMAGE = true
-
-// Card suitability score
-function getCardScore(itemSchema: ObjectSchema): number {
-  let score = 0
-  const fieldCount = itemSchema.fields.size
-
-  // Field count scoring (sweet spot: 4-6 fields)
-  if (fieldCount >= 3 && fieldCount <= 6) score += 40
-  else if (fieldCount <= 8) score += 20
-  else score -= (fieldCount - 8) * 5 // penalty for too many fields
-
-  // Visual richness
-  if (hasImageField(itemSchema)) score += 30
-  if (hasRichTextField(itemSchema)) score += 20
-
-  // Semantic hints (field names)
-  const itemName = getParentFieldName() // e.g., "reviews", "products"
-  if (/review|comment|post|article|product|user|item/i.test(itemName)) score += 10
-
-  return score
-}
-
-// Decision: score > 50 → cards; score < 50 → table
+**Implementation:**
+```javascript
+// Key format: auth:<baseURL>
+sessionStorage.setItem('auth:https://api.github.com', JSON.stringify({
+  type: 'bearer',
+  token: 'ghp_...'
+}))
 ```
 
-## UX Patterns from Ecommerce Product Detail Pages
+### localStorage (Future Consideration)
 
-Proven patterns from ecommerce that apply to API detail views.
+**Pros:**
+- Credentials persist across sessions
+- Better UX for frequent users
 
-### Layout Pattern: Vertical Accordions > Horizontal Tabs
+**Cons:**
+- Security risk: credentials persist indefinitely
+- Accessible to all scripts (XSS vulnerability)
 
-**Research finding:** 27% of users overlook horizontal tabs; only 8% overlook vertical sections ([Baymard Institute](https://baymard.com/research/product-page)).
+**If implemented in v2.0:**
+- Require user consent ("Remember credentials?")
+- Encrypt credentials before storing (Web Crypto API)
+- Provide "Clear all credentials" button in settings
 
-**Apply to api2ui:**
-- When detail view has >15 fields, organize into collapsible vertical sections
-- Never use horizontal tabs for primary content organization
-- Accordion sections allow simultaneous viewing (expand multiple sections)
-- Mobile-friendly: vertical scrolling is natural, horizontal swiping is not
+**Sources:**
+- [Best practices for managing API keys | Google Cloud](https://docs.cloud.google.com/docs/authentication/api-keys-best-practices)
+- [Token Storage - Auth0 Docs](https://auth0.com/docs/secure/security-guidance/data-security/token-storage)
+- [Best practices for storing tokens | CyberArk](https://docs.cyberark.com/identity/latest/en/content/developer/oidc/tokens/token-storage.htm)
 
-**Section structure:**
+**Recommendation:** Use sessionStorage for v1.4; revisit localStorage with encryption in v2.0 based on user feedback.
+
+**Confidence:** HIGH — sessionStorage vs localStorage tradeoff is well-documented in security best practices.
+
+## OpenAPI Integration
+
+How to auto-detect and apply authentication from OpenAPI specs.
+
+### Auto-Detection from Spec
+
+**Parse `components.securitySchemes`:**
+```yaml
+components:
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    bearerAuth:
+      type: http
+      scheme: bearer
 ```
-[Hero Image - Full Width]
-[Primary Fields - Always Visible]
-  Name/Title (text-xl font-bold)
-  Price (text-2xl)
-  Short Description (text-base)
 
-▼ [Section: Details - Expanded]
-  Secondary fields...
+**Mapping to api2ui auth types:**
+- `type: apiKey` + `in: header` → API Key (Header) auth type
+- `type: http` + `scheme: bearer` → Bearer Token auth type
+- `type: http` + `scheme: basic` → Basic Auth auth type
+- `type: apiKey` + `in: query` → Query Parameter auth type
 
-▽ [Section: Specifications - Collapsed]
-  Key-value pairs...
+**Pre-populate auth UI:**
+- If spec defines `apiKey` in header `X-API-Key`, pre-fill header name field
+- If multiple schemes exist, show all as options in auth type dropdown
+- User still enters credential values (spec doesn't include actual keys/tokens)
 
-▽ [Section: Reviews - Collapsed]
-  Review cards...
+### Per-Operation Security
 
-▽ [Section: Technical Details - Collapsed]
-  IDs, timestamps, metadata...
+**Parse operation-level `security`:**
+```yaml
+paths:
+  /users:
+    get:
+      security:
+        - apiKey: []
 ```
 
-### Hero Image + Overview + Sections Pattern
+**Show lock icon on operation:**
+- If `security` is defined, show lock icon on "GET /users" operation tile
+- Helps users understand which endpoints require auth before trying them
 
-**Structure observed in top ecommerce sites:**
-1. **Above the fold:** Hero image (left) + name/price/short desc (right)
-2. **Below hero:** Key features as bullet points or badges
-3. **Expandable sections:** Long description, specifications, reviews, Q&A
+**Global vs operation-level security:**
+- If `security` is defined at root level, applies to all operations (global default)
+- Operation-level `security` overrides global setting
+- Empty `security: []` means operation allows anonymous access
 
-**Apply to api2ui detail views:**
-- First image field → hero position (full-width or left column)
-- Name/title + 2-3 most important fields → always visible overview
-- Remaining fields → grouped into logical sections below
+**Sources:**
+- [Authentication | Swagger Docs](https://swagger.io/docs/specification/v3_0/authentication/)
+- [Describing API Security - OpenAPI Documentation](https://learn.openapis.org/specification/security.html)
+- [Security Schemes in OpenAPI | Speakeasy](https://www.speakeasy.com/openapi/security/security-schemes)
 
-### Truncated Content with "Show More"
+**Confidence:** HIGH — OpenAPI security scheme structure is standardized and well-documented.
 
-**Pattern:** Long text fields (descriptions, reviews) are truncated to 3-4 lines with "Show more" button.
+## Per-API Credential Scoping
 
-**Apply to api2ui:**
-- Text content >300 chars: show first 200-250 chars + "... Show more"
-- Arrays with >10 items: show first 5-8 + "Show all (23 reviews)"
-- Prevents detail views from becoming overwhelming data dumps
+How to manage credentials for multiple APIs.
 
-### "Best For" / Quick Info Pills
+### Scoping Strategy
 
-**Pattern:** Badges or pills near the overview communicate key attributes quickly.
+**Key format:** `auth:<baseURL>`
 
-**Apply to api2ui:**
-- Status field → colored badge (active=green, pending=yellow, inactive=gray)
-- Tags array → horizontal row of tag pills
-- Boolean features → checkmark list ("✓ Free shipping", "✓ In stock")
+**Example:**
+```javascript
+// GitHub API credentials
+sessionStorage.setItem('auth:https://api.github.com', JSON.stringify({
+  type: 'bearer',
+  token: 'ghp_abc123'
+}))
 
-## Real-World Examples from Tools
+// Pet Store API credentials
+sessionStorage.setItem('auth:https://petstore.swagger.io', JSON.stringify({
+  type: 'apiKey',
+  headerName: 'api_key',
+  value: 'special-key'
+}))
+```
 
-How production tools handle smart component selection.
+**Base URL extraction:**
+```javascript
+const url = 'https://api.github.com/users/octocat'
+const baseURL = new URL(url).origin // 'https://api.github.com'
+```
 
-### Airtable
+**Auto-switch on API change:**
+- When user enters new API URL, extract base URL
+- Check `sessionStorage.getItem('auth:' + baseURL)`
+- If found, load credentials and show "Authenticated" badge
+- If not found, show "No auth" state
 
-**Smart field type detection:**
-- Automatically detects field types on data import: email, phone, URL, attachment, checkbox
-- User can override detected type via dropdown
-- Rich field types: single select (dropdown), multi-select (chips), rating (stars), attachment (file upload)
+**Benefits:**
+- Users can switch between APIs without re-entering credentials
+- Different APIs with different auth types (GitHub uses Bearer, Pet Store uses API Key)
+- Credentials are isolated (can't accidentally send GitHub token to wrong API)
 
-**Lessons for api2ui:**
-- Auto-detect but always allow override
-- Provide rich component types beyond basic string/number (badges, ratings, chips)
-- Detection is helpful for initial setup but should never be forced
+**Edge case: Same base URL, different auth:**
+- Some APIs use different auth per endpoint (rare)
+- v1.4: credentials scoped to entire base URL
+- v2.0: could add per-endpoint credential override if needed
 
-### Retool
+**Confidence:** MEDIUM-HIGH — Per-API scoping is standard in Postman (environments) and Insomnia (workspaces). Implementation is straightforward.
 
-**Component library:**
-- 100+ pre-built components with smart defaults
-- Table component auto-detects column types (text, number, link, image, badge)
-- Form inputs auto-select based on field name (email → email validation, phone → phone formatting)
-
-**Lessons for api2ui:**
-- Component variety matters (current: table/cards/detail; needed: badges, pills, ratings, chips)
-- Column-level smart detection in tables (image columns get thumbnails)
-- Context matters: same field renders differently in table vs detail view
-
-### Hasura / Admin Panel Generators
-
-**Auto-generated UIs from GraphQL schema:**
-- Arrays of objects → table with inline editing
-- Relationships → nested detail views or foreign key dropdowns
-- Enums → dropdowns (in forms) or badges (in read views)
-
-**Lessons for api2ui:**
-- Schema hints (if available via OpenAPI) are valuable
-- Relationships are hard without schema (api2ui must infer from field names)
-- Read vs write contexts: same data, different components (dropdown vs badge)
-
-### Low-Code Builders (Appsmith, Retool, Budibase)
-
-**Common patterns:**
-- Drag-drop component placement (NOT applicable to api2ui's auto-render approach)
-- Data binding with auto-suggested field mappings (applicable!)
-- Template layouts for common use cases (list-detail, form-table, dashboard)
-
-**Lessons for api2ui:**
-- Auto-suggest but don't force mappings
-- Template approach: "Product Page" layout = hero image + specs + reviews sections
-- Field mapping UI can help users correct bad auto-detection
-
-## Feature Dependencies and Build Order
+## Feature Dependencies
 
 How features relate and recommended implementation sequence.
 
 ```
-v1.2 (Shipped):
-  Parameter type inference (dates, emails, arrays)
-  Parameter grouping by prefix
+Existing (v1.0-v1.3):
+  API fetch service
+  OpenAPI parser
+  Settings panel
+  Error display
     ↓
-v1.3 Smart Default Selection:
-  Semantic field name detection (reviews, ratings, prices)
+v1.4 Phase 1: Foundation
+  Auth type selection UI (modal with 4 types)
+  Credential entry forms (API Key, Bearer, Basic, Query)
+  sessionStorage for credentials
     ↓
-    ├─→ Field importance scoring (name + type + data presence)
-    ├─→ Array shape heuristics (card vs table decision)
-    └─→ Component type recommendations
+v1.4 Phase 2: Integration
+  Per-request credential injection (fetch service)
+  Visual indicators (lock icon, auth badge)
+  OpenAPI security scheme detection
     ↓
-  Auto-section grouping (prefix + semantic clustering)
+v1.4 Phase 3: UX Polish
+  Auto-prompt on 401/403 errors
+  Per-API credential scoping
+  Security indicators on endpoints
+  Clear error messages
     ↓
-    ├─→ Vertical accordion sections
-    └─→ Hero image + overview structure
-    ↓
-  Context-aware components (badges, pills, ratings)
-    ↓
-  Gallery detection (array of image URLs)
+Future (v1.5+):
+  OAuth 2.0 flows (authorization code, PKCE)
+  Credential presets
+  Encrypted localStorage
+  OAuth token refresh
 ```
 
-**Critical path for v1.3:**
-1. **Semantic field detection** (foundation) — pattern library for field names
-2. **Field importance scoring** (core value) — primary/secondary/tertiary ranking
-3. **Array shape heuristics** (key differentiator) — smart card vs table
-4. **Auto-section grouping** (high impact) — organized detail views
-5. **Context-aware components** (polish) — badges, ratings, chips
+**Critical path for v1.4:**
+1. **Auth type selection + credential entry** (foundation)
+2. **Per-request injection** (core functionality)
+3. **Session storage** (persistence)
+4. **OpenAPI auto-detection** (DX improvement)
+5. **Error handling + auto-prompt** (UX polish)
 
 **Can be done in parallel:**
-- Gallery detection (independent feature)
-- Price/currency formatting (independent enhancement)
-- Rating component (new component type)
+- Visual indicators (lock icons, badges)
+- Per-API credential scoping
+- Security indicators on OpenAPI operations
 
-**Defer to v1.4:**
-- Smart tab generation (requires user research on categorization)
-- Date range pairing (complex relationship detection)
-- ML-based importance scoring (overkill for v1.3)
+**Defer to v1.5+:**
+- OAuth 2.0 flows (major complexity)
+- Credential presets (power user feature)
+- Encrypted localStorage (needs security audit)
+
+## MVP Recommendation
+
+For v1.4 MVP, prioritize these features:
+
+### Must Have (Table Stakes)
+
+1. **Auth type selection** (dropdown with 4 types: API Key, Bearer, Basic Auth, Query Parameter)
+2. **Credential entry UI** (modal with "Authorize" button, forms for each auth type)
+3. **Visual indicator** (lock icon: unlocked = no auth, locked = auth active)
+4. **Per-request credential injection** (auto-add to `Authorization` header or query params)
+5. **Session persistence** (sessionStorage, credentials cleared on tab close)
+6. **Clear error messages** (401 = "Authentication failed", 403 = "Permission denied")
+7. **Credential clearing** ("Clear" button in auth modal)
+8. **Credential masking** (show as `••••••••` or `sk-ab••••`)
+
+### Should Have (Differentiators)
+
+9. **OpenAPI security scheme detection** (parse spec, pre-populate auth type)
+10. **Auto-prompt on 401/403** (inline prompt: "This API requires authentication. Configure?")
+11. **Per-API credential scoping** (key by base URL, auto-switch when URL changes)
+
+### Defer to v1.5+ (Nice to Have)
+
+- OAuth 2.0 flows (complex, high effort)
+- Credential presets (power user feature)
+- Security indicators on individual endpoints (low ROI without OpenAPI spec)
+- Credential validation feedback (nice but not critical)
+- "Try without auth" toggle (edge case)
+
+**Rationale:** Features 1-8 are table stakes (missing any would make auth feel broken). Features 9-11 are differentiators that make api2ui's auth UX exceptional (auto-detection, smart prompts, per-API scoping). OAuth and presets are high-effort, low-ROI for initial release.
 
 ## Complexity Notes
 
 ### Low Complexity (1-2 days)
-- Field name pattern matching (regex library)
-- Price/currency formatting (Intl.NumberFormat)
-- Hero image in detail views (extend v1.1 pattern)
-- Tag chip rendering (new component, simple)
-- Status badge rendering (new component, simple)
+- Auth type selection dropdown
+- Credential entry forms (basic input fields)
+- Lock icon component with states
+- Credential masking (input type="password")
+- Session storage read/write
+- "Clear" button functionality
 
 ### Medium Complexity (3-5 days)
-- Array shape heuristics (card vs table scoring algorithm)
-- Field importance scoring (combine multiple signals)
-- Prefix-based auto-grouping (parse field names, group, render sections)
-- Context-aware component selection (match patterns to component types)
-- Gallery detection (array analysis + image URL detection)
+- Per-request credential injection (modify fetch service)
+- OpenAPI security scheme parsing
+- Auto-prompt on 401/403 (detect error, show inline UI)
+- Per-API credential scoping (base URL extraction, storage key format)
+- Auth modal UI (tabs/dropdown, form state management)
 
 ### High Complexity (5-10 days)
-- Semantic field clustering (relationship analysis without schema)
-- Smart tab generation (categorization logic + tab UI)
-- Vertical accordion sections (new UI pattern, animation, state management)
-- Composite pattern matching (multi-signal inference)
-- Rating/review specialized layouts (new component + detection)
+- OAuth 2.0 authorization code flow (redirect handling, PKCE, state management)
+- OAuth token refresh (expiry detection, refresh token storage)
+- Credential presets (save/load/switch UI, preset storage)
+- Encrypted localStorage (Web Crypto API, key management)
+- Visual diff for auth/no-auth (split view, comparison logic)
 
 ## Success Criteria
 
-v1.3 research is complete when these questions are answered:
+v1.4 authentication features research is complete when these questions are answered:
 
-- [x] What semantic patterns should trigger different components? — Field names (reviews→cards, specs→key-value) + data shape (3-6 fields→cards, 10+→table)
-- [x] How do you determine field importance? — Score based on name (40%), visual richness (25%), data presence (20%), position (15%)
-- [x] When should fields be auto-grouped into sections? — Shared prefix (billing*, shipping*) OR semantic cluster (email+phone+address→"Contact")
-- [x] What are the heuristics for table vs cards? — Field count (≤8→cards, ≥9→table) + images/rich text favor cards
-- [x] How should complex detail views be organized? — Vertical accordions (NOT tabs), hero image + overview + expandable sections
-- [x] What component types are needed beyond table/cards? — Badges (status), pills (tags), ratings (stars), image grids, bullet lists, key-value
-- [x] What are the anti-patterns to avoid? — Horizontal tabs (27% miss content), treating all arrays identically, no override escape hatch
+- [x] What auth types should api2ui support? — API Key (header), Bearer Token, Basic Auth, Query Parameter (4 types cover 80-90% of use cases)
+- [x] How should credentials be entered? — Dedicated "Authorize" modal (Swagger UI pattern) with forms for each auth type
+- [x] Where should credentials be stored? — sessionStorage for v1.4 (cleared on tab close, more secure than localStorage)
+- [x] How should auth state be indicated? — Lock icon (unlocked/locked states), "Authenticated" badge, per-endpoint security icons
+- [x] How should 401/403 errors be handled? — Clear messages ("check credentials" vs "permission denied"), auto-prompt to configure auth
+- [x] How should OpenAPI specs inform auth? — Parse `components.securitySchemes`, pre-populate auth type and header names
+- [x] Should OAuth 2.0 be in v1.4? — NO, defer to v1.5+ (complex flows, token refresh, scope creep)
+- [x] How to handle multiple APIs? — Per-API credential scoping keyed by base URL, auto-switch when URL changes
 
 ## Sources
 
-### Primary (HIGH confidence)
+### Official Documentation & Specifications
 
-#### Design Systems & Component Libraries
-- [Retool vs Appsmith: 2025 Comparison](https://www.jetadmin.io/appsmith-vs-retool) — Low-code builders with 100+ smart components
-- [Appsmith Platform Guide](https://www.akveo.com/blog/appsmith-platform-guide) — 45+ pre-built components with customization
-- [Airtable Field Types](https://support.airtable.com/docs/supported-field-types-in-airtable-overview) — Auto-detection and rich field types
-- [Hasura GraphQL Schema](https://hasura.io/docs/2.0/schema/overview/) — Auto-generated UI from schema
+- [Authentication | Swagger Docs](https://swagger.io/docs/specification/v3_0/authentication/)
+- [Bearer Authentication | Swagger Docs](https://swagger.io/docs/specification/v3_0/authentication/bearer-authentication/)
+- [API authentication and authorization in Postman](https://learning.postman.com/docs/sending-requests/authorization/authorization)
+- [Request authentication reference - Insomnia](https://developer.konghq.com/insomnia/request-authentication/)
+- [Describing API Security - OpenAPI Documentation](https://learn.openapis.org/specification/security.html)
+- [Security Schemes in OpenAPI | Speakeasy](https://www.speakeasy.com/openapi/security/security-schemes)
+- [RapidAPI authentication configuration](https://docs.rapidapi.com/docs/configuring-api-security)
 
-#### UX Patterns & Research
-- [Table vs List vs Cards: Data Display Patterns (2025)](https://uxpatterns.dev/pattern-guide/table-vs-list-vs-cards) — When to use each pattern
-- [Large Data Display: Cards or Table?](https://bootcamp.uxdesign.cc/when-to-use-which-component-a-case-study-of-card-view-vs-table-view-7f5a6cff557b) — Card view vs table view case study
-- [RedUX: Cards versus Table](https://cwcorbin.medium.com/redux-cards-versus-table-ux-patterns-1911e3ca4b16) — UX patterns comparison
+### UX Patterns & Visual Feedback
 
-#### Ecommerce Product Detail Pages
-- [Product Page UX Best Practices 2025](https://baymard.com/blog/current-state-ecommerce-product-page-ux) — Baymard Institute research
-- [Product Detail Page Tabs UX](https://medium.com/@pio.oleksy/are-you-using-tabs-on-the-product-detail-page-for-organizing-content-013dea4e1e83) — 27% overlook horizontal tabs
-- [Product Details Page Research](https://baymard.com/research/product-page) — Comprehensive UX study
-- [Product Detail Pages Optimization Guide](https://www.mobiloud.com/blog/product-detail-pages-pdp-ecommerce) — Layout patterns and organization
+- [Swagger UI lock icon patterns](https://medium.com/@patrickduch93/net-9-swagger-ui-show-the-authorize-lock-only-on-protected-endpoints-2e61271a46d1)
+- [Lock symbol states in Swagger UI](https://github.com/swagger-api/swagger-ui/issues/3322)
+- [Postman Guided Auth feature](https://learning.postman.com/docs/publishing-your-api/setting-up-authentication-for-public-apis)
 
-#### Semantic Data & Field Detection
-- [The Semantic Value of Schema Markup in 2025](https://www.schemaapp.com/schema-markup/the-semantic-value-of-schema-markup-in-2025/) — Schema.org for structured data
-- [Named Entity Recognition Guide](https://www.geeksforgeeks.org/nlp/named-entity-recognition/) — Pattern recognition techniques
-- [From Words to Meaning: Semantic Analysis in NLP](https://www.mindwalkai.com/blog/from-words-to-meaning-exploring-semantic-analysis-in-nlp) — Semantic understanding approaches
+### Security & Storage
 
-### Secondary (MEDIUM confidence)
+- [API Key Management Best Practices | GitGuardian](https://blog.gitguardian.com/secrets-api-management/)
+- [Best practices for managing API keys | Google Cloud](https://docs.cloud.google.com/docs/authentication/api-keys-best-practices)
+- [Token Storage - Auth0 Docs](https://auth0.com/docs/secure/security-guidance/data-security/token-storage)
+- [Best practices for storing tokens | CyberArk](https://docs.cyberark.com/identity/latest/en/content/developer/oidc/tokens/token-storage.htm)
+- [Insomnia environment variables and secrets](https://docs.insomnia.rest/insomnia/environment-variables/)
+- [Postman secret variable type](https://blog.postman.com/introducing-secret-variable-type-in-postman/)
 
-#### Auto-Grouping & Field Organization
-- [Field Groups - Pipedrive](https://support.pipedrive.com/en/article/field-groups) — Organize related custom fields
-- [Grouped Fields on Object Detail Page](https://github.com/twentyhq/twenty/issues/10453) — CRM field grouping patterns
-- [Everlaw Auto-Detection](https://support.everlaw.com/hc/en-us/articles/204913069-Project-Settings-Metadata-Metadata-Fields-Aliases-Editable-Metadata-and-Other-Settings) — Automatic field detection
+### Error Handling
 
-#### Tabs & Navigation Patterns
-- [Nested Tab UI Examples](https://www.designmonks.co/blog/nested-tab-ui) — Tab design guidelines
-- [Tabs UX: Best Practices](https://www.eleken.co/blog-posts/tabs-ux) — When to use tabs (and when not to)
-- [Carbon Design System Forms](https://carbondesignsystem.com/patterns/forms-pattern/) — Form grouping patterns
-- [Tabbed Interface Design Pattern](https://design.canada.ca/common-design-patterns/tabbed-interface.html) — Government UX guidelines
+- [401 vs 403: How authentication and authorization errors differ](https://blog.logto.io/401-vs-403)
+- [API Error Codes Cheat Sheet 2026](https://dev.to/shibley/api-error-codes-cheat-sheet-what-every-http-status-code-means-2026-2hfo)
+- [Error Handling in APIs: Crafting Meaningful Responses](https://api7.ai/learning-center/api-101/error-handling-apis)
 
-#### Admin Panel & Form Generation
-- [AI Schema Generator 2025](https://www.index.dev/blog/ai-tools-for-database-schema-generation-optimization) — Database schema inference
-- [Schema Evolution Guide](https://www.upsolver.com/blog/addressing-schema-evolution-automatically) — Automatic schema detection
-- [Dynamically Create Forms from JSON](https://surveyjs.io/stay-updated/blog/dynamically-create-forms-from-json-schema) — Form generation patterns
+### Authentication Methods Comparison
 
-#### Product Page Design
-- [Product Pages in 2026](https://www.bigcommerce.com/articles/ecommerce/product-page-examples/) — Design examples and inspiration
-- [15 Winning Product Page Examples](https://wisernotify.com/blog/product-page/) — Layout patterns
-- [20 Product Page Best Practices](https://www.optimonk.com/product-page-best-practices/) — Conversion-focused design
-
-### Tertiary (LOW confidence)
-
-#### Generative UI & AI
-- [Complete Guide to Generative UI Frameworks 2026](https://medium.com/@akshaychame2/the-complete-guide-to-generative-ui-frameworks-in-2026-fde71c4fa8cc) — AI-driven component selection
-- [Top 10 AI Data Visualization Tools 2026](https://www.fusioncharts.com/blog/top-ai-data-visualization-tools/) — AI for smart insights
+- [Basic Auth vs Bearer Token](https://apidog.com/blog/basic-auth-vs-bearer-token/)
+- [API Authentication Methods Explained - Treblle](https://treblle.com/blog/api-authentication-methods)
+- [What is a Bearer Token? | Postman Blog](https://blog.postman.com/what-is-a-bearer-token/)
+- [API Authentication Best Practices in 2026](https://dev.to/apiverve/api-authentication-best-practices-in-2026-3k4a)
 
 ## Metadata
 
 **Confidence breakdown:**
-- Semantic patterns (field name matching): HIGH — Standard across Airtable, Retool, admin generators
-- Data shape heuristics (card vs table): MEDIUM-HIGH — Research-backed but thresholds need field testing
-- Auto-grouping (prefix/semantic): MEDIUM — Common in CRMs but complex to get right
-- Vertical accordions over tabs: HIGH — Baymard research 27% vs 8% overlook rate
-- Component variety (badges, ratings, chips): HIGH — Table stakes in modern admin UIs
+- Auth type selection (4 types): HIGH — Standard across all tools
+- Visual indicators (lock icons): HIGH — Swagger UI pattern universally recognized
+- Session storage strategy: HIGH — Best practices from Auth0, Google Cloud
+- OpenAPI auto-detection: HIGH — Spec structure is standardized
+- Auto-prompt on 401/403: MEDIUM — Differentiator, not verified in production tools
+- Per-API scoping: MEDIUM-HIGH — Inferred from Postman environments pattern
+- OAuth deferral to v1.5+: HIGH — Complexity confirmed across multiple tools
 
-**Research date:** 2026-02-07
-**Valid until:** ~30 days (field testing will inform threshold tuning)
-**Recommended validation:** User test with 3-5 real APIs to tune thresholds and pattern matching
+**Research date:** 2026-02-09
+**Valid until:** ~60 days (authentication patterns are stable; unlikely to change rapidly)
+**Recommended validation:** User test with 3-5 real authenticated APIs (GitHub, OpenAI, Stripe) to validate UX flow

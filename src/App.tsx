@@ -19,6 +19,7 @@ import { LayoutContainer } from './components/layout/LayoutContainer'
 import { parseUrlParameters, reconstructQueryString } from './services/urlParser/parser'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
+import { AuthError } from './services/api/errors'
 import 'react-loading-skeleton/dist/skeleton.css'
 
 function App() {
@@ -40,6 +41,11 @@ function App() {
   // Run semantic analysis pipeline when schema/data changes
   useSchemaAnalysis(schema, data)
 
+  // Derive auth error from error state
+  const authError = error && error instanceof AuthError
+    ? { status: error.status, message: error.message }
+    : null
+
   // Read api param from URL and auto-fetch on load
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -56,9 +62,9 @@ function App() {
     }
   }
 
-  // Show toast notification on error
+  // Show toast notification on error (skip auth errors — shown in auth panel)
   useEffect(() => {
-    if (error) {
+    if (error && !(error instanceof AuthError)) {
       toast.error('Failed to fetch data', {
         description: String(error),
         duration: 5000,
@@ -200,15 +206,15 @@ function App() {
 
               {/* URL Input */}
               <div className="flex justify-center mb-8">
-                <URLInput />
+                <URLInput authError={authError} detectedAuth={parsedSpec?.securitySchemes} />
               </div>
 
               {/* Main Content Area */}
               <div className="bg-surface rounded-lg shadow-md p-6 max-w-6xl mx-auto">
                 {loading && !parsedSpec && <SkeletonTable />}
 
-                {/* Standalone error (non-spec failures only) */}
-                {error && !loading && !parsedSpec && (
+                {/* Standalone error (non-spec failures only, skip auth errors — shown in auth panel) */}
+                {error && !loading && !parsedSpec && !authError && (
                   <ErrorDisplay error={error} onRetry={handleRetry} />
                 )}
 
@@ -302,15 +308,15 @@ function App() {
 
             {/* URL Input */}
             <div className="flex justify-center mb-8">
-              <URLInput />
+              <URLInput authError={authError} detectedAuth={parsedSpec?.securitySchemes} />
             </div>
 
             {/* Main Content Area */}
             <div className="bg-surface rounded-lg shadow-md p-6">
               {loading && !parsedSpec && <SkeletonTable />}
 
-              {/* Standalone error (non-spec failures only) */}
-              {error && !loading && !parsedSpec && (
+              {/* Standalone error (non-spec failures only, skip auth errors — shown in auth panel) */}
+              {error && !loading && !parsedSpec && !authError && (
                 <ErrorDisplay error={error} onRetry={handleRetry} />
               )}
 

@@ -1,5 +1,5 @@
 /** Error kinds for discriminated error handling */
-export type ErrorKind = 'cors' | 'network' | 'api' | 'parse' | 'unknown'
+export type ErrorKind = 'cors' | 'network' | 'api' | 'parse' | 'auth' | 'unknown'
 
 /** Base interface all app errors implement */
 export interface AppError {

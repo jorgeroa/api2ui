@@ -1,6 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppStore } from '../store/appStore'
 import { useAPIFetch } from '../hooks/useAPIFetch'
+import { useAuthStore } from '../store/authStore'
+import { LockIcon } from './auth/LockIcon'
+import { AuthPanel } from './auth/AuthPanel'
+import type { AuthStatus } from '../types/auth'
+import type { ParsedSecurityScheme } from '../services/openapi/types'
 
 const EXAMPLES = [
   {
@@ -29,11 +34,55 @@ const EXAMPLES = [
   },
 ]
 
-export function URLInput() {
+interface URLInputProps {
+  authError?: { status: 401 | 403; message: string } | null
+  detectedAuth?: ParsedSecurityScheme[]
+}
+
+export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
   const { url, setUrl, loading } = useAppStore()
   const { fetchAndInfer } = useAPIFetch()
   const [validationError, setValidationError] = useState<string | null>(null)
   const [lastClickedExample, setLastClickedExample] = useState<string | null>(null)
+  const [authPanelOpen, setAuthPanelOpen] = useState(false)
+
+  // Auth state
+  const getAuthStatus = useAuthStore((state) => state.getAuthStatus)
+  const getCredentials = useAuthStore((state) => state.getCredentials)
+
+  // Derive lock icon status from auth state
+  const authStatus = getAuthStatus(url)
+  const apiCreds = getCredentials(url)
+  const hasActiveCredential = apiCreds?.activeType !== null && apiCreds?.activeType !== undefined
+
+  // Lock status mapping:
+  // - authError present -> 'failed' (red)
+  // - 'untested' with active credential -> 'active' (green)
+  // - 'success' -> 'active' (green)
+  // - 'failed' -> 'failed' (red)
+  // - no credentials -> 'untested' (gray)
+  const lockStatus: AuthStatus =
+    authError
+      ? 'failed'
+      : authStatus === 'success' || (authStatus === 'untested' && hasActiveCredential)
+        ? 'success'
+        : authStatus === 'failed'
+          ? 'failed'
+          : 'untested'
+
+  // Auto-expand panel when auth error occurs
+  useEffect(() => {
+    if (authError) {
+      setAuthPanelOpen(true)
+    }
+  }, [authError])
+
+  // Auto-expand panel when spec has supported security schemes
+  useEffect(() => {
+    if (detectedAuth && detectedAuth.some(scheme => scheme.authType !== null)) {
+      setAuthPanelOpen(true)
+    }
+  }, [detectedAuth])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -89,6 +138,11 @@ export function URLInput() {
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             disabled={loading}
           />
+          <LockIcon
+            status={lockStatus}
+            activeType={apiCreds?.activeType}
+            onClick={() => setAuthPanelOpen(!authPanelOpen)}
+          />
           <button
             type="submit"
             disabled={loading}
@@ -97,6 +151,16 @@ export function URLInput() {
             {loading ? 'Fetching...' : 'Fetch'}
           </button>
         </div>
+
+        {/* Auth Panel */}
+        <AuthPanel
+          url={url}
+          isOpen={authPanelOpen}
+          onToggle={() => setAuthPanelOpen(!authPanelOpen)}
+          authError={authError}
+          detectedAuth={detectedAuth}
+          onConfigureClick={() => setAuthPanelOpen(true)}
+        />
 
         {validationError && (
           <div className="text-red-600 text-sm">{validationError}</div>

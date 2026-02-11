@@ -1,5 +1,34 @@
 # Project Milestones: api2ui
 
+## v1.4 API Authentication (Shipped: 2026-02-10)
+
+**Delivered:** Full authentication support for protected APIs — 4 auth types (API Key, Bearer Token, Basic Auth, Query Parameter) with credential injection, OpenAPI auto-detection, and smart error UX with actionable recovery prompts.
+
+**Phases completed:** 17-21 (9 plans total)
+
+**Key accomplishments:**
+
+- Zustand auth store with sessionStorage persistence, per-API credential scoping by base URL origin
+- fetchWithAuth wrapper with automatic credential injection for all 4 auth types and 401/403 detection
+- Auth configuration UI with lock icon, type selector, dynamic credential forms, and password masking
+- OpenAPI security scheme auto-detection with auth type pre-population for both OpenAPI 3.x and Swagger 2.0
+- Smart error UX with actionable "Configure Authentication" button on 401 and distinct permission guidance on 403
+- Zero new dependencies — all native browser APIs (btoa, URLSearchParams, fetch headers)
+
+**Stats:**
+
+- 62 files changed, 11,294 lines added
+- 24,114 total lines of TypeScript/TSX/CSS
+- 5 phases, 9 plans, 24 requirements (24/24 shipped)
+- 2 days from start to ship (Feb 9-10, 2026)
+- 449 tests passing
+
+**Git range:** `bc9b13b` → `e056309`
+
+**What's next:** TBD — ready for `/gsd:new-milestone`
+
+---
+
 ## v1.3 Smart Default Selection (Shipped: 2026-02-09)
 
 **Delivered:** Semantic field analysis with intelligent component selection — the rendering engine now picks context-appropriate components (star ratings, currency formatting, status badges, tag chips, grouped detail views) based on field name patterns, value analysis, and importance scoring.

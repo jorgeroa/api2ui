@@ -49,3 +49,26 @@ export class ParseError extends Error implements AppError {
     this.suggestion = 'The API did not return valid JSON. Ensure the URL points to a JSON API endpoint.'
   }
 }
+
+export class AuthError extends Error implements AppError {
+  readonly kind: ErrorKind = 'auth'
+  readonly suggestion: string
+  readonly status: 401 | 403
+  readonly authContext: string
+  readonly responseBody: string
+
+  constructor(url: string, status: 401 | 403, authContext: string, responseBody: string = '') {
+    const message = status === 401
+      ? `Authentication failed for ${url} (${status})`
+      : `Authorization denied for ${url} (${status})`
+    super(message)
+    this.name = 'AuthError'
+    this.status = status
+    this.authContext = authContext
+    this.responseBody = responseBody
+    this.suggestion = status === 401
+      ? 'Check your credentials. The server rejected your authentication.'
+      : 'Your credentials are valid but you lack permission for this resource.'
+    Object.setPrototypeOf(this, AuthError.prototype)
+  }
+}

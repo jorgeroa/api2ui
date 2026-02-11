@@ -1,401 +1,476 @@
-# Domain Pitfalls: Adding Smart Defaults to Data-to-UI Rendering
+# Domain Pitfalls: Adding API Authentication to Client-Side Web App
 
-**Domain:** Semantic component selection and intelligent grouping for API rendering
-**Context:** v1.3 milestone adding smart defaults ON TOP OF existing type-based rendering
-**Researched:** 2026-02-07
-**Confidence:** MEDIUM (WebSearch-informed, patterns verified across UI generation and form design domains)
+**Domain:** Client-side API exploration tool (api2ui)
+**Researched:** 2026-02-09
+**Context:** Adding authentication to existing public-API-only app
 
----
+## Critical Pitfalls
 
-## Summary
+Mistakes that cause rewrites, security breaches, or major issues.
 
-This research identifies critical pitfalls when adding semantic analysis, smart component selection, and auto-grouping to an existing data-to-UI rendering system. The highest risks lie in: (1) false positive component selection destroying user trust, (2) breaking existing type-based defaults when layering semantic heuristics on top, (3) auto-grouping that makes UX worse instead of better, (4) performance degradation from field analysis, and (5) conflicts between smart defaults and user overrides. **Unlike building from scratch, integration pitfalls with the existing v1.2 system dominate the risk landscape** - this is about making an already-working system smarter without making it worse.
+### Pitfall 1: Storing Credentials in localStorage (XSS Exposure)
 
----
+**What goes wrong:** Storing API keys, bearer tokens, or basic auth credentials in localStorage makes them accessible to any JavaScript code, including XSS attacks. A single XSS vulnerability anywhere in the application or third-party dependencies can compromise all stored credentials.
 
-## Critical Pitfalls (Must Address in Phase 1)
-
-### Pitfall 1: False Positive Component Selection Breaks User Expectations
-
-**Risk:** Heuristics misidentify field semantics and select wrong components. A field named "rating_count" gets rendered as a star rating component instead of a number. A "status" field becomes a badge when it should be plain text. Users see nonsensical UI that undermines trust in the system.
-
-**Why it happens:**
-- Name-based heuristics match partial patterns (rating → star rating, even when it's "rating_count")
-- Insufficient context analysis (looking at field name only, not data type + name + values)
-- Overly aggressive pattern matching with low confidence thresholds
-- Not considering domain context (e-commerce vs analytics vs social media)
+**Why it happens:** localStorage is convenient and persistent, but it has no protection against XSS. Developers assume "my app doesn't have XSS" without considering third-party scripts, CDN compromises, or future vulnerabilities.
 
 **Consequences:**
-- User trust erosion - one wrong guess makes users distrust all smart defaults
-- Users manually override everything, negating the value of smart defaults
-- Confusion when "smart" rendering looks worse than basic type-based rendering
-- Support burden from "why did it choose this?" questions
+- Complete credential compromise from a single XSS exploit
+- Credentials persist on disk permanently, accessible to other applications
+- No HttpOnly protection - JavaScript can always read the values
+- User credentials stolen and reused across sessions
 
 **Prevention:**
-1. **Precision over recall** - Better to fall back to type-based default than make wrong guess
-2. **Multi-signal detection** - Require name AND value patterns AND type to match (not just name)
-3. **Confidence thresholds** - Only apply semantic defaults at HIGH confidence (>90% sure)
-4. **Semantic type whitelist** - Start with narrow, unambiguous patterns (email, phone, url, image_url)
-5. **Data sampling** - Check actual values, not just field names (a field named "email" containing numbers is not email)
-6. **Fallback chain** - Semantic → Type-based → Primitive (always have a safe default)
+1. **Use sessionStorage for secrets** - Auto-clears on tab/browser close, reducing exposure window
+2. **Use localStorage only for non-sensitive config shape** - Auth method choice, header names, etc. (NOT the actual keys/tokens)
+3. **Never log credential values** - Even in development/debug mode
+4. **Implement CSP headers** - Control which scripts can execute
+5. **Sanitize all user input** - Especially when rendering API responses in the UI
 
 **Detection warning signs:**
-- Users frequently switching component types away from smart defaults
-- Configuration override rate >20% on semantic selections
-- User feedback mentions "confused" or "wrong" component choices
-- AB testing shows lower engagement with smart defaults vs type-based
+- Code like `localStorage.setItem('apiKey', userInput)`
+- Credential values visible in localStorage via DevTools
+- Auth headers built from `localStorage.getItem()` calls
+- No CSP headers in development/production builds
 
-**Phase to address:** Phase 1 (Detection Heuristics) - Build conservative classifiers with high precision
+**Phase assignment:** Phase 1 (Storage Architecture) - Get this right from the start
 
-**Severity:** CRITICAL - False positives destroy trust faster than false negatives help
+**Confidence:** HIGH - Multiple authoritative sources confirm this is the #1 client-side auth pitfall
 
 **Sources:**
-- [Google ML: Classification Precision/Recall](https://developers.google.com/machine-learning/crash-course/classification/accuracy-precision-recall)
-- [Evidentlyai: Classification Threshold Balance](https://www.evidentlyai.com/classification-metrics/classification-threshold)
-- [Medium: Precision/Recall Tradeoff](https://medium.com/analytics-vidhya/precision-recall-tradeoff-79e892d43134)
+- [LocalStorage XSS vulnerabilities](https://snyk.io/blog/is-localstorage-safe-to-use/)
+- [Best practices for storing access tokens](https://curity.medium.com/best-practices-for-storing-access-tokens-in-the-browser-6b3d515d9814)
+- [React XSS prevention guide](https://www.stackhawk.com/blog/react-xss-guide-examples-and-prevention/)
 
 ---
 
-### Pitfall 2: Breaking Existing Behavior When Enabling Smart Defaults
+### Pitfall 2: CORS Preflight Failure with Authorization Header
 
-**Risk:** Users who already have configured views saved in localStorage see their UI break when v1.3 ships. A table that worked perfectly now auto-switches to cards because of new semantic detection. Saved configurations are overridden by new heuristics. User workflows break.
+**What goes wrong:** Adding `Authorization` header to existing `fetchAPI()` breaks requests that previously worked. Browser sends OPTIONS preflight request, but the API server either:
+- Doesn't handle OPTIONS at all (405 Method Not Allowed)
+- Doesn't include `Authorization` in `Access-Control-Allow-Headers` response
+- Drops CORS headers on error responses (401/403)
+- Uses wildcard `Access-Control-Allow-Origin: *` with credentials
 
 **Why it happens:**
-- Smart defaults run on every render, overriding stored configurations
-- No migration path for existing configs when adding semantic layer
-- Heuristics applied retroactively to already-configured endpoints
-- Unclear precedence between user overrides and smart defaults
-- New heuristics take priority over explicit user choices made in v1.2
+- Current api2ui uses `credentials: 'omit'` and only `Accept: application/json` header
+- Adding `Authorization` triggers "non-simple request" requiring preflight
+- Public APIs often don't need OPTIONS support, so this is untested
+- CORS middleware configuration is notoriously complex
 
 **Consequences:**
-- Angry users whose working setups break on update
-- Loss of saved configurations
-- Users lose trust in system stability
-- Rollback requests and negative reviews
-- Existing users churn because "it worked before"
+- Auth headers never reach API server (request blocked at preflight)
+- Confusing error messages ("CORS error" instead of "auth failed")
+- Works in Postman/curl but fails in browser
+- Users think their credentials are invalid when CORS is the issue
 
 **Prevention:**
-1. **Config versioning** - Tag saved configs with version, migrate gracefully
-2. **Explicit beats implicit** - User overrides ALWAYS win over smart defaults
-3. **Opt-in for existing endpoints** - Only apply semantic detection to NEW endpoints by default
-4. **Smart defaults run only once** - On first load, then locked unless user resets
-5. **Migration layer** - Detect v1.2 configs, preserve them, add semantic suggestions (not replacements)
-6. **Feature flag with gradual rollout** - Ship disabled by default, let users opt in
-7. **"Reset to smart defaults" button** - Explicit action required to re-apply new heuristics
+1. **Test with APIs that require OPTIONS handling** - Don't assume all APIs support it
+2. **Provide clear error messages** - Distinguish "CORS preflight failed" from "auth invalid"
+3. **Document CORS requirements** - Warn users that authenticated APIs need proper CORS setup
+4. **Consider CORS proxy option** - For development/testing when API can't be fixed
+5. **Detect preflight failures** - Catch OPTIONS failures before showing generic "auth failed" message
 
 **Detection warning signs:**
-- Spike in localStorage config changes after update
-- Users reporting "my view broke"
-- Increased use of component switcher immediately after update
-- Support tickets about lost configurations
+- Network tab shows OPTIONS request with 4xx/5xx status
+- `Access-Control-Allow-Headers` missing `Authorization` in response
+- Error message says "CORS" but user thinks credentials are wrong
+- Works with `mode: 'no-cors'` (opaque) but not `mode: 'cors'`
 
-**Phase to address:** Phase 1 & Integration Phase - Build config precedence rules before shipping any heuristics
+**Phase assignment:** Phase 2 (Auth Injection) - Handle during fetch integration
 
-**Severity:** CRITICAL - Breaking existing behavior is a release-blocking bug
+**Confidence:** HIGH - Well-documented CORS/auth interaction issue
 
 **Sources:**
-- [Stack Overflow: Backwards Compatibility in Distributed Systems](https://stackoverflow.blog/2020/05/13/ensuring-backwards-compatibility-in-distributed-systems/)
-- [G2: Backwards Compatibility Definition](https://learn.g2.com/backwards-compatibility)
-- [FeatBit: Feature Flag System Design 2025](https://www.featbit.co/articles2025/feature-flag-system-design-2025)
+- [CORS preflight common mistakes](https://dev.to/thesanjeevsharma/cors-preflight-requests-and-common-cross-origin-issues-129n)
+- [NGINX CORS configuration guide](https://www.getpagespeed.com/server-setup/nginx/nginx-cors/amp)
+- [MDN CORS errors documentation](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS/Errors)
 
 ---
 
-### Pitfall 3: Auto-Grouping Creates Worse UX Than Flat Lists
+### Pitfall 3: Breaking Public API Flow (Regression)
 
-**Risk:** Smart grouping detects patterns and creates tabs/sections that make navigation harder instead of easier. An API with 15 fields gets grouped into 5 tabs - users now click through tabs instead of scanning one view. Groups are semantic but not useful ("Metadata" tab with 2 fields, "Core" tab with 12 fields). Z-pattern scanning breaks.
+**What goes wrong:** Existing public APIs stop working after adding authentication features:
+- Auth UI blocks access even when API doesn't require auth
+- `credentials: 'omit'` changed to `'include'`, causing CORS rejections
+- Empty/null auth values sent in headers, causing API rejections
+- Parameter values lost when switching between authenticated/public APIs
 
 **Why it happens:**
-- Grouping for grouping's sake (any pattern triggers a tab/section)
-- Not considering field count (grouping 3 fields into tabs adds clicks, not clarity)
-- Poor group naming (too abstract or technical)
-- Ignoring UX research on progressive disclosure limits (>2 levels confuses users)
-- Trying to be clever instead of useful
+- Focus on "making auth work" rather than "preserving existing behavior"
+- Not testing regression against original public API use cases
+- Assuming auth is "additive" when it often changes request behavior
+- State management doesn't handle auth-optional scenarios
 
 **Consequences:**
-- Increased time-to-information (clicking through tabs vs scrolling)
-- Hidden fields users can't find (buried in unexpected tabs)
-- Cognitive overload from deciding which tab to check
-- Users switch back to flat view, wasting development effort
-- AB tests show lower conversion/engagement with grouped views
+- v1.0-v1.3 users report "nothing works anymore"
+- Public API examples break on landing page
+- Users forced to configure auth even for public APIs
+- Loss of core value prop (paste URL, instant render)
 
 **Prevention:**
-1. **Grouping thresholds** - Only group when >8 fields AND clear semantic clusters exist
-2. **Two-level limit** - Never nest tabs/sections beyond one level of grouping
-3. **Field count balance** - No tab with <3 fields, no tab with >60% of total fields
-4. **User research validation** - Test grouping strategies with real APIs before shipping
-5. **Flat-first philosophy** - Default to flat unless grouping is clearly beneficial
-6. **Smart naming** - Group names must be immediately understandable (not "Metadata", but "Technical Details")
-7. **Escape hatch** - "Show all fields (ungrouped)" button always visible
+1. **Default to no auth** - Auth must be opt-in, not opt-out
+2. **Test all public API examples** - JSONPlaceholder, DummyJSON, etc. must still work
+3. **Separate auth state from global state** - Don't pollute fetch logic with auth if not needed
+4. **Preserve parameter state** - Switching APIs shouldn't lose query param values
+5. **Visual regression testing** - Playwright tests for public API flows
 
 **Detection warning signs:**
-- Users clicking "show all" more than exploring tabs
-- High bounce rate on grouped detail views
-- Time-to-action metrics worsen vs flat view
-- Component switcher used to force back to tables from tabs
+- Public API requests include auth headers with empty values
+- JSONPlaceholder example on landing page throws errors
+- `credentials: 'include'` is now default instead of opt-in
+- Auth UI appears even when spec has no security schemes
 
-**Phase to address:** Phase 2 (Auto-Grouping) - Build with conservative thresholds and extensive testing
+**Phase assignment:** Phase 3 (Integration Testing) - Explicit regression validation phase
 
-**Severity:** CRITICAL - Bad grouping makes UX objectively worse, violates core product promise
+**Confidence:** MEDIUM - Inferred from migration patterns, not directly cited
 
 **Sources:**
-- [IxDF: Progressive Disclosure](https://www.interaction-design.org/literature/topics/progressive-disclosure)
-- [NN/G: Progressive Disclosure](https://www.nngroup.com/articles/progressive-disclosure/)
-- [LogRocket: Progressive Disclosure Types](https://blog.logrocket.com/ux-design/progressive-disclosure-ux-types-use-cases/)
-- [NN/G: Group Form Elements with White Space](https://www.nngroup.com/articles/form-design-white-space/)
+- [Application migration pitfalls](https://www.tierpoint.com/blog/9-steps-to-avoid-cloud-migration-pitfalls-with-legacy-apps/)
 
 ---
 
-## Moderate Pitfalls (Address During Development)
+### Pitfall 4: Credential Leakage in Console Logs
 
-### Pitfall 4: Performance Degradation from Semantic Analysis
-
-**Risk:** Running semantic analysis on every field of every endpoint on every render causes lag. A table with 50 rows × 20 columns = 1000 field classifications. Page becomes sluggish. Initial render delay frustrates users.
+**What goes wrong:** Sensitive credentials appear in browser console logs:
+- Fetch requests logged with full headers (`Authorization: Bearer sk-abc123...`)
+- Error messages include credential values ("Invalid API key: sk-abc123")
+- Debug logging shows raw OpenAPI security scheme values
+- Redux DevTools / Zustand DevTools expose secrets in state snapshots
 
 **Why it happens:**
-- No caching of classification results
-- Analyzing every cell instead of schema-level detection
-- Complex regex matching on every render
-- Not memoizing expensive operations
-- Running analysis in main thread, blocking render
+- Developers add console.log during debugging and forget to remove
+- Error handling includes full request context for debugging
+- State management tools show everything by default
+- Network logging libraries log headers automatically
 
 **Consequences:**
-- Slow initial page loads
-- Janky scrolling and interactions
-- Poor mobile performance
-- Users perceive app as broken or slow
-- Increased bounce rate
+- Credentials exposed in screen recordings/screenshots
+- Secrets committed to bug reports
+- Production console logs contain API keys
+- Screen-sharing sessions leak credentials
 
 **Prevention:**
-1. **Schema-level detection** - Classify field types once per schema, not per row
-2. **Memoization** - Cache semantic classification results by field path + sample values
-3. **Lazy analysis** - Defer non-visible field analysis until needed
-4. **Budget limits** - Max 50ms for initial classification, timeout if exceeded
-5. **Web Workers** - Offload complex pattern matching to background thread
-6. **Incremental classification** - Classify on scroll for large datasets
-7. **Performance benchmarks** - Require <100ms overhead vs v1.2 type-based rendering
+1. **Redact credentials in all logs** - Replace with `[REDACTED]` or show only last 4 chars
+2. **Never log Authorization header** - Strip before logging request details
+3. **Configure Zustand persist to exclude secrets** - Only persist config shape, not values
+4. **Add .env to .gitignore** - Even for example values
+5. **Use structured logging** - Separate sensitive fields, redact at log time
 
 **Detection warning signs:**
-- Lighthouse performance score drops
-- Time-to-interactive increases
-- User reports of lag
-- React DevTools Profiler shows long classification times
+- Console shows `Authorization: Bearer ...` with full token
+- Error messages include credential values
+- Zustand DevTools shows sessionStorage secrets
+- Network tab logs not filtered in production build
 
-**Phase to address:** Phase 1 - Build performant classifiers from the start
+**Phase assignment:** Phase 1 (Storage Architecture) and Phase 2 (Auth Injection) - Implement redaction from start
 
-**Severity:** MODERATE - Fixable but creates bad first impression
+**Confidence:** HIGH - Common security mistake in web apps
 
 **Sources:**
-- [IJCT: Graphics Rendering Pipeline Trends](https://ijctjournal.org/graphics-rendering-pipeline-trends/)
+- [API security best practices 2026](https://www.aikido.dev/blog/api-security-best-practices)
+- [API key safety best practices](https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety)
 
 ---
 
-### Pitfall 5: Semantic Defaults Conflict with User Overrides
+### Pitfall 5: OpenAPI Security Scheme Parsing Errors
 
-**Risk:** User manually changes a component (email field → text input for privacy). Next API call re-runs semantic detection and switches it back to email component. User's override is silently ignored. User fights with the system.
+**What goes wrong:**
+- Malformed OpenAPI spec crashes the parser
+- Security schemes present but no `security` requirement at operation level
+- Multiple security schemes but no UI to choose between them
+- OAuth flows defined but only API key/bearer actually supported
+- Scope information missing or incorrect in spec
 
 **Why it happens:**
-- No distinction between "default" and "user-chosen" in state
-- Heuristics re-run unconditionally on every data change
-- Override state not persisted or merged correctly
-- Unclear precedence rules between semantic defaults and manual choices
+- OpenAPI security is complex (scheme definition + operation application)
+- Specs often have security schemes defined but not applied
+- Generators produce incomplete security metadata
+- Spec authors don't understand scheme vs requirement difference
 
 **Consequences:**
-- Frustration from settings that don't stick
-- Users stop trusting configuration system
-- Increased support burden ("my changes keep reverting")
-- Churn from power users who need precise control
+- App detects auth but can't determine which method to use
+- User configures wrong auth type (basic instead of bearer)
+- OAuth detected but unsupported, user confused why it doesn't work
+- Missing scopes cause 403 errors with valid credentials
 
 **Prevention:**
-1. **Three-tier state model** - Semantic default < Type default < User override
-2. **Sticky overrides** - Once user changes component, lock it (disable semantic updates)
-3. **Visual distinction** - Show indicator when using semantic default vs user override vs type default
-4. **Reset mechanism** - "Revert to smart default" option to re-enable semantic detection
-5. **State persistence** - Serialize override flags in localStorage config
-6. **Config inspector** - Debug panel showing precedence chain for each component
+1. **Validate security schemes before using** - Check for required fields (type, scheme, name, in)
+2. **Fall back gracefully on invalid schemes** - Show warning, don't crash
+3. **Check operation-level security** - Scheme exists ≠ scheme required
+4. **Limit to supported types in Phase 1** - API key, bearer, basic, query param only
+5. **Show "unsupported auth" message for OAuth/OpenID** - Don't silently ignore
 
 **Detection warning signs:**
-- Users reporting "settings won't save"
-- High re-configuration rate (same field changed multiple times)
-- Support tickets about overrides reverting
+- Parser throws on specs with OAuth flows
+- Security schemes array exists but no auth UI shown
+- Operation works without auth despite security scheme present
+- User can't tell which of 3 security schemes to use
 
-**Phase to address:** Integration Phase - Build state management layer handling all three tiers
+**Phase assignment:** Phase 4 (OpenAPI Detection) - Handle when parsing specs
 
-**Severity:** MODERATE - Damages UX but doesn't break core functionality
+**Confidence:** MEDIUM - Based on OpenAPI complexity patterns, not direct citations
 
 **Sources:**
-- [Studio Contrast: Smart Defaults](https://www.contrast.studio/design-terms-explained/smart-defaults)
-- [Multi-user Conflict Resolution PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC10319268/)
+- [OpenAPI security schemes documentation](https://learn.openapis.org/specification/security.html)
+- [OpenAPI security warnings](https://learning.postman.com/docs/api-governance/api-definition/openapi3)
 
 ---
 
-### Pitfall 6: Field Importance Hierarchy Hides Critical Data
+## Moderate Pitfalls
 
-**Risk:** Semantic detection decides "created_at" is low-importance and hides it in a collapsed section. For this API, creation time is critical for users to see immediately. Hidden "secondary" fields are actually primary for specific use cases.
+Mistakes that cause delays, poor UX, or technical debt.
+
+### Pitfall 6: Confusing Auth Error Messages
+
+**What goes wrong:** User receives unhelpful error messages:
+- "401 Unauthorized" shown with no hint about what to do
+- CORS preflight failure displayed as "Network error"
+- Invalid API key returns "403 Forbidden" with no explanation
+- Auth config UI doesn't explain which field goes where
 
 **Why it happens:**
-- Generic importance rules (all timestamps → low importance)
-- Not considering domain context (timestamps matter in event logs, not in product catalogs)
-- No user customization of importance rules
-- Overly aggressive hiding of "metadata" fields
+- Direct HTTP status shown to user instead of interpreted
+- CORS detection heuristic doesn't distinguish auth-related CORS
+- API error responses not parsed for helpful messages
+- UI assumes user knows difference between bearer/basic/API key
 
 **Consequences:**
-- Users miss critical information
-- Increased clicks to find "hidden" but important fields
-- Confusion about what data is available
-- Users abandon app if key fields are buried
+- Users don't know whether credentials are wrong or auth type is wrong
+- Support requests: "It says unauthorized, what do I do?"
+- Users paste credentials into wrong field
+- Abandonment because error is too cryptic
 
 **Prevention:**
-1. **Conservative hiding** - Only hide fields with clear low value (IDs, internal flags)
-2. **Domain-aware rules** - Timestamp importance varies by API type
-3. **Always-visible minimum** - Never hide more than 30% of fields
-4. **User importance overrides** - Let users mark fields as "always show" or "always hide"
-5. **Smart defaults suggest, don't enforce** - Show all fields, but suggest grouping/ordering
-6. **Prominence not hiding** - Use visual hierarchy instead of collapsing sections
+1. **Detect 401/403 and prompt for auth** - "This API requires authentication. Configure credentials?"
+2. **Parse API error messages** - Show `error.message` from response body if present
+3. **Distinguish CORS from auth** - "CORS preflight blocked. API may not support browser requests with auth."
+4. **Provide inline help** - "Bearer token: Usually starts with 'Bearer' or 'sk-'"
+5. **Show examples** - Placeholder text demonstrates format
 
 **Detection warning signs:**
-- Users frequently expanding "More details" sections
-- Search/filtering by "hidden" fields
-- Support questions about missing data
+- User sees raw "401 Unauthorized" with no context
+- Help requests asking "where do I put my API key?"
+- Users configuring bearer tokens as API keys
+- No retry prompt after 401 response
 
-**Phase to address:** Phase 3 (Field Importance) - Build with escape hatches
+**Phase assignment:** Phase 5 (Error Handling & UX) - Dedicated UX polish phase
 
-**Severity:** MODERATE - Annoying but reversible
+**Confidence:** MEDIUM - UX anti-pattern, not security critical
+
+---
+
+### Pitfall 7: Per-Endpoint Auth Instead of Per-API
+
+**What goes wrong:** Auth scope is too granular, requiring separate credentials for each endpoint from the same API.
+
+**Why it happens:**
+- Following OpenAPI operation-level security too literally
+- Not recognizing that endpoints share credentials by base URL
+- Over-engineering for edge cases
+
+**Consequences:**
+- User must re-enter same credentials for every endpoint
+- Poor UX for multi-endpoint APIs (RESTful services)
+- Credential storage bloat in sessionStorage
+
+**Prevention:**
+1. **Scope credentials by base URL** - `https://api.example.com` shares auth across all paths
+2. **Use operation security as detection** - Not as separate credential storage
+3. **Allow override if needed** - Edge case support without making it default
+4. **Document assumption** - Explain per-API credential model to users
+
+**Detection warning signs:**
+- SessionStorage has 10+ entries for same API domain
+- User asked for credentials on every endpoint switch
+- Credentials don't persist when switching endpoints
+
+**Phase assignment:** Phase 1 (Storage Architecture) - Design decision, implement early
+
+**Confidence:** MEDIUM - Based on project requirements, not external research
+
+---
+
+### Pitfall 8: Session Credential Loss on Refresh
+
+**What goes wrong:** User configures credentials, refreshes page, all credentials gone.
+
+**Why it happens:**
+- sessionStorage clears on page reload (by design)
+- No warning about temporary storage
+- User expects browser to "remember" credentials
+
+**Consequences:**
+- User frustration: "Why do I keep losing my API key?"
+- Repeated credential entry
+- Users misunderstand security model
+
+**Prevention:**
+1. **Show visual indicator** - "Session credentials (lost on refresh)"
+2. **Provide localStorage option** - Explicit opt-in to "Remember credentials (less secure)"
+3. **Warn on page unload** - "You have unsaved credentials. They will be lost on refresh."
+4. **Document behavior** - Help text explains sessionStorage vs localStorage tradeoff
+
+**Detection warning signs:**
+- Support requests: "My API key keeps disappearing"
+- Users don't understand why auth fails after refresh
+- No indicator that credentials are temporary
+
+**Phase assignment:** Phase 5 (Error Handling & UX) - User education and warnings
+
+**Confidence:** LOW - Hypothetical UX issue based on sessionStorage behavior
 
 **Sources:**
-- [IxDF: UI Form Design 2026](https://www.interaction-design.org/literature/article/ui-form-design)
-- [VentureHarbour: Form Design Best Practices](https://ventureharbour.com/form-design-best-practices/)
+- [SessionStorage vs localStorage behavior](https://stytch.com/blog/localstorage-vs-sessionstorage-vs-cookies/)
 
 ---
 
-### Pitfall 7: Overfitting Heuristics to Test APIs
+### Pitfall 9: Query Parameter Auth Logged in URLs
 
-**Risk:** Smart defaults work perfectly on test APIs (JSONPlaceholder, PokéAPI, Star Wars API) but fail on real-world APIs with different field naming conventions. Detection tuned to "name", "email", "image" doesn't work for "fullName", "emailAddress", "thumbnailUrl".
+**What goes wrong:** API keys passed as query parameters (`?api_key=sk-abc123`) appear in:
+- Browser history
+- Server logs
+- Referrer headers
+- Analytics tools
 
 **Why it happens:**
-- Limited test dataset diversity
-- Pattern matching optimized for specific API styles
-- No cross-validation across different domains
-- Test bias (APIs chosen because they're easy to detect)
+- Query param auth is legitimate pattern for some APIs
+- URLs are logged everywhere by default
+- Developer doesn't consider logging implications
 
 **Consequences:**
-- Smart defaults useless for many real APIs
-- User disappointment (marketing vs reality gap)
-- Poor reviews mentioning "doesn't work with my API"
-- Maintenance burden as users report new patterns
+- Credentials exposed in browser history
+- API server logs contain secrets
+- Analytics platforms collect API keys
+- Sharing URL shares credential
 
 **Prevention:**
-1. **Diverse test corpus** - Test with 20+ real-world APIs across domains (e-commerce, social, analytics, government)
-2. **Pattern generalization** - Support variations (name/fullName/userName, email/emailAddress/mail)
-3. **Levenshtein distance matching** - Fuzzy field name matching (imageUrl vs image_url vs thumbnail_url)
-4. **Community patterns** - Allow users to submit successful pattern matches
-5. **Confidence calibration** - Track precision/recall across test corpus, require >85% precision
-6. **Fallback gracefully** - When detection fails, fall back to v1.2 type-based (no regression)
+1. **Warn users** - "Query parameter auth is less secure than header-based auth"
+2. **Prefer header auth** - Recommend header when both are available
+3. **Don't persist query param credentials** - Don't save to localStorage
+4. **Strip from displayed URLs** - Show `?api_key=***` in UI
 
 **Detection warning signs:**
-- User reports "smart defaults don't work on my API"
-- Low semantic detection rate (<30% of endpoints)
-- Variance in detection quality across APIs
+- Browser history shows full API key in URL
+- Users share URLs with embedded credentials
+- No warning about query param security
 
-**Phase to address:** Phase 1 - Build robust test suite before implementing heuristics
+**Phase assignment:** Phase 5 (Error Handling & UX) - Add warnings and redaction
 
-**Severity:** MODERATE - Damages feature value proposition but doesn't break app
+**Confidence:** HIGH - Well-documented security issue
 
 **Sources:**
-- [Megagon Labs: Semantic Type Detection](https://megagonlabs.medium.com/semantic-type-detection-why-it-matters-current-approaches-and-how-to-improve-it-62027bf8632f)
+- [API key security schemes](https://www.speakeasy.com/openapi/security/security-schemes/security-api-key)
+- [API key management best practices](https://infisical.com/blog/api-key-management)
 
 ---
 
-## Minor Pitfalls (Annoying but Easily Fixable)
+## Minor Pitfalls
 
-### Pitfall 8: Ambiguous Field Names Create Flip-Flopping
+Mistakes that cause annoyance but are fixable.
 
-**Risk:** A field named "rating" could be numeric rating (4.5 stars) or text rating ("Excellent"). Heuristic guesses star rating, user's API returns text. Component renders incorrectly. Similar APIs get different treatments inconsistently.
+### Pitfall 10: Hardcoded Auth Header Names
+
+**What goes wrong:** Code assumes `Authorization` header, but some APIs use:
+- `X-API-Key`
+- `X-Auth-Token`
+- `ApiKey`
+- Custom header names
 
 **Why it happens:**
-- Pattern matching on name only without validating data
-- No value-based verification of classification
-- Single-signal detection
+- Most APIs use standard `Authorization` header
+- Developers don't test with non-standard APIs
 
 **Consequences:**
-- Inconsistent rendering across similar APIs
-- User confusion about why same field name renders differently
-- Need for manual override
+- APIs with custom header names don't work
+- No way to configure custom header name in UI
+- User can't authenticate even with valid credentials
 
 **Prevention:**
-1. **Value validation** - Sample first 5 values, check if they match expected type
-2. **Pattern + type agreement** - Only classify if both name and values match
-3. **Consistent tiebreaking** - When ambiguous, always choose same fallback (e.g., type-based)
-4. **Confidence signaling** - Show "low confidence" indicator on ambiguous classifications
+1. **Make header name configurable** - UI field for custom header name
+2. **Detect from OpenAPI spec** - `in: header, name: X-API-Key`
+3. **Provide common presets** - Dropdown with standard options
+4. **Default to `Authorization`** - Most common case
 
 **Detection warning signs:**
-- Same field name classified differently across endpoints
-- User reports of "sometimes works, sometimes doesn't"
+- API requires `X-API-Key` but app sends `Authorization`
+- No UI field to customize header name
+- OpenAPI spec says `name: X-API-Key` but ignored
 
-**Phase to address:** Phase 1 - Build multi-signal detection
+**Phase assignment:** Phase 2 (Auth Injection) - Support during implementation
 
-**Severity:** MINOR - Annoying but user can override
+**Confidence:** MEDIUM - Common API variation
 
 ---
 
-### Pitfall 9: Smart Defaults Feel "Too Smart" and Creepy
+### Pitfall 11: Basic Auth Not Base64 Encoded
 
-**Risk:** Users uncomfortable with how much the system "guesses" about their data. Feels like magic that can't be trusted. Users prefer explicit, predictable behavior over clever but opaque heuristics.
+**What goes wrong:** Basic auth requires `Authorization: Basic <base64(username:password)>` but code sends:
+- `Authorization: username:password` (not base64)
+- `Authorization: Basic username:password` (not encoded)
+- `Authorization: base64(username):base64(password)` (encoded separately)
 
 **Why it happens:**
-- No explanation of why component was chosen
-- Black box decision making
-- Over-engineering beyond user expectations
+- Developers forget encoding step
+- Assume browser handles it automatically
+- Misunderstand Basic auth spec
 
 **Consequences:**
-- User discomfort with "magic"
-- Preference for manual control over smart defaults
-- Trust issues
+- Valid credentials rejected
+- 401 errors despite correct username/password
+- Confusion about why Postman works but app doesn't
 
 **Prevention:**
-1. **Explain decisions** - Tooltip showing "Detected as email because field name matches 'email' and values match email pattern"
-2. **Visual indicators** - Show when semantic vs type-based default is active
-3. **Progressive disclosure** - Start with minimal smart defaults, let users opt into more
-4. **Predictable behavior** - Document what patterns trigger which components
-5. **Manual mode toggle** - "Use simple type-based defaults" option
+1. **Use btoa() for base64 encoding** - `btoa(username + ':' + password)`
+2. **Add "Basic " prefix** - `Authorization: Basic ${encoded}`
+3. **Test with real basic auth API** - Validate implementation
+4. **Show example in UI** - "Result will be: Basic dXNlcjpwYXNz"
 
 **Detection warning signs:**
-- Users asking "how does it know?"
-- Low adoption of smart defaults feature
-- Preference for manual configuration
+- Basic auth always returns 401
+- Authorization header missing "Basic " prefix
+- Credentials not base64 encoded
 
-**Phase to address:** Integration Phase - Add transparency features
+**Phase assignment:** Phase 2 (Auth Injection) - Implement correctly from start
 
-**Severity:** MINOR - Aesthetic/philosophical concern, not functional issue
+**Confidence:** HIGH - Common implementation mistake
 
 **Sources:**
-- [Jakob Nielsen: 2026 UX Predictions](https://jakobnielsenphd.substack.com/p/2026-predictions)
-- [Spinta: Designing for Trust 2026](https://spintadigital.com/blog/designing-for-trust-ui-ux-2026/)
+- [OpenAPI basic authentication](https://swagger.io/docs/specification/v3_0/authentication/)
 
 ---
 
-### Pitfall 10: Component Library Compatibility Issues
+### Pitfall 12: Bearer Token "Bearer " Prefix Confusion
 
-**Risk:** Adding new semantic component types (gallery, timeline, stats) that don't exist in current component set requires expanding the component library, creating maintenance burden.
+**What goes wrong:**
+- User includes "Bearer " in token input, code adds it again: `Authorization: Bearer Bearer sk-abc123`
+- User doesn't include "Bearer ", code doesn't add it: `Authorization: sk-abc123`
+- Inconsistent behavior across different UIs
 
 **Why it happens:**
-- Semantic detection wants to recommend components that don't exist yet
-- Feature creep (detecting 20 semantic types but only building 5 components)
-- Mismatch between detection ambition and implementation capacity
+- Spec says "Bearer " prefix required, but users don't know this
+- UI doesn't clarify whether to include prefix
+- Code doesn't normalize input
 
 **Consequences:**
-- Heuristics detect "timeline" but system only has "list" → confusing UX
-- Dead code (detection logic for components that don't exist)
-- Maintenance burden from unused code paths
+- Valid tokens rejected
+- User doesn't know whether to type "Bearer" or not
+- Works sometimes, fails other times
 
 **Prevention:**
-1. **Component-first approach** - Only detect semantic types for components that exist
-2. **Phased rollout** - Start with 3-5 high-confidence semantic types, expand later
-3. **Future-proof detection** - Detection logic supports more types than components, but only activates existing ones
-4. **Clear roadmap** - Document which semantic types are planned but not yet implemented
+1. **Strip "Bearer " from user input** - Normalize before storage
+2. **Always add "Bearer " prefix** - Code handles formatting
+3. **Placeholder text shows format** - "sk-abc123 (prefix added automatically)"
+4. **Label clarifies** - "Token (without 'Bearer' prefix)"
 
-**Phase to address:** Phase 1 - Align detection with existing component set
+**Detection warning signs:**
+- User input includes "Bearer " causing double prefix
+- Token works in Postman but not in app
+- No clear guidance on whether to include prefix
 
-**Severity:** MINOR - Creates technical debt but doesn't break UX
+**Phase assignment:** Phase 2 (Auth Injection) - Input normalization
+
+**Confidence:** MEDIUM - Common UX issue
 
 ---
 
@@ -403,306 +478,51 @@ This research identifies critical pitfalls when adding semantic analysis, smart 
 
 | Phase Topic | Likely Pitfall | Mitigation |
 |-------------|---------------|------------|
-| Semantic Detection (Phase 1) | False positives (Pitfall 1) | High precision thresholds, multi-signal detection, extensive test corpus |
-| Auto-Grouping (Phase 2) | Worse UX than flat (Pitfall 3) | Conservative grouping rules, field count thresholds, user testing |
-| Field Importance (Phase 3) | Hiding critical data (Pitfall 6) | Never hide >30% of fields, domain-aware rules, user overrides |
-| Integration | Breaking existing configs (Pitfall 2) | Config versioning, explicit > implicit, opt-in rollout |
-| Integration | Override conflicts (Pitfall 5) | Three-tier state model, sticky overrides, visual indicators |
-| All Phases | Performance issues (Pitfall 4) | Schema-level classification, memoization, performance budgets |
-
----
-
-## Implementation Risk Matrix
-
-| Pitfall | Probability | Impact | Risk Score | Priority |
-|---------|-------------|--------|------------|----------|
-| 1. False Positive Selection | HIGH | CRITICAL | 9/10 | P0 |
-| 2. Breaking Existing Behavior | MEDIUM | CRITICAL | 8/10 | P0 |
-| 3. Bad Auto-Grouping | MEDIUM | CRITICAL | 8/10 | P0 |
-| 4. Performance Degradation | MEDIUM | MODERATE | 6/10 | P1 |
-| 5. Override Conflicts | MEDIUM | MODERATE | 6/10 | P1 |
-| 6. Hiding Critical Data | LOW | MODERATE | 4/10 | P2 |
-| 7. Overfitting Test APIs | MEDIUM | MODERATE | 6/10 | P1 |
-| 8. Ambiguous Fields | HIGH | MINOR | 5/10 | P2 |
-| 9. Too Smart Creepiness | LOW | MINOR | 2/10 | P3 |
-| 10. Component Library Gaps | LOW | MINOR | 2/10 | P3 |
-
----
-
-## Recommended Safeguards
-
-### 1. Precision-First Philosophy
-- Prefer false negatives over false positives
-- When unsure, fall back to v1.2 type-based defaults
-- Require HIGH confidence (>90%) for semantic classification
-- Quote: "Better to show boring defaults than wrong clever ones"
-
-### 2. Explicit User Control
-- User overrides ALWAYS beat smart defaults
-- Three-tier precedence: Semantic < Type < User
-- Visual indicators showing which tier is active
-- "Reset to smart defaults" explicit action
-
-### 3. Backwards Compatibility
-- Config versioning and migration
-- Opt-in for existing endpoints
-- Feature flag for gradual rollout
-- No breaking changes to v1.2 configs
-
-### 4. Performance Budget
-- <100ms classification overhead vs v1.2
-- Schema-level detection (not per-row)
-- Memoization and caching
-- Lazy analysis for non-visible fields
-
-### 5. Transparency
-- Explain why component was chosen
-- Debug panel showing classification logic
-- Confidence scores visible to users
-- Documentation of pattern matching rules
-
-### 6. Conservative Grouping
-- Only group when >8 fields AND clear clusters
-- Max 2 levels of nesting
-- Field count balance (<3 or >60% flags issues)
-- "Show all (ungrouped)" always available
-
----
-
-## Testing Requirements
-
-To avoid these pitfalls:
-
-### Functional Testing
-- [ ] Test with 20+ diverse real-world APIs (not just JSONPlaceholder)
-- [ ] Verify backwards compatibility with all v1.2 localStorage configs
-- [ ] Test override precedence chain (semantic < type < user)
-- [ ] Validate performance benchmarks (<100ms overhead)
-- [ ] Test grouping with 5, 10, 20, 50 field APIs
-
-### Edge Case Testing
-- [ ] Ambiguous field names (rating, status, type)
-- [ ] APIs with non-standard naming (CamelCase vs snake_case vs kebab-case)
-- [ ] Very large responses (100+ fields, 1000+ rows)
-- [ ] Nested objects with repeated field names
-- [ ] APIs where "metadata" fields are actually primary
-
-### User Testing
-- [ ] AB test smart defaults vs type-based with real users
-- [ ] Measure override rate (target: <15%)
-- [ ] Track time-to-information with grouped vs flat views
-- [ ] Survey trust/satisfaction with smart defaults
-- [ ] Observe users discovering and using component switcher
-
-### Performance Testing
-- [ ] Benchmark classification time across API sizes
-- [ ] Test with slow devices (mobile, throttled CPU)
-- [ ] Measure React render time impact
-- [ ] Profile memoization effectiveness
-
----
-
-## Success Metrics
-
-Smart defaults are working when:
-
-| Metric | Target | Red Flag |
-|--------|--------|----------|
-| Override rate | <15% | >25% (users don't trust defaults) |
-| Performance overhead | <100ms | >200ms (noticeable lag) |
-| Precision | >90% | <75% (too many false positives) |
-| Recall | >60% | <40% (rarely detects semantic types) |
-| User satisfaction | >4.0/5 | <3.5/5 (feature creates problems) |
-| Breaking change reports | 0 | >5 (configs broken on update) |
-| Grouping adoption | >50% endpoints | <20% (users disable grouping) |
-
----
-
-## Integration with Existing System
-
-### Current api2ui Architecture (v1.2)
-
-**Type-based defaults:**
-- Response side: array → table/cards, object → detail, primitive → text
-- Parameter side: string → text, number → number, enum → dropdown, bool → toggle
-- Image detection: image_url fields auto-render as images
-- Smart type inference: dates, coordinates, zip codes, emails (for parameters)
-
-**Risk zones for v1.3:**
-- `src/services/schema/inferrer.ts` - Adding semantic layer on top of type inference
-- `src/types/components.ts` - Expanding ComponentType enum
-- `src/store/configStore.ts` - Storing semantic defaults vs user overrides
-- Component switcher UI - Needs to show semantic vs type vs user choice
-
-### Integration Strategy
-
-1. **Non-breaking semantic layer**
-   ```typescript
-   // Current: Type-based default
-   function getDefaultComponent(schema: TypeSignature): ComponentType {
-     if (schema.kind === 'array') return 'table'
-     if (schema.kind === 'object') return 'detail'
-     return 'primitive'
-   }
-
-   // v1.3: Semantic layer on top
-   function getSmartComponent(
-     schema: TypeSignature,
-     fieldName: string,
-     sampleValues: unknown[]
-   ): ComponentType {
-     // Try semantic detection first
-     const semantic = detectSemanticType(fieldName, sampleValues, schema)
-     if (semantic.confidence === 'HIGH') {
-       return semantic.component
-     }
-
-     // Fall back to type-based (existing v1.2 logic)
-     return getDefaultComponent(schema)
-   }
-   ```
-
-2. **Config state extension**
-   ```typescript
-   // Extend existing FieldConfig
-   interface FieldConfig {
-     path: string
-     componentType: ComponentType
-     // NEW: Track where default came from
-     defaultSource?: 'semantic' | 'type' | 'user'
-     // NEW: Track if user has overridden
-     userOverride?: boolean
-   }
-   ```
-
-3. **Migration path**
-   ```typescript
-   // Detect v1.2 configs and mark as user overrides
-   function migrateConfig(v2Config: ConfigState): ConfigState {
-     return {
-       ...v2Config,
-       fieldConfigs: v2Config.fieldConfigs.map(config => ({
-         ...config,
-         defaultSource: 'user', // Preserve v1.2 choices
-         userOverride: true
-       }))
-     }
-   }
-   ```
-
----
-
-## Anti-Patterns to Avoid
-
-### 1. "Smart Defaults Fix Everything" Optimism
-
-**Anti-pattern:** "Once we add semantic detection, users won't need manual overrides"
-**Reality:** False positives destroy trust faster than true positives build it
-**Instead:** Build excellent override UX alongside smart defaults
-
-### 2. Semantic Detection as Core Feature
-
-**Anti-pattern:** "v1.3 is about smart defaults, focus 100% on heuristics"
-**Reality:** Integration and backwards compatibility are more important than detection accuracy
-**Instead:** Spend 50% effort on detection, 50% on integration/migration/UX
-
-### 3. Progressive Enhancement Excuse
-
-**Anti-pattern:** "Smart defaults are additive, won't affect existing behavior"
-**Reality:** Every new heuristic creates opportunity to override user config
-**Instead:** Treat backwards compatibility as P0 requirement
-
-### 4. Grouping for Grouping's Sake
-
-**Anti-pattern:** "Let's group everything we can detect patterns for"
-**Reality:** Bad grouping is worse than no grouping
-**Instead:** Conservative grouping thresholds with escape hatches
-
-### 5. Black Box Magic
-
-**Anti-pattern:** "The smarter the system, the better"
-**Reality:** Users distrust opaque cleverness
-**Instead:** Transparency, explainability, user control
-
----
-
-## Red Flags During Development
-
-Watch for these warning signs that you're hitting a pitfall:
-
-- **"It works great on JSONPlaceholder!"** → Pitfall 7 (overfitting to test APIs)
-- **"Users keep switching away from the smart component"** → Pitfall 1 (false positives)
-- **"My v1.2 config broke after update"** → Pitfall 2 (breaking existing behavior)
-- **"The tabs make it harder to find data"** → Pitfall 3 (bad grouping)
-- **"Page feels sluggish now"** → Pitfall 4 (performance)
-- **"My override keeps reverting"** → Pitfall 5 (state conflicts)
-- **"Where did that field go?"** → Pitfall 6 (hiding data)
-- **"TypeScript is complaining but it works"** → Type safety violation, will break later
+| Storage Architecture | Using localStorage for secrets | Use sessionStorage for credentials, localStorage only for config shape |
+| Auth Injection | Not checking if auth is needed | Default to no-auth for public APIs, only inject when configured |
+| Integration Testing | Breaking existing public API flows | Test JSONPlaceholder, DummyJSON examples as regression suite |
+| OpenAPI Detection | Crashing on OAuth schemes | Gracefully skip unsupported schemes, show warning |
+| Error Handling & UX | Generic "401 Unauthorized" message | Detect 401/403 and prompt for auth configuration |
+| 401/403 Fallback Prompt | Always prompting even for auth'd requests | Track configured APIs, only prompt on first 401 per API |
 
 ---
 
 ## Sources
 
-**Classification & Heuristics:**
-- [Google ML: Classification Accuracy, Precision, Recall](https://developers.google.com/machine-learning/crash-course/classification/accuracy-precision-recall)
-- [Evidentlyai: Classification Threshold Balance](https://www.evidentlyai.com/classification-metrics/classification-threshold)
-- [Medium: Precision/Recall Tradeoff](https://medium.com/analytics-vidhya/precision-recall-tradeoff-79e892d43134)
-- [Megagon Labs: Semantic Type Detection](https://megagonlabs.medium.com/semantic-type-detection-why-it-matters-current-approaches-and-how-to-improve-it-62027bf8632f)
+### Security & Storage
+- [Top 10 API Security Best Practices & Standards for 2026](https://www.aikido.dev/blog/api-security-best-practices)
+- [Is LocalStorage safe to use?](https://snyk.io/blog/is-localstorage-safe-to-use/)
+- [Best Practices for Storing Access Tokens in the Browser](https://curity.medium.com/best-practices-for-storing-access-tokens-in-the-browser-6b3d515d9814)
+- [Just Stop Using LocalStorage For Secrets](https://medium.com/@stanislavbabenko/just-stop-using-localstorage-for-secrets-honestly-ea9ef9af9022)
+- [React XSS Guide: Understanding and Prevention](https://www.stackhawk.com/blog/react-xss-guide-examples-and-prevention/)
+- [How to Prevent XSS Attacks in React Applications](https://oneuptime.com/blog/post/2026-01-15-prevent-xss-attacks-react/view)
 
-**Form Design & Grouping:**
-- [IxDF: UI Form Design 2026](https://www.interaction-design.org/literature/article/ui-form-design)
-- [NN/G: Group Form Elements with White Space](https://www.nngroup.com/articles/form-design-white-space/)
-- [VentureHarbour: 58 Form Design Best Practices](https://ventureharbour.com/form-design-best-practices/)
+### CORS & Preflight
+- [CORS, Preflight Requests, and Common Cross-Origin Issues](https://dev.to/thesanjeevsharma/cors-preflight-requests-and-common-cross-origin-issues-129n)
+- [NGINX CORS Configuration: The Complete Guide (2026)](https://www.getpagespeed.com/server-setup/nginx/nginx-cors/amp)
+- [MDN Cross-Origin Resource Sharing (CORS)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS)
+- [MDN CORS errors](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS/Errors)
 
-**Progressive Disclosure:**
-- [IxDF: Progressive Disclosure](https://www.interaction-design.org/literature/topics/progressive-disclosure)
-- [NN/G: Progressive Disclosure](https://www.nngroup.com/articles/progressive-disclosure/)
-- [LogRocket: Progressive Disclosure Types](https://blog.logrocket.com/ux-design/progressive-disclosure-ux-types-use-cases/)
+### OpenAPI Security
+- [Describing API Security - OpenAPI Documentation](https://learn.openapis.org/specification/security.html)
+- [Authentication | Swagger Docs](https://swagger.io/docs/specification/v3_0/authentication/)
+- [Security Schemes in OpenAPI | Speakeasy](https://www.speakeasy.com/openapi/security/security-schemes)
+- [OpenAPI Security: Five types & best practices](https://liblab.com/blog/a-big-look-at-security-in-openapi)
+- [OpenAPI 3 security warnings | Postman](https://learning.postman.com/docs/api-governance/api-definition/openapi3)
 
-**Smart Defaults & User Trust:**
-- [Jakob Nielsen: 2026 UX Predictions](https://jakobnielsenphd.substack.com/p/2026-predictions)
-- [Spinta: Designing for Trust 2026](https://spintadigital.com/blog/designing-for-trust-ui-ux-2026/)
-- [Studio Contrast: Smart Defaults](https://www.contrast.studio/design-terms-explained/smart-defaults)
+### API Key Management
+- [API Key Security Best Practices for 2026](https://dev.to/alixd/api-key-security-best-practices-for-2026-1n5d)
+- [API Key Management | Definition and Best Practices](https://infisical.com/blog/api-key-management)
+- [Best Practices for API Key Safety | OpenAI](https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety)
+- [The API Key security scheme in OpenAPI](https://www.speakeasy.com/openapi/security/security-schemes/security-api-key)
 
-**AI Integration & Breaking Changes:**
-- [CapTech: 2026 AI Trends](https://www.captechconsulting.com/articles/2026-tech-trends-the-only-constants-are-ai-and-change)
-- [36kr: Data and AI 2026 Predictions](https://eu.36kr.com/en/p/3650016478421127)
+### Storage Comparison
+- [Managing user sessions: localStorage vs sessionStorage vs cookies](https://stytch.com/blog/localstorage-vs-sessionstorage-vs-cookies/)
+- [Secure Browser Storage: The Facts](https://auth0.com/blog/secure-browser-storage-the-facts/)
+- [Securing Web Storage: LocalStorage and SessionStorage Best Practices](https://dev.to/rigalpatel001/securing-web-storage-localstorage-and-sessionstorage-best-practices-f00)
 
-**Feature Flags & Gradual Rollout:**
-- [Octopus: Feature Flag Best Practices 2025](https://octopus.com/devops/feature-flags/feature-flag-best-practices/)
-- [FeatBit: Feature Flag System Design 2025](https://www.featbit.co/articles2025/feature-flag-system-design-2025)
-- [Unleash: Gradual Rollout Guide](https://docs.getunleash.io/guides/gradual-rollout)
+### Error Handling
+- [Best Practices for API Error Handling | Postman Blog](https://blog.postman.com/best-practices-for-api-error-handling/)
 
-**Email/Field Validation:**
-- [MailFloss: Email Validation Best Practices 2025](https://mailfloss.com/email-validation-test-cases-best-practices-2025/)
-- [ServiceObjects: False Positives in Email Validation](https://www.serviceobjects.com/blog/tackling-false-positives-in-email-validation/)
-
-**Backwards Compatibility:**
-- [Stack Overflow: Backwards Compatibility in Distributed Systems](https://stackoverflow.blog/2020/05/13/ensuring-backwards-compatibility-in-distributed-systems/)
-- [G2: Backwards Compatibility Definition](https://learn.g2.com/backwards-compatibility)
-
-**Multi-user Conflicts:**
-- [Multi-user Conflict Resolution PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC10319268/)
-
----
-
-**Confidence Assessment:** MEDIUM
-
-- WebSearch-based findings verified across multiple authoritative sources (NN/G, IxDF, Google ML)
-- Patterns corroborated by 2025-2026 industry best practices
-- General UX principles applied to specific api2ui context
-- No Context7 or official docs available for this niche domain (semantic API-to-UI rendering)
-- Existing codebase analysis provides HIGH confidence on integration risks
-- Recommendations are informed synthesis rather than authoritative rules
-
-**Gaps to validate:**
-- Actual semantic type detection libraries (if any exist) for field classification
-- Industry benchmarks for acceptable override rates in smart default systems
-- Performance budget norms for runtime heuristic classification
-- User research on trust thresholds for "smart" UI generation
-
-**Next steps:**
-- Build prototype and validate assumptions with real APIs
-- Conduct user testing to calibrate precision/recall tradeoffs
-- Establish baseline metrics from v1.2 for comparison
-- Test backwards compatibility with actual v1.2 localStorage configs
+### Migration
+- [Legacy Application Migration: 9 Steps To Avoid Pitfalls](https://www.tierpoint.com/blog/9-steps-to-avoid-cloud-migration-pitfalls-with-legacy-apps/)

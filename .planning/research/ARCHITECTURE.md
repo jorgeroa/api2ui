@@ -1,1210 +1,1023 @@
-# Architecture Patterns: Smart Default Selection
+# Architecture Patterns: API Authentication Integration
 
-**Domain:** Semantic component selection for data-to-UI rendering
-**Researched:** 2026-02-07
+**Domain:** Adding authentication to existing api2ui app
+**Researched:** 2026-02-09
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This research addresses how semantic component selection should integrate with api2ui's existing rendering pipeline. The core architectural challenge is **where** and **when** to perform field classification while preserving user overrides and maintaining clean separation of concerns.
+API authentication in React applications requires careful integration across the fetch pipeline, state management, UI layer, and error handling. For api2ui, authentication should be injected at the fetch layer via a wrapper around the existing `fetchAPI` function, with credentials managed in a dedicated Zustand store using sessionStorage for security. OpenAPI security scheme parsing feeds into UI generation, while 401/403 detection triggers re-authentication flows through existing error handling infrastructure.
 
-**Key finding:** Analysis belongs **before render**, in a preprocessing layer that transforms schema + data into enriched metadata. DynamicRenderer consumes this metadata to make smarter default selections, while configStore continues to hold user overrides that take precedence.
-
-**Recommended approach:** Data transformation pipeline architecture with cached analysis results stored alongside schema in appStore.
-
-## Current Architecture Analysis
-
-### Existing Rendering Pipeline
-
-```
-API Response → Schema Inference → DynamicRenderer → Component Selection → Render
-                    ↓                    ↓                    ↓
-                appStore            configStore         ComponentRegistry
-                                   (user overrides)
-```
-
-**Current flow (DynamicRenderer.tsx:24-30):**
-```typescript
-function getDefaultTypeName(schema: TypeSignature): string {
-  if (schema.kind === 'array' && schema.items.kind === 'object') return 'table'
-  if (schema.kind === 'array' && schema.items.kind === 'primitive') return 'primitive-list'
-  if (schema.kind === 'object') return 'detail'
-  if (schema.kind === 'primitive') return 'primitive'
-  return 'json'
-}
-```
-
-This is **structural** selection (based on schema shape). Smart defaults need **semantic** selection (based on field names, data patterns, content).
-
-### Integration Points
-
-| Component | Current Role | Integration Point for Smart Defaults |
-|-----------|--------------|-------------------------------------|
-| `appStore.ts` | Holds `data` + `schema` | Add `analysisMetadata` field |
-| `DynamicRenderer.tsx` | Selects component via `getDefaultTypeName()` | Replace with `getSmartDefaultTypeName()` that reads metadata |
-| `configStore.ts` | Holds user overrides in `fieldConfigs` | Unchanged - continues to override defaults |
-| `ComponentRegistry.tsx` | Maps type names to components | Unchanged - registry stays same |
-| `DetailRenderer.tsx` | Already groups fields (primary/metadata/images/nested) | Consume analysis metadata for grouping decisions |
-
-### Current Field Classification
-
-DetailRenderer (lines 14-27) already implements **basic** semantic classification:
-
-```typescript
-function isPrimaryField(fieldName: string): boolean {
-  const nameLower = fieldName.toLowerCase()
-  const primaryExact = ['name', 'title', 'label', 'heading', 'subject']
-  if (primaryExact.includes(nameLower)) return true
-  const primarySuffixes = ['_name', '_title', '_label', '-name', '-title', '-label', 'Name', 'Title']
-  return primarySuffixes.some(suffix => fieldName.endsWith(suffix))
-}
-
-function isMetadataField(fieldName: string): boolean {
-  return /created|updated|modified|timestamp|date/i.test(fieldName)
-}
-```
-
-And `imageDetection.ts` implements URL pattern matching:
-
-```typescript
-export function isImageUrl(value: unknown): boolean {
-  if (!value || typeof value !== 'string' || !/^https?:\/\//i.test(value)) {
-    return false
-  }
-  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.avif']
-  const url = new URL(value)
-  const pathname = url.pathname.toLowerCase()
-  return imageExtensions.some(ext => pathname.endsWith(ext))
-}
-```
-
-**Gap:** These classifications are **local** (per-component) and **runtime** (executed during render). Smart defaults need **global** (cross-field relationships) and **cached** (execute once per schema).
+**Key architectural decisions:**
+- Fetch wrapper pattern for header/param injection (not interceptors, since native fetch doesn't support them)
+- Dedicated `authStore` separate from `appStore` for credential lifecycle management
+- sessionStorage + Zustand persist for session-scoped credential storage
+- Extend existing error types to handle 401/403 with re-auth prompting
+- Auth UI lives in Settings Panel as a dedicated "Authentication" section
+- OpenAPI security schemes parsed during spec loading, feeding into auth config UI
 
 ## Recommended Architecture
 
-### Data Transformation Pipeline
+### Data Flow: Authentication-Aware Fetch Pipeline
 
 ```
-API Response → Schema Inference → Field Analysis → Enriched Schema → DynamicRenderer
-                                        ↓
-                               AnalysisMetadata
-                               (cached in appStore)
+┌─────────────────────────────────────────────────────────────────┐
+│ User Action (Fetch API / Submit Parameters)                     │
+└────────────────┬────────────────────────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ useAPIFetch Hook                                                 │
+│ - fetchAndInfer(url)                                            │
+│ - fetchOperation(baseUrl, operation, params)                    │
+└────────────────┬────────────────────────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ NEW: fetchWithAuth(url, options?)                               │
+│ ┌─────────────────────────────────────────────────────────────┐ │
+│ │ 1. Get credentials from authStore.getCredentials(apiUrl)    │ │
+│ │ 2. Inject auth headers/params based on auth type           │ │
+│ │ 3. Call original fetchAPI(url, enhancedOptions)            │ │
+│ │ 4. If 401/403: throw AuthError with retry metadata         │ │
+│ └─────────────────────────────────────────────────────────────┘ │
+└────────────────┬────────────────────────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ services/api/fetcher.ts: fetchAPI(url, options)                 │
+│ - Existing CORS/network/API error detection                     │
+│ - Now receives auth-enhanced options from wrapper               │
+└────────────────┬────────────────────────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ Error Handling (services/api/errors.ts)                         │
+│ - NEW: AuthError (401 Unauthorized, 403 Forbidden)             │
+│ - Includes re-auth suggestion and retry capability             │
+└────────────────┬────────────────────────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ App.tsx / ErrorDisplay.tsx                                      │
+│ - Detect AuthError → show re-auth prompt                       │
+│ - "Update credentials" button → open auth settings             │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-**New architecture flow:**
+### Component Boundaries
 
-1. **Schema Inference** (existing): `inferSchema()` creates TypeSignature
-2. **Field Analysis** (new): `analyzeFields()` creates AnalysisMetadata
-3. **Enriched Schema** (new): appStore holds both schema + metadata
-4. **Smart Selection** (modified): DynamicRenderer reads metadata for defaults
-5. **User Override** (existing): configStore continues to override any default
+| Component | Responsibility | Communicates With |
+|-----------|---------------|-------------------|
+| `fetchWithAuth` (NEW) | Auth injection wrapper around `fetchAPI`. Reads credentials from store, injects headers/params, handles 401/403. | `authStore`, `fetchAPI`, error types |
+| `authStore` (NEW) | Manages per-API credentials, session lifecycle, validation. Persists to sessionStorage. | `fetchWithAuth`, `AuthPanel` UI, OpenAPI parser |
+| `AuthError` (NEW) | Error type for 401/403 responses with re-auth metadata. | `fetchWithAuth`, `ErrorDisplay` |
+| `AuthPanel` (NEW) | UI for configuring auth per API. Form with auth type selector and credential inputs. | `authStore`, `ConfigPanel` (parent) |
+| `parseSecuritySchemes` (NEW) | Extracts security schemes from OpenAPI spec. Returns auth type + metadata. | OpenAPI parser, `authStore`, `AuthPanel` |
+| `useAPIFetch` (MODIFIED) | Replace `fetchAPI` calls with `fetchWithAuth`. Pass API base URL for credential lookup. | `fetchWithAuth`, existing stores |
+| `ErrorDisplay` (MODIFIED) | Detect `AuthError` and show re-auth UI instead of generic error. | Error types, `authStore` |
+| `ConfigPanel` (MODIFIED) | Add "Authentication" section alongside Fields/Components/Style. | `AuthPanel` |
 
-### Component Structure
+### Integration Points with Existing Components
 
+#### 1. Fetch Pipeline Integration (`src/services/api/`)
+
+**Current state:**
+- `fetchAPI(url: string)` in `fetcher.ts` is the single entry point for all API calls
+- Returns raw data or throws typed errors (CORSError, NetworkError, APIError, ParseError)
+- Called by `useAPIFetch` hook for both direct URLs and OpenAPI operations
+
+**Integration approach:**
+- Create `fetchWithAuth(url: string, options?: AuthOptions)` wrapper
+- `fetchWithAuth` reads credentials from `authStore.getCredentials(url)`
+- Injects auth based on type:
+  - **API Key (header)**: Add to `headers` object
+  - **Bearer Token**: Add `Authorization: Bearer ${token}` header
+  - **Basic Auth**: Add `Authorization: Basic ${base64(user:pass)}` header
+  - **Query Parameter**: Append to URL query string
+- Call `fetchAPI(url, options)` with enhanced options
+- Catch APIError, check for 401/403 status codes, re-throw as AuthError
+
+**Modified files:**
+- `src/services/api/fetcher.ts` — Add optional `options` parameter to `fetchAPI`, extend to accept custom headers
+- NEW `src/services/api/auth.ts` — Contains `fetchWithAuth` wrapper and credential injection logic
+
+#### 2. State Management Integration (`src/store/`)
+
+**Current state:**
+- `appStore`: Runtime state (url, loading, error, data, schema, parsedSpec)
+- `configStore`: User preferences (fieldConfigs, theme, styleOverrides) — persisted to localStorage
+- `parameterStore`: Parameter values per endpoint
+
+**Integration approach:**
+- Create NEW `authStore` separate from `appStore` to avoid polluting runtime state
+- Use Zustand persist middleware with **sessionStorage** (not localStorage for security)
+- Store structure:
+  ```typescript
+  interface AuthStore {
+    // Per-API credentials: baseUrl -> AuthConfig
+    credentials: Record<string, AuthConfig>
+
+    // Actions
+    setCredentials(baseUrl: string, config: AuthConfig): void
+    clearCredentials(baseUrl: string): void
+    getCredentials(baseUrl: string): AuthConfig | null
+    hasCredentials(baseUrl: string): boolean
+  }
+
+  interface AuthConfig {
+    type: 'apiKey' | 'bearer' | 'basic' | 'query'
+    // API Key
+    headerName?: string
+    apiKey?: string
+    // Bearer Token
+    token?: string
+    // Basic Auth
+    username?: string
+    password?: string
+    // Query Parameter
+    paramName?: string
+    paramValue?: string
+  }
+  ```
+
+**Why separate authStore:**
+- Different lifecycle (credentials persist across sessions, runtime state doesn't)
+- Different storage (sessionStorage for security vs localStorage for preferences)
+- Clearer separation of concerns (auth is security-critical, appStore is transient)
+
+**Modified files:**
+- NEW `src/store/authStore.ts` — Credential management with sessionStorage persistence
+
+#### 3. OpenAPI Integration (`src/services/openapi/`)
+
+**Current state:**
+- `parseOpenAPISpec` extracts operations, parameters, responseSchema from spec
+- Results stored in `appStore.parsedSpec`
+- Spec includes security schemes but they're not currently parsed
+
+**Integration approach:**
+- Add security scheme parsing to `parseOpenAPISpec`:
+  ```typescript
+  interface ParsedSpec {
+    // Existing fields...
+    securitySchemes?: Record<string, SecurityScheme>
+    globalSecurity?: string[] // Global security requirements
+  }
+
+  interface SecurityScheme {
+    type: 'apiKey' | 'http' | 'oauth2' | 'openIdConnect'
+    // apiKey
+    name?: string          // Header/query/cookie name
+    in?: 'header' | 'query' | 'cookie'
+    // http
+    scheme?: string        // 'basic' | 'bearer'
+    bearerFormat?: string  // 'JWT', etc.
+    // oauth2 (future)
+    flows?: unknown
+    // openIdConnect (future)
+    openIdConnectUrl?: string
+  }
+  ```
+- Parse `components.securitySchemes` during spec loading
+- Parse `security` field at root and operation levels
+- Feed into `AuthPanel` to pre-populate auth type and suggest header/param names
+
+**Modified files:**
+- `src/services/openapi/parser.ts` — Add `extractSecuritySchemes` function
+- `src/services/openapi/types.ts` — Add SecurityScheme types
+- `src/store/appStore.ts` — Add securitySchemes to ParsedSpec interface
+
+#### 4. UI Integration (`src/components/`)
+
+**Current state:**
+- `ConfigPanel`: Right-side panel with Fields/Components/Style sections
+- `URLInput`: Landing page URL entry point
+- `ErrorDisplay`: Shows typed errors with retry buttons
+
+**Integration approach:**
+
+##### ConfigPanel Enhancement
+Add "Authentication" section to `ConfigPanel` alongside existing sections:
+```tsx
+<section>
+  <h3>Authentication</h3>
+  <AuthPanel />
+</section>
 ```
-src/
-├── services/
-│   └── analysis/
-│       ├── fieldAnalyzer.ts          # Main analysis orchestrator
-│       ├── fieldClassifier.ts        # Pattern matching for field types
-│       ├── groupingAnalyzer.ts       # Tab/section detection
-│       └── componentSuggester.ts     # Map classifications to components
-├── store/
-│   └── appStore.ts                   # Add analysisMetadata field
-├── components/
-│   └── DynamicRenderer.tsx           # Read metadata for smart defaults
-└── utils/
-    ├── imageDetection.ts             # Existing - keep for validation
-    └── fieldPatterns.ts              # NEW - shared pattern constants
+
+Position: Between "Components" and "Style" sections (logical flow: data → components → auth → style)
+
+##### AuthPanel Component (NEW)
+```
+┌─────────────────────────────────────────────────────┐
+│ Authentication                                       │
+├─────────────────────────────────────────────────────┤
+│ API: https://api.example.com                        │
+│                                                      │
+│ Auth Type: [API Key ▼]                             │
+│                                                      │
+│ [If apiKey selected:]                               │
+│   Header Name: [X-API-Key        ]                 │
+│   API Key:     [•••••••••••••••  ] [Show]          │
+│                                                      │
+│ [If bearer selected:]                               │
+│   Token:       [•••••••••••••••  ] [Show]          │
+│                                                      │
+│ [If basic selected:]                                │
+│   Username:    [                 ]                  │
+│   Password:    [•••••••••••••••  ] [Show]          │
+│                                                      │
+│ [If query selected:]                                │
+│   Parameter:   [api_key          ]                 │
+│   Value:       [•••••••••••••••  ] [Show]          │
+│                                                      │
+│ [Save] [Clear]                                      │
+│                                                      │
+│ OpenAPI detected: bearer (JWT)                      │
+│ [Use OpenAPI Config]                                │
+└─────────────────────────────────────────────────────┘
 ```
 
-### New Services/Utilities Needed
+Features:
+- Detect current API from `appStore.url` or `appStore.parsedSpec.baseUrl`
+- If OpenAPI spec has security schemes, show detected type + "Use OpenAPI Config" button
+- Manual override always available
+- Password masking with show/hide toggle
+- Save → `authStore.setCredentials(baseUrl, config)`
+- Clear → `authStore.clearCredentials(baseUrl)`
 
-#### 1. `fieldAnalyzer.ts` - Analysis Orchestrator
+##### ErrorDisplay Enhancement
+Detect `AuthError` type and show special UI:
+```
+┌─────────────────────────────────────────────────────┐
+│ ⚠ Authentication Required                           │
+├─────────────────────────────────────────────────────┤
+│ The API returned 401 Unauthorized.                  │
+│                                                      │
+│ This API requires authentication. Configure         │
+│ credentials in settings to access this endpoint.    │
+│                                                      │
+│ [Open Auth Settings] [Retry]                        │
+└─────────────────────────────────────────────────────┘
+```
 
-**Responsibility:** Coordinate field classification and grouping analysis.
+"Open Auth Settings" → Opens ConfigPanel + scrolls to Authentication section (similar to existing field config scrolling)
 
+**New files:**
+- `src/components/config/AuthPanel.tsx` — Auth configuration UI
+- `src/components/config/AuthTypeSelector.tsx` — Dropdown for auth type selection
+- `src/components/config/CredentialInput.tsx` — Masked input with show/hide toggle
+
+**Modified files:**
+- `src/components/config/ConfigPanel.tsx` — Add Authentication section
+- `src/components/error/ErrorDisplay.tsx` — Add AuthError detection and special rendering
+
+#### 5. Error Handling Integration (`src/services/api/errors.ts`)
+
+**Current state:**
+- Typed errors: CORSError, NetworkError, APIError, ParseError
+- APIError has status code but no special handling for auth errors
+
+**Integration approach:**
+- Add new `AuthError` type for 401/403 responses:
+  ```typescript
+  export class AuthError extends Error implements AppError {
+    readonly kind: ErrorKind = 'auth'
+    readonly suggestion: string
+    readonly status: 401 | 403
+    readonly url: string
+
+    constructor(url: string, status: 401 | 403) {
+      super(`Authentication ${status === 401 ? 'required' : 'failed'} for ${url}`)
+      this.name = 'AuthError'
+      this.status = status
+      this.url = url
+      this.suggestion = status === 401
+        ? 'This API requires authentication. Configure credentials in settings.'
+        : 'Your credentials were rejected. Check your API key/token and try again.'
+    }
+  }
+  ```
+- `fetchWithAuth` catches APIError, checks status, re-throws as AuthError for 401/403
+- All other status codes remain as APIError
+
+**Modified files:**
+- `src/services/api/errors.ts` — Add AuthError class
+- `src/types/errors.ts` — Add 'auth' to ErrorKind union
+
+## Authentication Injection Patterns
+
+### Pattern 1: Fetch Wrapper (RECOMMENDED)
+
+**Why fetch wrapper over interceptors:**
+- Native `fetch` API doesn't support interceptors (unlike Axios)
+- Interceptor pattern requires rewriting fetch globally or using third-party libraries
+- Wrapper pattern is explicit, testable, and doesn't pollute global scope
+
+**Implementation:**
 ```typescript
-import type { TypeSignature, FieldDefinition } from '../types/schema'
-import type { AnalysisMetadata } from '../types/analysis'
+// src/services/api/auth.ts
+import { fetchAPI } from './fetcher'
+import { useAuthStore } from '../../store/authStore'
+import { AuthError, APIError } from './errors'
 
-export function analyzeFields(
-  schema: TypeSignature,
-  data: unknown,
-  path: string = '$'
-): AnalysisMetadata {
-  const classifier = new FieldClassifier()
-  const groupingAnalyzer = new GroupingAnalyzer()
-  const suggester = new ComponentSuggester()
+export async function fetchWithAuth(url: string): Promise<unknown> {
+  const authStore = useAuthStore.getState()
 
-  // Classify fields based on names and values
-  const classifications = classifier.classify(schema, data, path)
+  // Extract base URL for credential lookup
+  const baseUrl = extractBaseUrl(url)
+  const credentials = authStore.getCredentials(baseUrl)
 
-  // Detect grouping opportunities (tabs, sections)
-  const groupings = groupingAnalyzer.analyze(classifications)
+  // If no credentials configured, proceed without auth
+  if (!credentials) {
+    return fetchAPI(url)
+  }
 
-  // Suggest component types based on classifications
-  const suggestions = suggester.suggest(classifications, groupings)
+  // Inject auth based on type
+  let authUrl = url
+  const headers: Record<string, string> = {
+    'Accept': 'application/json',
+  }
 
-  return {
-    path,
-    classifications,
-    groupings,
-    suggestions,
-    analyzedAt: Date.now(),
+  switch (credentials.type) {
+    case 'apiKey':
+      if (credentials.headerName && credentials.apiKey) {
+        headers[credentials.headerName] = credentials.apiKey
+      }
+      break
+
+    case 'bearer':
+      if (credentials.token) {
+        headers['Authorization'] = `Bearer ${credentials.token}`
+      }
+      break
+
+    case 'basic':
+      if (credentials.username && credentials.password) {
+        const encoded = btoa(`${credentials.username}:${credentials.password}`)
+        headers['Authorization'] = `Basic ${encoded}`
+      }
+      break
+
+    case 'query':
+      if (credentials.paramName && credentials.paramValue) {
+        const separator = url.includes('?') ? '&' : '?'
+        authUrl = `${url}${separator}${credentials.paramName}=${encodeURIComponent(credentials.paramValue)}`
+      }
+      break
+  }
+
+  try {
+    // Call original fetch with auth-enhanced options
+    return await fetchAPI(authUrl, { headers })
+  } catch (error) {
+    // Detect 401/403 and re-throw as AuthError
+    if (error instanceof APIError && (error.status === 401 || error.status === 403)) {
+      throw new AuthError(url, error.status)
+    }
+    throw error
+  }
+}
+
+function extractBaseUrl(url: string): string {
+  try {
+    const parsed = new URL(url)
+    return `${parsed.protocol}//${parsed.host}`
+  } catch {
+    return url.split('?')[0] // Fallback for relative URLs
   }
 }
 ```
 
-**When to call:** After `fetchSuccess()` in pipeline, before storing in appStore.
-
-**Confidence:** HIGH - This is a standard data transformation pattern in frontend architectures.
-
-#### 2. `fieldClassifier.ts` - Pattern Matching
-
-**Responsibility:** Classify fields into semantic categories.
-
+**Modification to fetchAPI signature:**
 ```typescript
-export type FieldCategory =
-  | 'primary'      // name, title (hero fields)
-  | 'description'  // long text content
-  | 'review'       // reviews, comments, feedback
-  | 'rating'       // stars, scores, ratings
-  | 'image'        // image URLs
-  | 'price'        // currency, cost
-  | 'spec'         // key-value attributes (color, size, weight)
-  | 'metadata'     // timestamps, IDs, system fields
-  | 'nested-collection' // arrays of objects
-  | 'regular'      // default category
+// src/services/api/fetcher.ts
+export async function fetchAPI(
+  url: string,
+  options?: { headers?: Record<string, string> }
+): Promise<unknown> {
+  let response: Response
 
-export interface FieldClassification {
-  fieldPath: string
-  fieldName: string
-  category: FieldCategory
-  confidence: 'high' | 'medium' | 'low'
-  reason: string  // Why this classification was chosen
-}
-
-export class FieldClassifier {
-  classify(schema: TypeSignature, data: unknown, path: string): FieldClassification[] {
-    // Pattern matching based on field names, data patterns, content
-    // Similar to existing isPrimaryField/isMetadataField but comprehensive
+  try {
+    response = await fetch(url, {
+      mode: 'cors',
+      credentials: 'omit',
+      headers: {
+        'Accept': 'application/json',
+        ...options?.headers, // Merge custom headers
+      },
+    })
+  } catch (error) {
+    // Existing error handling...
   }
+
+  // Existing response handling...
 }
 ```
 
-**Pattern library:**
-
-| Category | Field Name Patterns | Data Patterns | Example Fields |
-|----------|-------------------|---------------|----------------|
-| `primary` | `name`, `title`, `label`, `heading`, `subject`, `*_name`, `*_title` | String, 10-100 chars | `product_name`, `title` |
-| `description` | `description`, `summary`, `body`, `content`, `details`, `about`, `bio` | String, >100 chars | `description`, `long_description` |
-| `review` | `review`, `comment`, `feedback`, `testimonial`, `opinion`, `*_review` | String or object with text field | `customer_reviews`, `comments` |
-| `rating` | `rating`, `score`, `stars`, `rank`, `*_rating`, `*_score` | Number 0-5 or 0-100 | `rating`, `average_rating` |
-| `image` | `image`, `photo`, `picture`, `thumbnail`, `avatar`, `icon`, `*_url`, `*_image` | URL string ending in image extension | `image_url`, `thumbnail` |
-| `price` | `price`, `cost`, `amount`, `fee`, `rate`, `*_price`, `*_cost` | Number, often with currency | `price`, `unit_price` |
-| `spec` | `specs`, `specifications`, `attributes`, `properties`, `features` | Object with short key-value pairs | `specifications`, `attributes` |
-| `metadata` | `id`, `*_id`, `created`, `updated`, `modified`, `timestamp`, `date`, `status` | System-generated values | `created_at`, `id`, `status` |
-| `nested-collection` | `reviews`, `images`, `items`, `products`, `users`, `comments` | Array of objects | `reviews`, `related_products` |
-
-**Source:** Pattern library synthesized from research on [metadata filtering best practices](https://lakefs.io/blog/metadata-filtering/) and [classification patterns](https://bigid.com/blog/smarter-classification-for-data-attributes-metadata-and-files/).
-
-**Confidence:** HIGH - These patterns are well-established in data classification systems.
-
-#### 3. `groupingAnalyzer.ts` - Tab/Section Detection
-
-**Responsibility:** Detect when fields should be grouped into tabs or sections.
-
+**Integration into useAPIFetch:**
 ```typescript
-export type GroupingStrategy =
-  | 'tabs'         // Complex objects with 3+ logical groups
-  | 'sections'     // Moderate objects with 2-3 groups
-  | 'flat'         // Simple objects, no grouping needed
+// src/hooks/useAPIFetch.ts
+import { fetchWithAuth } from '../services/api/auth'
 
-export interface FieldGrouping {
-  strategy: GroupingStrategy
-  groups: Array<{
-    id: string
-    label: string
-    fieldPaths: string[]
-    priority: number  // Display order
-  }>
-}
+export function useAPIFetch() {
+  // ...existing code...
 
-export class GroupingAnalyzer {
-  analyze(classifications: FieldClassification[]): FieldGrouping {
-    // Detect natural groupings based on field categories
-    // Example: reviews + ratings = "Reviews" tab
-    //          specs + attributes = "Specifications" tab
-    //          images = "Gallery" tab
-  }
-}
-```
+  const fetchAndInfer = async (url: string) => {
+    try {
+      clearFieldConfigs()
 
-**Grouping heuristics:**
+      if (isSpecUrl(url)) {
+        await fetchSpec(url)
+        return
+      }
 
-| Condition | Strategy | Example Groups |
-|-----------|----------|----------------|
-| 5+ categories present, 3+ with 2+ fields | `tabs` | "Overview", "Reviews", "Specifications", "Gallery" |
-| 3-4 categories present | `sections` | "Details", "Metadata" |
-| <3 categories | `flat` | No grouping |
-| Nested collections present | `sections` | Each collection becomes a section |
+      clearSpec()
+      startFetch()
 
-**Tab creation triggers:**
+      // CHANGED: Use fetchWithAuth instead of fetchAPI
+      const data = await fetchWithAuth(url)
 
-- **Reviews tab:** 2+ fields in `review` or `rating` categories
-- **Specifications tab:** 3+ fields in `spec` category
-- **Gallery tab:** 3+ fields in `image` category
-- **About/Overview tab:** Default group for `primary`, `description`, `regular`
-
-**Source:** Based on [nested tab UI patterns](https://www.designmonks.co/blog/nested-tab-ui) and [semantic UI component grouping research](https://arxiv.org/html/2403.04984v1).
-
-**Confidence:** MEDIUM - Heuristics require tuning based on real data patterns.
-
-#### 4. `componentSuggester.ts` - Map to Components
-
-**Responsibility:** Suggest component types based on classifications.
-
-```typescript
-export interface ComponentSuggestion {
-  fieldPath: string
-  suggestedType: string  // Component type name from registry
-  reason: string
-  confidence: 'high' | 'medium' | 'low'
-}
-
-export class ComponentSuggester {
-  suggest(
-    classifications: FieldClassification[],
-    groupings: FieldGrouping
-  ): ComponentSuggestion[] {
-    // Map field categories to component types
-  }
-}
-```
-
-**Mapping rules:**
-
-| Field Category | Schema Kind | Suggested Component | Rationale |
-|----------------|-------------|---------------------|-----------|
-| `review` + `rating` | `array<object>` | `card-list` | Reviews need visual separation, rich content |
-| `nested-collection` | `array<object>` | `card-list` | Better for heterogeneous or text-heavy items |
-| `regular` | `array<object>` | `table` | Default for homogeneous data |
-| `image` | `array<string>` | `gallery` | Image URLs best displayed as gallery |
-| `spec` | `object` | `detail` (with key-value layout) | Specifications are key-value pairs |
-| `primary` + `description` + `image` | `object` | `hero` | Product-like objects get hero layout |
-| `regular` | `object` | `detail` | Default for objects |
-| `metadata` | `object` fields | Hidden by default or footer section | De-emphasize system fields |
-
-**Confidence:** HIGH - Mappings are derived from existing component patterns in api2ui.
-
-### Data Flow Changes
-
-#### Before (Current)
-
-```typescript
-// In pipeline service
-const schema = inferSchema(data)
-appStore.fetchSuccess(data, schema)
-
-// In DynamicRenderer
-const defaultType = getDefaultTypeName(schema)  // Structural selection
-const override = fieldConfigs[path]?.componentType
-const Component = getComponent(schema, override || defaultType)
-```
-
-#### After (Smart Defaults)
-
-```typescript
-// In pipeline service
-const schema = inferSchema(data)
-const analysisMetadata = analyzeFields(schema, data)  // NEW
-appStore.fetchSuccess(data, schema, analysisMetadata)  // MODIFIED
-
-// In DynamicRenderer
-const metadata = appStore.analysisMetadata  // NEW
-const defaultType = getSmartDefaultTypeName(schema, path, metadata)  // MODIFIED
-const override = fieldConfigs[path]?.componentType
-const Component = getComponent(schema, override || defaultType)  // Unchanged
-```
-
-**Key principle:** User overrides (`fieldConfigs`) **always** take precedence over smart defaults.
-
-## Preserving User Overrides
-
-### Architecture Pattern: Explicit Over Implicit
-
-```
-Priority hierarchy:
-1. User explicit override (fieldConfigs[path].componentType) → HIGHEST
-2. Smart default (analysisMetadata suggestions)              → MEDIUM
-3. Structural default (getDefaultTypeName)                   → LOWEST
-```
-
-**Implementation strategy:**
-
-```typescript
-function getSmartDefaultTypeName(
-  schema: TypeSignature,
-  path: string,
-  metadata: AnalysisMetadata | null
-): string {
-  // 1. Check if smart analysis has a suggestion
-  if (metadata) {
-    const suggestion = metadata.suggestions.find(s => s.fieldPath === path)
-    if (suggestion && suggestion.confidence !== 'low') {
-      return suggestion.suggestedType
+      const schema = inferSchema(data, url)
+      fetchSuccess(data, schema)
+    } catch (error) {
+      // Existing error handling...
     }
   }
 
-  // 2. Fall back to structural default
-  return getDefaultTypeName(schema)
-}
-```
+  const fetchOperation = async (
+    baseUrl: string,
+    operation: ParsedOperation,
+    params: Record<string, string>
+  ) => {
+    try {
+      startFetch()
 
-**User override preservation:**
+      // Build URL with path/query params (existing logic)
+      let fullUrl = baseUrl + operation.path
+      // ...existing URL building...
 
-```typescript
-// In DynamicRenderer (no change needed)
-const override = fieldConfigs[path]?.componentType
-const Component = getComponent(schema, override || defaultType)
-```
+      // CHANGED: Use fetchWithAuth instead of fetchAPI
+      const data = await fetchWithAuth(fullUrl)
 
-The override check **already exists** and runs **before** defaults are used. No modification needed to preserve overrides.
-
-**When defaults change:**
-
-| Scenario | Current Behavior | Smart Defaults Behavior |
-|----------|------------------|------------------------|
-| User has override set | Override used, default ignored | Override used, smart default ignored |
-| User has no override | Structural default used | Smart default used |
-| Schema changes | Structural default recalculated | Smart default recalculated |
-| User clears override | Returns to structural default | Returns to smart default |
-
-**Source:** Based on [CSS inheritance and override patterns](https://thelinuxcode.com/applying-inheritance-in-css-2026-predictable-styling-theming-and-safe-overrides/) and [Android ViewModel state preservation](https://developer.android.com/guide/topics/resources/runtime-changes).
-
-**Confidence:** HIGH - Override pattern already exists and works correctly.
-
-## Caching Analysis Results
-
-### Storage Location: appStore
-
-```typescript
-// src/store/appStore.ts
-interface AppState {
-  // Existing fields
-  data: unknown
-  schema: UnifiedSchema | null
-
-  // NEW
-  analysisMetadata: AnalysisMetadata | null
-
-  // Actions
-  fetchSuccess: (data: unknown, schema: UnifiedSchema, metadata: AnalysisMetadata) => void
-}
-```
-
-**Why appStore:** Analysis metadata is **derived from schema + data**, not user configuration. It belongs with the data it describes, not with user preferences.
-
-### Cache Invalidation Strategy
-
-```typescript
-// Analysis results are valid until:
-// 1. New API response fetched (different data)
-// 2. User manually triggers re-analysis
-// 3. Schema structure changes (different endpoint)
-
-// In appStore
-startFetch: () => set({
-  loading: true,
-  error: null,
-  data: null,
-  schema: null,
-  analysisMetadata: null  // Invalidate on new fetch
-})
-```
-
-**Caching benefits:**
-
-- **Performance:** Analysis runs once per response, not on every render
-- **Consistency:** Same analysis results across all components
-- **Debugging:** Analysis metadata visible in state for inspection
-
-**Source:** Caching strategy follows [React memoization best practices](https://www.toptal.com/react/react-memoization) and [frontend data transformation pipeline patterns](https://dev.to/jajibhee/solving-frontend-performance-the-data-pipeline-transformation-2206).
-
-**Confidence:** HIGH - Standard caching pattern for derived data.
-
-### Memoization Within Analysis
-
-```typescript
-// In fieldAnalyzer.ts
-import { useMemo } from 'react'
-
-// For expensive pattern matching
-const FIELD_PATTERNS = {
-  primary: /^(name|title|label|heading|subject)$/i,
-  metadata: /^(id|.*_id|created|updated|modified|timestamp|date|status)$/i,
-  // ... more patterns
-}
-
-// Compile once, reuse for all fields
-export class FieldClassifier {
-  private patterns: Map<FieldCategory, RegExp>
-
-  constructor() {
-    this.patterns = new Map()
-    for (const [category, pattern] of Object.entries(FIELD_PATTERNS)) {
-      this.patterns.set(category as FieldCategory, pattern)
+      const schema = inferSchema(data, fullUrl)
+      fetchSuccess(data, schema)
+    } catch (error) {
+      // Existing error handling...
     }
   }
 
-  classify(schema: TypeSignature, data: unknown, path: string): FieldClassification[] {
-    // Use pre-compiled patterns for matching
-  }
+  return { fetchAndInfer, fetchSpec, fetchOperation }
 }
 ```
 
-**Memoization targets:**
+### Pattern 2: OpenAPI Security Scheme Parsing
 
-1. **Pattern compilation:** Compile regexes once at initialization
-2. **Classification results:** Cache per field path
-3. **Grouping analysis:** Cache per object path
-
-**Source:** [React 19 compiler optimizations](https://dev.co/react/memoization) show that manual memoization is less critical with new compiler, but still beneficial for expensive non-React computations.
-
-**Confidence:** HIGH - Standard optimization for expensive operations.
-
-## Integration with Existing Components
-
-### DynamicRenderer.tsx Modifications
-
-**Current (lines 24-44):**
-
+**Implementation:**
 ```typescript
-function getDefaultTypeName(schema: TypeSignature): string {
-  if (schema.kind === 'array' && schema.items.kind === 'object') return 'table'
-  // ... structural selection only
+// src/services/openapi/parser.ts
+function extractSecuritySchemes(
+  api: OpenAPIV3.Document | OpenAPIV2.Document
+): Record<string, SecurityScheme> | undefined {
+  if (!('components' in api) || !api.components?.securitySchemes) {
+    return undefined
+  }
+
+  const schemes: Record<string, SecurityScheme> = {}
+
+  for (const [name, schemeObj] of Object.entries(api.components.securitySchemes)) {
+    const scheme = schemeObj as OpenAPIV3.SecuritySchemeObject
+
+    if (scheme.type === 'apiKey') {
+      schemes[name] = {
+        type: 'apiKey',
+        name: scheme.name,
+        in: scheme.in as 'header' | 'query' | 'cookie',
+      }
+    } else if (scheme.type === 'http') {
+      schemes[name] = {
+        type: 'http',
+        scheme: scheme.scheme, // 'basic' | 'bearer'
+        bearerFormat: scheme.bearerFormat,
+      }
+    }
+    // oauth2 and openIdConnect for future phases
+  }
+
+  return schemes
 }
 
-function getAvailableTypes(schema: TypeSignature): string[] {
-  if (schema.kind === 'array' && schema.items.kind === 'object') {
-    return ['table', 'card-list', 'list', 'gallery', 'timeline', 'stats', 'json']
-  }
-  // ... all available types
+// Add to parseOpenAPISpec return value
+return {
+  title,
+  version,
+  specVersion,
+  baseUrl,
+  operations,
+  securitySchemes: extractSecuritySchemes(api),
+  globalSecurity: api.security?.map(req => Object.keys(req)[0]).filter(Boolean),
 }
 ```
 
-**After (smart defaults):**
+## Credential Storage Strategy
+
+### sessionStorage vs localStorage: Security Analysis
+
+Based on research findings, **sessionStorage is strongly preferred for authentication credentials** for api2ui:
+
+| Aspect | sessionStorage | localStorage |
+|--------|---------------|--------------|
+| **Persistence** | Cleared on tab/browser close | Persists indefinitely |
+| **XSS Protection** | None (both vulnerable) | None (both vulnerable) |
+| **Attack Surface** | Expires with session | Accessible to other apps on file system |
+| **Best for** | Session-scoped auth | User preferences, non-sensitive data |
+
+**Why sessionStorage for api2ui:**
+1. **Session lifecycle matches use case**: Users configure auth per session when exploring APIs
+2. **Reduced risk**: Credentials auto-expire when browser closes
+3. **No cross-session leakage**: Each browser session is isolated
+4. **Industry standard**: Auth tokens stored in sessionStorage or in-memory per current best practices
+
+**Security note:** Both sessionStorage and localStorage are vulnerable to XSS. To mitigate:
+- Content Security Policy (CSP) headers (deployment concern, not runtime)
+- Input sanitization (already handled by React's escaping)
+- No `dangerouslySetInnerHTML` usage (already avoided in codebase)
+
+**Implementation:**
+```typescript
+// src/store/authStore.ts
+import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
+
+interface AuthStore {
+  credentials: Record<string, AuthConfig>
+  setCredentials: (baseUrl: string, config: AuthConfig) => void
+  clearCredentials: (baseUrl: string) => void
+  getCredentials: (baseUrl: string) => AuthConfig | null
+  hasCredentials: (baseUrl: string) => boolean
+}
+
+export const useAuthStore = create<AuthStore>()(
+  persist(
+    (set, get) => ({
+      credentials: {},
+
+      setCredentials: (baseUrl, config) =>
+        set((state) => ({
+          credentials: { ...state.credentials, [baseUrl]: config },
+        })),
+
+      clearCredentials: (baseUrl) =>
+        set((state) => {
+          const { [baseUrl]: _, ...rest } = state.credentials
+          return { credentials: rest }
+        }),
+
+      getCredentials: (baseUrl) => {
+        const state = get()
+        return state.credentials[baseUrl] ?? null
+      },
+
+      hasCredentials: (baseUrl) => {
+        const state = get()
+        return baseUrl in state.credentials
+      },
+    }),
+    {
+      name: 'api2ui-auth',
+      storage: createJSONStorage(() => sessionStorage), // SESSION STORAGE
+      version: 1,
+    }
+  )
+)
+```
+
+### Alternative: In-Memory Only (More Secure, Worse UX)
+
+For maximum security, credentials could be stored only in-memory (lost on page refresh). This is the most secure approach but creates poor UX for api2ui's exploratory use case:
 
 ```typescript
-function getSmartDefaultTypeName(
-  schema: TypeSignature,
-  path: string,
-  metadata: AnalysisMetadata | null
-): string {
-  // Try smart analysis first
-  if (metadata) {
-    const suggestion = metadata.suggestions.find(s => s.fieldPath === path)
-    if (suggestion && suggestion.confidence !== 'low') {
-      return suggestion.suggestedType
+// No persist middleware, just plain zustand
+export const useAuthStore = create<AuthStore>()((set, get) => ({
+  credentials: {},
+  // ...same actions...
+}))
+```
+
+**Tradeoff:**
+- **More secure**: Credentials never touch disk/storage
+- **Worse UX**: Users must re-enter credentials on every page refresh
+- **Not recommended for api2ui**: Exploration workflow involves frequent refreshes/navigation
+
+## 401/403 Detection and Re-Authentication Flow
+
+### Error Detection Strategy
+
+**Implementation in fetchWithAuth:**
+```typescript
+try {
+  return await fetchAPI(authUrl, { headers })
+} catch (error) {
+  if (error instanceof APIError) {
+    // Detect authentication errors
+    if (error.status === 401 || error.status === 403) {
+      throw new AuthError(url, error.status)
     }
   }
-
-  // Fall back to structural default
-  return getDefaultTypeName(schema)
+  // Re-throw all other errors unchanged
+  throw error
 }
-
-// getAvailableTypes() unchanged - all components remain available
 ```
 
-**Changes needed:**
+### Re-Authentication UI Flow
 
-1. Import `analysisMetadata` from appStore
-2. Replace `getDefaultTypeName()` calls with `getSmartDefaultTypeName()`
-3. Pass `path` and `metadata` to new function
+```
+┌──────────────────────────────────────────────────────────┐
+│ 1. User fetches API → 401 response                      │
+└────────────────┬─────────────────────────────────────────┘
+                 │
+                 ▼
+┌──────────────────────────────────────────────────────────┐
+│ 2. fetchWithAuth throws AuthError                        │
+└────────────────┬─────────────────────────────────────────┘
+                 │
+                 ▼
+┌──────────────────────────────────────────────────────────┐
+│ 3. App.tsx catches, stores in appStore.error            │
+└────────────────┬─────────────────────────────────────────┘
+                 │
+                 ▼
+┌──────────────────────────────────────────────────────────┐
+│ 4. ErrorDisplay detects error.kind === 'auth'           │
+│    Renders special auth error UI                        │
+└────────────────┬─────────────────────────────────────────┘
+                 │
+                 ▼
+┌──────────────────────────────────────────────────────────┐
+│ 5. User clicks "Open Auth Settings"                     │
+│    → configStore.togglePanel()                          │
+│    → Scroll to Authentication section                   │
+└────────────────┬─────────────────────────────────────────┘
+                 │
+                 ▼
+┌──────────────────────────────────────────────────────────┐
+│ 6. User configures credentials                          │
+│    → authStore.setCredentials(baseUrl, config)          │
+└────────────────┬─────────────────────────────────────────┘
+                 │
+                 ▼
+┌──────────────────────────────────────────────────────────┐
+│ 7. User clicks "Retry"                                  │
+│    → Calls fetchWithAuth again (now with credentials)   │
+└──────────────────────────────────────────────────────────┘
+```
 
-**Lines affected:** ~5 lines modified, ~15 lines added
-
-**Risk:** LOW - Only changes default selection, doesn't affect override mechanism
-
-### DetailRenderer.tsx Modifications
-
-**Current (lines 149-180):**
+### ErrorDisplay Enhancement
 
 ```typescript
-// View mode: manual field grouping
-const primaryFields: Array<[string, FieldDefinition]> = []
-const regularFields: Array<[string, FieldDefinition]> = []
-const imageFields: Array<[string, FieldDefinition]> = []
-const metaFields: Array<[string, FieldDefinition]> = []
-const nestedFields: Array<[string, FieldDefinition]> = []
+// src/components/error/ErrorDisplay.tsx
+import { useConfigStore } from '../../store/configStore'
+import type { AuthError } from '../../services/api/errors'
 
-for (const field of visibleFields) {
-  const [fieldName, fieldDef] = field
+export function ErrorDisplay({
+  error,
+  onRetry
+}: {
+  error: Error
+  onRetry?: () => void
+}) {
+  const { togglePanel } = useConfigStore()
 
-  if (isPrimaryField(fieldName)) {
-    primaryFields.push(field)
-  } else if (isMetadataField(fieldName)) {
-    metaFields.push(field)
+  // Detect auth error
+  const isAuthError = 'kind' in error && error.kind === 'auth'
+
+  const handleOpenAuthSettings = () => {
+    togglePanel() // Open panel
+
+    // Scroll to auth section after panel opens
+    setTimeout(() => {
+      const authSection = document.querySelector('[data-section="authentication"]')
+      authSection?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 150)
   }
-  // ... manual classification
+
+  if (isAuthError) {
+    const authError = error as AuthError
+    return (
+      <div className="border border-yellow-300 bg-yellow-50 rounded-lg p-6">
+        <div className="flex items-start gap-3">
+          <svg className="w-6 h-6 text-yellow-600 flex-shrink-0" /* ... warning icon ... */ />
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-yellow-900 mb-2">
+              Authentication {authError.status === 401 ? 'Required' : 'Failed'}
+            </h3>
+            <p className="text-yellow-800 mb-4">{authError.suggestion}</p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleOpenAuthSettings}
+                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+              >
+                Open Auth Settings
+              </button>
+              {onRetry && (
+                <button
+                  onClick={onRetry}
+                  className="px-4 py-2 bg-white border border-yellow-600 text-yellow-700 rounded-lg hover:bg-yellow-50"
+                >
+                  Retry
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Existing error rendering for other error types...
 }
 ```
 
-**After (smart grouping):**
+## Build Order and Dependencies
 
-```typescript
-// View mode: use analysis metadata for grouping
-const metadata = appStore.analysisMetadata
-const grouping = metadata?.groupings
+Recommended implementation order based on existing architecture dependencies:
 
-if (grouping?.strategy === 'tabs') {
-  // Render TabsRenderer with groups
-  return <TabsRenderer groups={grouping.groups} data={data} schema={schema} />
-}
+### Phase 1: Foundation (No Dependencies)
+1. **Error types** (`src/services/api/errors.ts`)
+   - Add `AuthError` class
+   - Extend `ErrorKind` type
+   - **Why first:** No dependencies, required by all other components
 
-if (grouping?.strategy === 'sections') {
-  // Render with section headers
-  return renderSections(grouping.groups, data, schema)
-}
+2. **Auth store** (`src/store/authStore.ts`)
+   - Zustand store with sessionStorage persistence
+   - Credential CRUD operations
+   - **Why second:** No dependencies, required by fetch wrapper and UI
 
-// Fall back to existing flat layout
-const { primaryFields, regularFields, imageFields, metaFields, nestedFields }
-  = groupFieldsByMetadata(visibleFields, metadata)
+### Phase 2: Fetch Integration (Depends on Phase 1)
+3. **Fetch wrapper** (`src/services/api/auth.ts`)
+   - `fetchWithAuth` function
+   - Credential injection logic
+   - 401/403 → AuthError transformation
+   - **Why third:** Requires AuthError and authStore, required by hooks
+
+4. **Modify fetchAPI** (`src/services/api/fetcher.ts`)
+   - Add optional headers parameter
+   - **Why fourth:** Required by fetchWithAuth
+
+5. **Modify useAPIFetch** (`src/hooks/useAPIFetch.ts`)
+   - Replace `fetchAPI` calls with `fetchWithAuth`
+   - **Why fifth:** Requires fetchWithAuth, completes fetch pipeline
+
+### Phase 3: OpenAPI Integration (Depends on Phase 1, 2)
+6. **Security scheme types** (`src/services/openapi/types.ts`)
+   - Add SecurityScheme interface
+   - Extend ParsedSpec interface
+   - **Why sixth:** No dependencies, required by parser
+
+7. **Security scheme parser** (`src/services/openapi/parser.ts`)
+   - Extract security schemes from spec
+   - **Why seventh:** Requires types, feeds into UI
+
+### Phase 4: UI Layer (Depends on Phase 1, 2, 3)
+8. **AuthPanel component** (`src/components/config/AuthPanel.tsx`)
+   - Auth type selector
+   - Credential inputs
+   - OpenAPI scheme detection
+   - **Why eighth:** Requires authStore and OpenAPI types
+
+9. **Modify ConfigPanel** (`src/components/config/ConfigPanel.tsx`)
+   - Add Authentication section
+   - **Why ninth:** Requires AuthPanel component
+
+10. **Modify ErrorDisplay** (`src/components/error/ErrorDisplay.tsx`)
+    - Detect AuthError
+    - Render re-auth UI
+    - **Why tenth:** Requires AuthError type and ConfigPanel integration
+
+### Dependency Graph
+
 ```
-
-**Changes needed:**
-
-1. Import `analysisMetadata` from appStore
-2. Check for `tabs` or `sections` strategy
-3. Conditionally render TabsRenderer (NEW component) or SplitRenderer (existing)
-4. Fall back to existing flat layout if no grouping
-
-**Lines affected:** ~30 lines modified, ~50 lines added (TabsRenderer)
-
-**Risk:** MEDIUM - Significant behavior change, needs careful testing
-
-### appStore.ts Modifications
-
-**Current (lines 14-15, 47):**
-
-```typescript
-interface AppState {
-  data: unknown
-  schema: UnifiedSchema | null
-
-  fetchSuccess: (data: unknown, schema: UnifiedSchema) => void
-}
+Phase 1 (Foundation)
+  ├─ AuthError
+  └─ authStore
+      │
+Phase 2 (Fetch)
+  ├─ fetchWithAuth ───depends on──→ AuthError, authStore
+  ├─ fetchAPI (modified)
+  └─ useAPIFetch (modified) ───depends on──→ fetchWithAuth
+      │
+Phase 3 (OpenAPI)
+  ├─ SecurityScheme types
+  └─ parseSecuritySchemes ───depends on──→ SecurityScheme types
+      │
+Phase 4 (UI)
+  ├─ AuthPanel ───depends on──→ authStore, SecurityScheme types
+  ├─ ConfigPanel (modified) ───depends on──→ AuthPanel
+  └─ ErrorDisplay (modified) ───depends on──→ AuthError, ConfigPanel
 ```
-
-**After:**
-
-```typescript
-import type { AnalysisMetadata } from '../types/analysis'
-
-interface AppState {
-  data: unknown
-  schema: UnifiedSchema | null
-  analysisMetadata: AnalysisMetadata | null  // NEW
-
-  fetchSuccess: (
-    data: unknown,
-    schema: UnifiedSchema,
-    metadata: AnalysisMetadata  // NEW parameter
-  ) => void
-}
-
-// In implementation
-fetchSuccess: (data, schema, metadata) => set({
-  loading: false,
-  data,
-  schema,
-  analysisMetadata: metadata,  // Store metadata
-  error: null
-})
-```
-
-**Changes needed:**
-
-1. Add `analysisMetadata` field to state
-2. Add `metadata` parameter to `fetchSuccess()`
-3. Clear metadata on `startFetch()` and `reset()`
-
-**Lines affected:** ~5 lines modified
-
-**Risk:** LOW - Additive change, doesn't break existing code
-
-### Pipeline Service Modifications
-
-**Current (approximate, based on fetchSuccess call pattern):**
-
-```typescript
-// In some pipeline service or component
-const response = await fetch(url)
-const data = await response.json()
-const schema = inferSchema(data)
-appStore.fetchSuccess(data, schema)
-```
-
-**After:**
-
-```typescript
-import { analyzeFields } from '../services/analysis/fieldAnalyzer'
-
-const response = await fetch(url)
-const data = await response.json()
-const schema = inferSchema(data)
-const metadata = analyzeFields(schema.rootType, data)  // NEW
-appStore.fetchSuccess(data, schema, metadata)  // MODIFIED
-```
-
-**Changes needed:**
-
-1. Import `analyzeFields()`
-2. Call `analyzeFields()` after schema inference
-3. Pass metadata to `fetchSuccess()`
-
-**Lines affected:** ~3 lines added per pipeline entry point
-
-**Risk:** LOW - Analysis runs after schema inference, doesn't affect existing flow
-
-## Component Modification vs New Component Creation
-
-### Modified Components
-
-| Component | Type | Changes | Risk | Lines Changed |
-|-----------|------|---------|------|---------------|
-| `appStore.ts` | MODIFY | Add `analysisMetadata` field | LOW | ~5 |
-| `DynamicRenderer.tsx` | MODIFY | Use smart defaults | LOW | ~20 |
-| `DetailRenderer.tsx` | MODIFY | Use metadata for grouping | MEDIUM | ~30 |
-| Pipeline services | MODIFY | Call `analyzeFields()` | LOW | ~3 each |
-
-### New Components
-
-| Component | Type | Purpose | Complexity | Lines (est.) |
-|-----------|------|---------|------------|--------------|
-| `fieldAnalyzer.ts` | NEW | Analysis orchestrator | LOW | ~50 |
-| `fieldClassifier.ts` | NEW | Pattern matching | MEDIUM | ~150 |
-| `groupingAnalyzer.ts` | NEW | Tab/section detection | MEDIUM | ~100 |
-| `componentSuggester.ts` | NEW | Component mapping | LOW | ~80 |
-| `fieldPatterns.ts` | NEW | Shared pattern constants | LOW | ~30 |
-| `analysis.ts` (types) | NEW | TypeScript types | LOW | ~50 |
-
-**Total new code:** ~460 lines (analysis layer)
-**Total modified code:** ~60 lines (integration)
-
-**Build order rationale:** New analysis layer is **independent** from modifications. Can be built and tested in isolation before integration.
-
-## Build Order
-
-### Phase 1: Analysis Layer (Independent)
-
-Build new services without touching existing components. Test in isolation.
-
-**Tasks:**
-
-1. Create `src/types/analysis.ts` with type definitions
-2. Create `src/utils/fieldPatterns.ts` with pattern constants
-3. Create `src/services/analysis/fieldClassifier.ts`
-4. Create `src/services/analysis/groupingAnalyzer.ts`
-5. Create `src/services/analysis/componentSuggester.ts`
-6. Create `src/services/analysis/fieldAnalyzer.ts` (orchestrator)
-
-**Testing:** Unit tests for each classifier, mock schema + data
-
-**Deliverable:** Working `analyzeFields()` function with comprehensive tests
-
-**Dependencies:** None - pure functions operating on schema + data
-
-### Phase 2: Storage Integration (Low Risk)
-
-Add metadata storage without using it.
-
-**Tasks:**
-
-1. Modify `appStore.ts` to add `analysisMetadata` field
-2. Modify pipeline services to call `analyzeFields()` and store result
-3. Verify metadata appears in state (React DevTools inspection)
-
-**Testing:** Integration test that metadata is populated correctly
-
-**Deliverable:** Metadata stored in appStore, visible but unused
-
-**Dependencies:** Phase 1 complete
-
-### Phase 3: Smart Default Selection (Medium Risk)
-
-Use metadata for component selection, preserve overrides.
-
-**Tasks:**
-
-1. Modify `DynamicRenderer.tsx` to use `getSmartDefaultTypeName()`
-2. Test that smart defaults work
-3. Test that user overrides still work
-4. Test fallback to structural defaults when metadata missing
-
-**Testing:** E2E tests with various API responses
-
-**Deliverable:** Smart component selection working, overrides preserved
-
-**Dependencies:** Phase 2 complete
-
-### Phase 4: Smart Grouping (High Risk)
-
-Use metadata for tab/section organization in DetailRenderer.
-
-**Tasks:**
-
-1. Create `TabsRenderer.tsx` if using tabs strategy
-2. Modify `DetailRenderer.tsx` to check grouping strategy
-3. Conditionally render tabs/sections based on metadata
-4. Fall back to flat layout when no grouping
-
-**Testing:** E2E tests with complex objects
-
-**Deliverable:** Automatic tab/section organization working
-
-**Dependencies:** Phase 3 complete
-
-**Risk mitigation:** Start with `sections` strategy (simpler) before `tabs` strategy.
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Analysis During Render
+### Anti-Pattern 1: Storing Credentials in localStorage
 
-**What goes wrong:** Calling `analyzeFields()` inside DynamicRenderer causes analysis to run on every render, killing performance.
+**What goes wrong:** Credentials persist indefinitely, accessible to other processes on user's machine, greater XSS attack surface.
 
-**Why it happens:** Temptation to keep analysis "close" to where it's used.
+**Why it happens:** localStorage is the default for Zustand persist examples, developers reach for it without considering security.
 
-**Prevention:** Analysis must happen **once per response** in pipeline, **before** components render. Store result in appStore.
+**Instead:** Use sessionStorage for session-scoped credentials, or in-memory for maximum security.
 
-**Detection:** Check React DevTools profiler for expensive computations in DynamicRenderer.
+### Anti-Pattern 2: Global Fetch Interceptor Rewrite
 
-### Anti-Pattern 2: Overriding User Overrides
+**What goes wrong:** Rewriting `window.fetch` globally affects all third-party libraries, causes hard-to-debug issues, pollutes global scope.
 
-**What goes wrong:** Smart defaults accidentally overwrite explicit user choices.
+**Why it happens:** Copying Axios interceptor patterns without understanding fetch API limitations.
 
-**Why it happens:** Not checking configStore before applying smart defaults.
+**Instead:** Use explicit fetch wrapper (`fetchWithAuth`) that wraps the specific `fetchAPI` function.
 
-**Prevention:** Always check `fieldConfigs[path]?.componentType` **before** using smart defaults. If override exists, use it and ignore defaults entirely.
+### Anti-Pattern 3: Auth Logic in UI Components
 
-**Detection:** Manual test: Set override, trigger re-analysis, verify override persists.
+**What goes wrong:** Credential injection scattered across components, hard to test, inconsistent behavior.
 
-### Anti-Pattern 3: Blocking Rendering on Analysis
+**Why it happens:** Quick fix mentality, adding headers directly in `URLInput` or `ParameterForm`.
 
-**What goes wrong:** Waiting for analysis to complete before showing any UI.
+**Instead:** Centralize auth logic in `fetchWithAuth` service layer, components remain auth-agnostic.
 
-**Why it happens:** Misunderstanding of when analysis happens.
+### Anti-Pattern 4: Single Global Auth Config
 
-**Prevention:** Analysis is synchronous and fast (<10ms for typical responses). Run immediately after schema inference, no async/await needed. If analysis fails, fall back to structural defaults.
+**What goes wrong:** User can only configure auth for one API at a time, switching APIs requires reconfiguring.
 
-**Detection:** Network throttling test - UI should appear instantly even with slow network.
+**Why it happens:** Simplest data structure, single `AuthConfig` object instead of per-API map.
 
-### Anti-Pattern 4: Too-Specific Pattern Matching
+**Instead:** Per-API credential storage keyed by base URL (`Record<string, AuthConfig>`).
 
-**What goes wrong:** Classification patterns are brittle, break on slight variations.
+### Anti-Pattern 5: Treating 401 and 403 Identically
 
-**Example:** Pattern `/^reviews$/` matches "reviews" but not "Reviews", "customer_reviews", "product_reviews".
+**What goes wrong:** 403 means authenticated but unauthorized (wrong user), re-entering same credentials won't help.
 
-**Why it happens:** Insufficient testing with diverse field names.
+**Why it happens:** Both are "auth errors," developers handle them the same way.
 
-**Prevention:** Use case-insensitive patterns with flexible matching. Test against diverse real-world APIs.
+**Instead:**
+- **401**: Show "Authentication Required" → prompt for credentials
+- **403**: Show "Access Forbidden" → suggest checking account permissions or switching accounts
 
-**Detection:** Test classification with field names from 10+ different APIs.
+### Anti-Pattern 6: Ignoring OpenAPI Security Schemes
 
-### Anti-Pattern 5: Analysis Without Fallbacks
+**What goes wrong:** User must manually configure auth even though spec defines it, poor UX.
 
-**What goes wrong:** System breaks when analysis returns no suggestions.
+**Why it happens:** Treating OpenAPI as just endpoint metadata, not leveraging security scheme definitions.
 
-**Why it happens:** Assuming analysis always succeeds.
+**Instead:** Parse security schemes, pre-populate auth UI with detected type and metadata, offer "Use OpenAPI Config" shortcut.
 
-**Prevention:** Every analysis function must return a valid result. If no pattern matches, return `category: 'regular'` and `confidence: 'low'`. Rendering code must handle missing metadata gracefully.
+## Security Considerations
 
-**Detection:** Test with unexpected data structures (empty objects, weird field names).
+### XSS Mitigation
 
-## Tab/Section Grouping Logic
+Both sessionStorage and localStorage are vulnerable to XSS attacks. Mitigation strategies:
 
-### When to Create Tabs vs Sections
+1. **React's built-in escaping**: Already prevents XSS in rendered content
+2. **No `dangerouslySetInnerHTML`**: Audit codebase to ensure no usage
+3. **CSP headers**: Add Content-Security-Policy in deployment (nginx/CDN config)
+4. **Input sanitization**: Validate credential inputs (no script tags, etc.)
 
-**Decision tree:**
+### Credential Masking
 
-```
-Object with N field categories:
-
-If N >= 5 AND 3+ categories have 2+ fields → tabs
-Else if N >= 3 → sections
-Else → flat (no grouping)
-
-Special cases:
-- If nested collections present → always sections (one per collection)
-- If only 1-2 total fields → always flat
-```
-
-**Tab examples:**
-
-```
-Product object with:
-- 2 primary fields (name, brand)
-- 1 description
-- 5 spec fields (color, size, weight, material, origin)
-- 3 image URLs
-- 8 reviews
-- 2 rating fields (average_rating, rating_count)
-- 3 metadata fields
-
-Categories present: 7
-Groups: "Overview" (primary + description), "Specifications" (specs), "Gallery" (images), "Reviews" (reviews + ratings), "Details" (metadata)
-
-Result: tabs (5 groups)
-```
-
-**Section examples:**
-
-```
-User object with:
-- 2 primary fields (name, email)
-- 3 regular fields (phone, address, bio)
-- 2 metadata fields (created_at, last_login)
-
-Categories present: 3
-Groups: "Profile" (primary + regular), "Metadata" (metadata)
-
-Result: sections (2 groups)
-```
-
-**Flat examples:**
-
-```
-Simple object with:
-- 1 primary field (name)
-- 2 regular fields (value, status)
-
-Categories present: 2
-Result: flat (no grouping needed)
-```
-
-### Tab Priority Order
-
-```
-1. Overview (primary + description + regular)
-2. Specifications (spec fields)
-3. Reviews (review + rating fields)
-4. Gallery (image fields)
-5. Details/Metadata (metadata fields)
-```
-
-**Rationale:** Most important information first, system fields last.
-
-### Section Headers
-
-For `sections` strategy, render with visual separators:
-
+**Implementation:**
 ```typescript
-<div>
-  <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-3">
-    {group.label}
-  </h3>
-  {/* Fields in this group */}
-  <div className="border-t border-gray-200 mt-4" />
-</div>
-```
+// src/components/config/CredentialInput.tsx
+export function CredentialInput({
+  value,
+  onChange,
+  placeholder
+}: {
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+}) {
+  const [visible, setVisible] = useState(false)
 
-Follows existing pattern in DetailRenderer.tsx line 558.
-
-## Field Importance Hierarchy
-
-### Priority Levels
-
-| Level | Categories | Display Treatment |
-|-------|-----------|-------------------|
-| Hero | `primary` + hero `image` | Large text, prominent position |
-| Primary | `description`, `price`, `rating` | Normal emphasis, above fold |
-| Secondary | `regular`, `spec`, `nested-collection` | Standard display |
-| Tertiary | `metadata` | De-emphasized, small text, footer or hidden |
-
-### Visual Hierarchy Rules
-
-**Hero treatment:**
-- Font: text-2xl font-bold
-- Position: Top of object, before other fields
-- Hero image: Full-width above text
-
-**Primary treatment:**
-- Font: text-lg font-semibold
-- Position: First section/tab
-
-**Secondary treatment:**
-- Font: text-base
-- Position: Main content area
-
-**Tertiary treatment:**
-- Font: text-sm text-gray-500
-- Position: Footer section or hidden by default
-
-Follows existing typography hierarchy in DetailRenderer.tsx lines 223-231.
-
-## Architecture Diagrams
-
-### Data Flow: Complete Pipeline
-
-```
-┌─────────────────┐
-│  API Response   │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Schema Inference│ (existing)
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Field Analysis  │ (NEW)
-│ - Classify      │
-│ - Group         │
-│ - Suggest       │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│   appStore      │
-│ - data          │
-│ - schema        │
-│ - metadata ←NEW │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ DynamicRenderer │
-│ - Read metadata │
-│ - Smart default │
-│ - Check override│
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Component Render│
-└─────────────────┘
-```
-
-### Component Dependencies
-
-```
-DynamicRenderer.tsx
-    │
-    ├─→ appStore (read metadata)
-    ├─→ configStore (read overrides)
-    ├─→ ComponentRegistry (get component)
-    └─→ getSmartDefaultTypeName()
-            │
-            └─→ AnalysisMetadata (from appStore)
-
-DetailRenderer.tsx
-    │
-    ├─→ appStore (read metadata for grouping)
-    ├─→ configStore (read field configs)
-    └─→ Conditionally:
-        ├─→ TabsRenderer (if tabs strategy)
-        ├─→ SectionRenderer (if sections strategy)
-        └─→ Flat layout (if no grouping)
-
-Pipeline Service
-    │
-    ├─→ inferSchema() (existing)
-    ├─→ analyzeFields() (NEW)
-    └─→ appStore.fetchSuccess()
-```
-
-### Analysis Layer Internal
-
-```
-analyzeFields()
-    │
-    ├─→ FieldClassifier.classify()
-    │       │
-    │       ├─→ fieldPatterns.ts (pattern matching)
-    │       └─→ imageDetection.ts (URL validation)
-    │
-    ├─→ GroupingAnalyzer.analyze()
-    │       │
-    │       └─→ Detect tabs/sections from categories
-    │
-    └─→ ComponentSuggester.suggest()
-            │
-            └─→ Map categories → component types
-```
-
-## Performance Considerations
-
-### Analysis Complexity
-
-| Operation | Complexity | Example (100 fields) |
-|-----------|-----------|---------------------|
-| Pattern matching per field | O(1) | ~0.01ms per field |
-| Classification all fields | O(n) | ~1ms total |
-| Grouping analysis | O(n) | ~0.5ms total |
-| Component suggestion | O(n) | ~0.5ms total |
-| **Total analysis** | **O(n)** | **~2ms for 100 fields** |
-
-**Worst case:** 1000-field response = ~20ms analysis time. Still fast enough for synchronous execution.
-
-**Optimization:** If responses exceed 1000 fields regularly, add async analysis with loading state. For v1, synchronous is sufficient.
-
-### Memory Usage
-
-```
-AnalysisMetadata size for 100 fields:
-- 100 FieldClassification objects: ~10KB
-- 1 FieldGrouping object: ~1KB
-- 100 ComponentSuggestion objects: ~10KB
-Total: ~21KB per analysis
-
-For 10 recent responses cached: ~210KB
-```
-
-**Acceptable:** Modern browsers handle this easily. No special memory optimization needed.
-
-### Cache Hit Rate
-
-**Scenario:** User switches between endpoints in multi-endpoint API.
-
-```
-Without cache: Analyze on every endpoint switch (2ms each)
-With cache: Analyze once per endpoint, reuse on return (0ms subsequent)
-
-Expected hit rate: 60-80% for typical usage
-Savings: 1-2ms per cached endpoint switch
-```
-
-**Trade-off:** 20KB memory per cached analysis vs 2ms saved per switch. Worth it.
-
-## Migration Strategy
-
-### Backwards Compatibility
-
-**Guaranteed:** All existing functionality continues working.
-
-**How:**
-
-1. `getSmartDefaultTypeName()` **falls back** to `getDefaultTypeName()` if metadata missing
-2. User overrides in configStore **always** take precedence
-3. All existing components remain in ComponentRegistry
-4. ViewModeBadge shows all available types, not just smart defaults
-
-**Migration path:**
-
-```
-Phase 1: Ship with smart defaults OFF (feature flag)
-Phase 2: Enable for new users, keep OFF for existing users
-Phase 3: Enable for all users, allow opt-out in settings
-Phase 4: On by default, remove feature flag
-```
-
-### Opt-Out Mechanism (Optional)
-
-```typescript
-// In configStore
-interface ConfigStore {
-  useSmartDefaults: boolean  // Toggle in settings
+  return (
+    <div className="relative">
+      <input
+        type={visible ? 'text' : 'password'}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="pr-10 /* ...styles... */"
+      />
+      <button
+        type="button"
+        onClick={() => setVisible(!visible)}
+        className="absolute right-2 top-1/2 -translate-y-1/2"
+      >
+        {visible ? <EyeOffIcon /> : <EyeIcon />}
+      </button>
+    </div>
+  )
 }
-
-// In DynamicRenderer
-const useSmartDefaults = configStore.useSmartDefaults
-const defaultType = useSmartDefaults
-  ? getSmartDefaultTypeName(schema, path, metadata)
-  : getDefaultTypeName(schema)
 ```
 
-**Recommendation:** Start with opt-out available, remove after validation period.
+### HTTPS Requirement
+
+**Warning in UI:**
+```typescript
+// In AuthPanel, show warning for http:// URLs
+{baseUrl.startsWith('http://') && (
+  <div className="text-sm text-yellow-700 bg-yellow-50 p-2 rounded">
+    ⚠️ Warning: Sending credentials over HTTP is insecure. Use HTTPS APIs in production.
+  </div>
+)}
+```
+
+## Testing Strategy
+
+### Unit Tests
+
+1. **fetchWithAuth tests:**
+   - Injects API key header correctly
+   - Injects bearer token correctly
+   - Injects basic auth correctly
+   - Appends query parameter correctly
+   - Throws AuthError on 401
+   - Throws AuthError on 403
+   - Passes through other errors unchanged
+
+2. **authStore tests:**
+   - Stores credentials per base URL
+   - Retrieves credentials by base URL
+   - Clears credentials
+   - Persists to sessionStorage
+   - Handles missing credentials gracefully
+
+3. **parseSecuritySchemes tests:**
+   - Parses apiKey scheme
+   - Parses http bearer scheme
+   - Parses http basic scheme
+   - Returns undefined for spec without security
+
+### Integration Tests
+
+1. **Fetch pipeline:**
+   - URL input → fetchWithAuth → renders data (with auth)
+   - 401 response → AuthError → ErrorDisplay → re-auth flow
+
+2. **OpenAPI flow:**
+   - Parse spec with security schemes → AuthPanel shows detected type → user saves → fetch succeeds
+
+### Manual Testing Checklist
+
+- [ ] Configure API key auth, verify header sent
+- [ ] Configure bearer token auth, verify header sent
+- [ ] Configure basic auth, verify header sent
+- [ ] Configure query param auth, verify param appended
+- [ ] Fetch API without auth → 401 → configure auth → retry → success
+- [ ] Switch between APIs, verify credentials isolated per base URL
+- [ ] Close browser tab, reopen, verify credentials cleared (sessionStorage)
+- [ ] OpenAPI spec with security scheme → verify pre-populated in UI
+
+## Confidence Assessment
+
+| Area | Confidence | Reason |
+|------|------------|--------|
+| Fetch wrapper pattern | HIGH | Industry standard for native fetch, verified in search results and existing codebase structure |
+| sessionStorage strategy | HIGH | Security research strongly favors sessionStorage over localStorage for credentials |
+| Zustand store architecture | HIGH | Consistent with existing configStore/parameterStore patterns in codebase |
+| OpenAPI security parsing | MEDIUM | OpenAPI spec structure well-documented, but integration with existing parser needs validation |
+| Error handling integration | HIGH | Existing error infrastructure (typed errors, ErrorDisplay) maps cleanly to auth errors |
+| UI placement | MEDIUM | ConfigPanel is logical location, but user testing would validate discoverability |
 
 ## Open Questions
 
-### Question 1: Multi-Sample Analysis
+1. **OAuth2 flows**: Current design supports API key/bearer/basic. OAuth2 requires redirect flow—defer to future phase?
+2. **Multi-auth APIs**: Some APIs support multiple auth types simultaneously. Current design assumes one auth config per API—is this sufficient?
+3. **Credential validation**: Should UI validate credentials before saving (e.g., test request)? Or save immediately and let first fetch validate?
+4. **Per-operation auth**: OpenAPI allows security requirements per operation. Current design applies auth globally per base URL—is operation-level granularity needed?
+5. **Credential export/import**: Should users be able to export/import auth configs (e.g., for sharing with team)? Security implications?
 
-**Problem:** Current schema inference uses multiple samples for confidence. Should field analysis also aggregate across samples?
+## References
 
-**Example:** Array of 20 products - analyze first product or aggregate patterns across all 20?
+### Authentication Patterns
+- [React + Fetch - Set Authorization Header for API Requests](https://jasonwatmore.com/post/2021/09/17/react-fetch-set-authorization-header-for-api-requests-if-user-logged-in)
+- [Intercepting JavaScript Fetch API requests and responses](https://blog.logrocket.com/intercepting-javascript-fetch-api-requests-responses/)
+- [Redux Toolkit fetchBaseQuery - Authentication](https://redux-toolkit.js.org/rtk-query/api/fetchBaseQuery)
+- [Replace axios with a simple custom fetch wrapper](https://kentcdodds.com/blog/replace-axios-with-a-simple-custom-fetch-wrapper)
 
-**Trade-offs:**
+### State Management
+- [Managing User Sessions with Zustand in React](https://medium.com/@jkc5186/managing-user-sessions-with-zustand-in-react-5bf30f6bc536)
+- [Authentication store with zustand](https://doichevkostia.dev/blog/authentication-store-with-zustand/)
+- [Authentication in React and Next.js Apps with Zustand](https://blog.stackademic.com/zustand-for-authentication-in-react-apps-156b6294129c)
 
-| Approach | Pros | Cons |
-|----------|------|------|
-| Single sample (first item) | Fast, simple | May miss patterns |
-| All samples | More accurate patterns | Slower, more complex |
-| Hybrid (first 5 samples) | Balance of speed + accuracy | Arbitrary limit |
+### OpenAPI Security
+- [Describing API Security - OpenAPI Documentation](https://learn.openapis.org/specification/security.html)
+- [Security Schemes in OpenAPI](https://www.speakeasy.com/openapi/security/security-schemes)
+- [Authentication - Swagger Docs](https://swagger.io/docs/specification/v3_0/authentication/)
 
-**Recommendation:** Start with **first sample** for simplicity. Add multi-sample in v1.4 if needed.
+### Error Handling
+- [React + Fetch - Logout on 401 Unauthorized or 403 Forbidden](https://jasonwatmore.com/post/2021/09/27/react-fetch-logout-on-401-unauthorized-or-403-forbidden-http-response)
+- [Handle 401 errors in a cleaner way with Axios interceptors](https://dev.to/idboussadel/handle-401-errors-in-a-cleaner-way-with-axios-interceptors-5hkk)
 
-**Confidence:** MEDIUM - Needs validation with real-world data.
-
-### Question 2: User Feedback Loop
-
-**Problem:** Smart defaults may be wrong. How do users correct them?
-
-**Current override mechanism:** User can switch component via ViewModeBadge. This implicitly overrides smart defaults.
-
-**Open question:** Should we add explicit "Don't use this default again" feedback?
-
-**Options:**
-
-1. Implicit learning: Track user overrides, adjust confidence over time
-2. Explicit feedback: "This default was wrong" button → adjusts patterns
-3. No learning: User overrides are just preferences, no feedback loop
-
-**Recommendation:** Start with **no learning** (option 3). Add feedback loop in v1.4 if user testing shows need.
-
-**Confidence:** LOW - Requires user research to validate approach.
-
-### Question 3: Cross-Field Relationships
-
-**Problem:** Some classifications depend on relationships between fields.
-
-**Example:** `review_text` + `review_rating` together = review, but alone they're just string + number.
-
-**Current approach:** Each field classified independently.
-
-**Alternative:** Detect field relationships and classify groups.
-
-**Trade-offs:**
-
-| Approach | Pros | Cons |
-|----------|------|------|
-| Independent fields | Simple, fast | Misses relationships |
-| Relationship detection | More accurate | Complex, slower |
-
-**Recommendation:** Start with **independent fields** plus simple suffix matching (`review_*` = review category). Add relationship detection in v1.4 if needed.
-
-**Confidence:** MEDIUM - Simple suffix matching covers 80% of cases.
-
-## Sources
-
-Architecture patterns and best practices:
-
-- [Semantic UI React component selection patterns](https://react.semantic-ui.com/)
-- [CommonForms dataset for form field detection](https://arxiv.org/html/2509.16506v1)
-- [Frontend architecture caching strategies](https://www.debugbear.com/blog/performant-front-end-architecture)
-- [React memoization for expensive computations](https://www.toptal.com/react/react-memoization)
-- [Data transformation pipeline architecture](https://dev.to/jajibhee/solving-frontend-performance-the-data-pipeline-transformation-2206)
-- [Metadata filtering and classification patterns](https://lakefs.io/blog/metadata-filtering/)
-- [BigID classification for data attributes](https://bigid.com/blog/smarter-classification-for-data-attributes-metadata-and-files/)
-- [UI semantic component grouping research](https://arxiv.org/html/2403.04984v1)
-- [Nested tab UI patterns](https://www.designmonks.co/blog/nested-tab-ui)
-- [CSS inheritance and override patterns](https://thelinuxcode.com/applying-inheritance-in-css-2026-predictable-styling-theming-and-safe-overrides/)
-- [Android state preservation patterns](https://developer.android.com/guide/topics/resources/runtime-changes)
-- [React 19 optimization patterns](https://dev.co/react/memoization)
-
-## Summary
-
-**Core architectural decision:** Add a **data transformation layer** that runs between schema inference and rendering, producing enriched metadata that DynamicRenderer consumes for smart defaults.
-
-**Key principles:**
-
-1. **Analysis before render:** Field classification happens once per response, cached in appStore
-2. **User overrides always win:** Existing override mechanism in configStore takes precedence over smart defaults
-3. **Graceful degradation:** Smart defaults fall back to structural defaults when metadata missing or low confidence
-4. **Independent layer:** Analysis services are pure functions, testable in isolation
-5. **Additive changes:** Most integration is adding new code, not modifying existing behavior
-
-**Build order:** Analysis layer first (independent), storage integration second (low risk), smart selection third (medium risk), smart grouping last (high risk).
-
-**Confidence:** HIGH overall - Architecture patterns are well-established, integration points are clean, existing override mechanism provides safety net.
+### Security
+- [Managing user sessions: localStorage vs sessionStorage vs cookies](https://stytch.com/blog/localstorage-vs-sessionstorage-vs-cookies/)
+- [Best Practices for Storing Access Tokens in the Browser](https://curity.medium.com/best-practices-for-storing-access-tokens-in-the-browser-6b3d515d9814)
+- [Local Storage vs Cookies: Securely Store Session Tokens](https://www.pivotpointsecurity.com/local-storage-versus-cookies-which-to-use-to-securely-store-session-tokens/)
+- [How to Store Session Tokens in a Browser](https://blog.ropnop.com/storing-tokens-in-browser/)

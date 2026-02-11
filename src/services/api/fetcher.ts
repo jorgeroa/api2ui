@@ -1,4 +1,6 @@
-import { CORSError, NetworkError, APIError, ParseError } from './errors'
+import { CORSError, NetworkError, APIError, ParseError, AuthError } from './errors'
+import { useAuthStore } from '../../store/authStore'
+import type { Credential } from '../../types/auth'
 
 /**
  * Fetch JSON data from an API URL with typed error handling.
@@ -51,5 +53,193 @@ async function detectCORS(url: string): Promise<boolean> {
   } catch {
     // Both modes failed = network error
     return false
+  }
+}
+
+/**
+ * Validates HTTP header name format.
+ * Must start with a letter and contain only letters, numbers, and hyphens.
+ */
+function validateHeaderName(name: string): boolean {
+  return /^[a-zA-Z][a-zA-Z0-9-]*$/.test(name)
+}
+
+/**
+ * Safely parse response body as JSON or text.
+ * Returns JSON stringified if parsable, raw text otherwise, empty string on failure.
+ */
+async function safeParseResponseBody(response: Response): Promise<string> {
+  try {
+    const text = await response.text()
+    if (!text) return ''
+
+    // Try to parse as JSON
+    try {
+      const json = JSON.parse(text)
+      return JSON.stringify(json)
+    } catch {
+      // Not JSON, return raw text
+      return text
+    }
+  } catch {
+    return ''
+  }
+}
+
+/**
+ * Build authenticated request with credentials injected.
+ * Returns modified URL and RequestInit with auth headers/params.
+ */
+function buildAuthenticatedRequest(url: string, credential: Credential): { url: string; init: RequestInit } {
+  const init: RequestInit = {
+    mode: 'cors',
+    credentials: 'omit',
+    headers: {
+      'Accept': 'application/json',
+    },
+  }
+
+  switch (credential.type) {
+    case 'bearer': {
+      init.headers = {
+        ...init.headers,
+        'Authorization': `Bearer ${credential.token}`,
+      }
+      return { url, init }
+    }
+
+    case 'basic': {
+      const encoded = btoa(`${credential.username}:${credential.password}`)
+      init.headers = {
+        ...init.headers,
+        'Authorization': `Basic ${encoded}`,
+      }
+      return { url, init }
+    }
+
+    case 'apiKey': {
+      if (!validateHeaderName(credential.headerName)) {
+        throw new Error(`Invalid header name: ${credential.headerName}`)
+      }
+      init.headers = {
+        ...init.headers,
+        [credential.headerName]: credential.value,
+      }
+      return { url, init }
+    }
+
+    case 'queryParam': {
+      const parsedUrl = new URL(url)
+      parsedUrl.searchParams.set(credential.paramName, credential.value)
+      return { url: parsedUrl.toString(), init }
+    }
+
+    default: {
+      // TypeScript exhaustiveness check
+      const _exhaustive: never = credential
+      return _exhaustive
+    }
+  }
+}
+
+/**
+ * Execute fetch with auth error detection.
+ * Checks for 401/403 and throws AuthError with context.
+ */
+async function executeFetch(url: string, init: RequestInit, credential: Credential | null): Promise<unknown> {
+  let response: Response
+
+  try {
+    response = await fetch(url, init)
+  } catch (error) {
+    // TypeError: Failed to fetch indicates CORS or network issue
+    if (error instanceof TypeError) {
+      const isCORS = await detectCORS(url)
+      if (isCORS) throw new CORSError(url)
+      throw new NetworkError(url)
+    }
+    throw new NetworkError(url)
+  }
+
+  // Check for auth errors (401/403)
+  if (response.status === 401 || response.status === 403) {
+    const authContext = credential ? `${credential.type} auth` : 'no credentials configured'
+    const responseBody = await safeParseResponseBody(response.clone())
+    throw new AuthError(url, response.status, authContext, responseBody)
+  }
+
+  // Check for other HTTP errors
+  if (!response.ok) {
+    throw new APIError(url, response.status, response.statusText)
+  }
+
+  // Parse JSON response
+  try {
+    return await response.json()
+  } catch {
+    throw new ParseError(url)
+  }
+}
+
+/**
+ * Fetch JSON data from an API URL with authentication support.
+ * Automatically injects credentials from auth store if configured.
+ * Detects 401/403 as AuthError, CORS, network, HTTP, and parse errors.
+ */
+export async function fetchWithAuth(url: string): Promise<unknown> {
+  const credential = useAuthStore.getState().getActiveCredential(url)
+
+  if (credential) {
+    const { url: modifiedUrl, init } = buildAuthenticatedRequest(url, credential)
+    return executeFetch(modifiedUrl, init, credential)
+  } else {
+    // Passthrough: no credentials configured
+    const init: RequestInit = {
+      mode: 'cors',
+      credentials: 'omit',
+      headers: {
+        'Accept': 'application/json',
+      },
+    }
+    return executeFetch(url, init, null)
+  }
+}
+
+/**
+ * Check if authentication is configured for a URL.
+ * Returns true if an active credential exists for the URL's origin.
+ */
+export function isAuthConfigured(url: string): boolean {
+  const credential = useAuthStore.getState().getActiveCredential(url)
+  return credential !== null
+}
+
+/**
+ * Mask credential values for safe logging.
+ * Returns a masked string representation of the credential.
+ */
+export function maskCredential(credential: Credential): string {
+  switch (credential.type) {
+    case 'bearer': {
+      const preview = credential.token.substring(0, 4)
+      return `Bearer ${preview}***`
+    }
+
+    case 'basic': {
+      return `Basic ${credential.username}:***`
+    }
+
+    case 'apiKey': {
+      return `${credential.headerName}: ***`
+    }
+
+    case 'queryParam': {
+      return `?${credential.paramName}=***`
+    }
+
+    default: {
+      const _exhaustive: never = credential
+      return _exhaustive
+    }
   }
 }

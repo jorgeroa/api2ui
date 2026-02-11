@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A web app that takes an API URL and automatically renders a live, interactive website for that API. Users paste an endpoint URL (or a Swagger/OpenAPI spec URL), and the engine infers the API's structure, maps data types to UI components, and renders an instant default view — no code generation, just runtime rendering. The engine uses semantic field analysis to pick context-appropriate components (star ratings for ratings, currency formatting for prices, status badges for states), organizes fields into visual sections, and applies importance-based hierarchy. Developers configure the view via a settings panel and inline editing, non-technical users consume the clean rendered interface.
+A web app that takes an API URL and automatically renders a live, interactive website for that API. Users paste an endpoint URL (or a Swagger/OpenAPI spec URL), and the engine infers the API's structure, maps data types to UI components, and renders an instant default view — no code generation, just runtime rendering. The engine uses semantic field analysis to pick context-appropriate components (star ratings for ratings, currency formatting for prices, status badges for states), organizes fields into visual sections, and applies importance-based hierarchy. Supports authenticated APIs with 4 auth types (API Key, Bearer Token, Basic Auth, Query Parameter), auto-detecting auth requirements from OpenAPI specs. Developers configure the view via a settings panel and inline editing, non-technical users consume the clean rendered interface.
 
 ## Core Value
 
@@ -56,6 +56,11 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 - Smart defaults for detail views (Hero + Overview + Sections layout) — v1.3
 - Context-aware components (status badges, star ratings, currency, dates, tag chips) — v1.3
 - All existing components remain available via component switcher overrides — v1.3
+- API Key, Bearer Token, Basic Auth, Query Parameter authentication — v1.4
+- Auto-detect auth requirements from OpenAPI security schemes — v1.4
+- 401/403 error prompts with actionable recovery buttons — v1.4
+- Per-API credential scoping with sessionStorage persistence — v1.4
+- Auth configuration UI with lock icon, type selector, credential forms — v1.4
 
 ### Active
 
@@ -64,7 +69,6 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 ### Out of Scope
 
 - CRUD / write operations (POST/PUT/DELETE) — read-only for now
-- API authentication handling — targets public APIs only
 - AI-assisted CSS customization — deferred, not essential
 - Shareable links / hosted views — requires backend, defer
 - Custom/extensible components — start with fixed set
@@ -79,7 +83,8 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 - **Shipped v1.1 UX Polish** with smart visual defaults, discoverable component switching, pagination, and enhanced detail views
 - **Shipped v1.2 Smart Parameters & Layout System** with URL parsing, type inference, rich input components, applied filter chips, and user-selectable layouts
 - **Shipped v1.3 Smart Default Selection** with semantic field analysis (22 patterns), importance scoring, auto-grouping (prefix + semantic clustering), smart component selection heuristics, and context-aware rendering components
-- **Current codebase:** 21,773 lines of TypeScript/TSX/CSS, 415 tests
+- **Shipped v1.4 API Authentication** with 4 auth types (API Key, Bearer, Basic, Query Param), OpenAPI security scheme auto-detection, and smart error UX with actionable recovery
+- **Current codebase:** 24,114 lines of TypeScript/TSX/CSS, 449 tests
 - **Tech stack:** React 19, TypeScript 5.9, Vite 7, Tailwind CSS 4, Zustand, Headless UI, @dnd-kit, @apidevtools/swagger-parser, shadcn/ui, Sonner
 - The rendering engine has two symmetric sides: input (parameters -> form controls) and output (responses -> data components), both following type-based defaults with developer overrides
 - Smart defaults use three-tier precedence: user override > semantic smart default > type-based fallback
@@ -91,7 +96,7 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 ## Constraints
 
 - **Read-only**: v1 only renders GET responses, no write operations
-- **Public APIs**: v1 does not handle authentication, only public endpoints
+- **Authenticated APIs**: v1.4 added auth support (API Key, Bearer, Basic, Query Param)
 - **Client-side**: No backend required, direct API calls from browser (CORS may limit some APIs)
 - **Tech stack**: React 19, TypeScript 5.9, Vite 7, Tailwind CSS 4
 
@@ -120,5 +125,9 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 | Absolute-only date formatting | User decision: relative dates ("2 days ago") add ambiguity | Good |
 | Three-tier precedence (override > smart > fallback) | Preserves user agency while improving defaults | Good |
 
+| Session storage for secrets, localStorage for config | Balances security (no persistent credentials) with UX (auth config shape persists) | Good |
+| Per-API auth scope by base URL origin | Simpler than per-endpoint, covers majority of use cases | Good |
+| Zero new dependencies for auth | Native browser APIs (btoa, URLSearchParams, fetch headers) keep bundle small | Good |
+
 ---
-*Last updated: 2026-02-09 after v1.3 milestone completion*
+*Last updated: 2026-02-10 after v1.4 milestone complete*

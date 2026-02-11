@@ -43,6 +43,14 @@ export function ErrorDisplay({ error, onRetry }: ErrorDisplayProps) {
       textColor: 'text-yellow-800',
       iconBg: 'bg-yellow-100',
     },
+    auth: {
+      title: 'Authentication Error',
+      icon: '🔒',
+      bgColor: 'bg-purple-50',
+      borderColor: 'border-purple-300',
+      textColor: 'text-purple-800',
+      iconBg: 'bg-purple-100',
+    },
     parse: {
       title: 'Parse Error',
       icon: '📝',

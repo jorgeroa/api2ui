@@ -1,0 +1,323 @@
+import { useState, useEffect } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
+import { Input } from '../ui/input'
+import { Button } from '../ui/button'
+import { useAuthStore } from '../../store/authStore'
+import type { AuthType, Credential } from '../../types/auth'
+
+interface CredentialFormProps {
+  type: AuthType | 'none'
+  url: string
+  detectedMetadata?: {
+    headerName?: string
+    paramName?: string
+  }
+}
+
+/**
+ * Dynamic credential form that renders different fields based on auth type.
+ * Auto-saves credentials to authStore on input change.
+ */
+export function CredentialForm({ type, url, detectedMetadata }: CredentialFormProps) {
+  const getCredentials = useAuthStore((state) => state.getCredentials)
+  const setCredential = useAuthStore((state) => state.setCredential)
+
+  // Load initial values from store
+  const apiCreds = getCredentials(url)
+
+  // Local state for form fields
+  const [token, setToken] = useState('')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [headerName, setHeaderName] = useState('X-API-Key')
+  const [headerValue, setHeaderValue] = useState('')
+  const [paramName, setParamName] = useState('api_key')
+  const [paramValue, setParamValue] = useState('')
+
+  // Visibility toggles for password fields
+  const [showToken, setShowToken] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showHeaderValue, setShowHeaderValue] = useState(false)
+  const [showParamValue, setShowParamValue] = useState(false)
+
+  // Load existing credentials into local state on mount or type change
+  useEffect(() => {
+    if (type === 'none') return
+
+    const cred = apiCreds?.credentials[type as AuthType]
+    if (cred) {
+      switch (cred.type) {
+        case 'bearer':
+          setToken(cred.token)
+          break
+        case 'basic':
+          setUsername(cred.username)
+          setPassword(cred.password)
+          break
+        case 'apiKey':
+          setHeaderName(cred.headerName)
+          setHeaderValue(cred.value)
+          break
+        case 'queryParam':
+          setParamName(cred.paramName)
+          setParamValue(cred.value)
+          break
+      }
+    } else {
+      // Reset to defaults if no existing credential
+      // Use detected metadata if available
+      setToken('')
+      setUsername('')
+      setPassword('')
+      setHeaderName(detectedMetadata?.headerName ?? 'X-API-Key')
+      setHeaderValue('')
+      setParamName(detectedMetadata?.paramName ?? 'api_key')
+      setParamValue('')
+    }
+  }, [type, url, detectedMetadata]) // Re-run when type, url, or detectedMetadata changes
+
+  // Auto-save helper
+  const saveCredential = (credential: Credential) => {
+    setCredential(url, credential)
+  }
+
+  // Render nothing for 'none' type
+  if (type === 'none') return null
+
+  // Bearer Token
+  if (type === 'bearer') {
+    return (
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <label htmlFor="token" className="block text-sm font-medium text-gray-700">
+            Token
+          </label>
+          <div className="relative">
+            <Input
+              id="token"
+              type={showToken ? 'text' : 'password'}
+              value={token}
+              onChange={(e) => {
+                setToken(e.target.value)
+                saveCredential({
+                  type: 'bearer',
+                  label: '',
+                  token: e.target.value,
+                })
+              }}
+              placeholder="Enter bearer token"
+              className="pr-10"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setShowToken(!showToken)}
+              className="absolute right-1 top-1/2 -translate-y-1/2"
+            >
+              {showToken ? (
+                <EyeOff className="h-4 w-4 text-gray-400" />
+              ) : (
+                <Eye className="h-4 w-4 text-gray-400" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Basic Auth
+  if (type === 'basic') {
+    return (
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+            Username
+          </label>
+          <Input
+            id="username"
+            type="text"
+            value={username}
+            onChange={(e) => {
+              setUsername(e.target.value)
+              saveCredential({
+                type: 'basic',
+                label: '',
+                username: e.target.value,
+                password,
+              })
+            }}
+            placeholder="Enter username"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            Password
+          </label>
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value)
+                saveCredential({
+                  type: 'basic',
+                  label: '',
+                  username,
+                  password: e.target.value,
+                })
+              }}
+              placeholder="Enter password"
+              className="pr-10"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-1 top-1/2 -translate-y-1/2"
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4 text-gray-400" />
+              ) : (
+                <Eye className="h-4 w-4 text-gray-400" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // API Key (custom header)
+  if (type === 'apiKey') {
+    return (
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <label htmlFor="header-name" className="block text-sm font-medium text-gray-700">
+            Header Name
+          </label>
+          <Input
+            id="header-name"
+            type="text"
+            value={headerName}
+            onChange={(e) => {
+              setHeaderName(e.target.value)
+              saveCredential({
+                type: 'apiKey',
+                label: '',
+                headerName: e.target.value,
+                value: headerValue,
+              })
+            }}
+            placeholder={detectedMetadata?.headerName ?? "X-API-Key"}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor="header-value" className="block text-sm font-medium text-gray-700">
+            Value
+          </label>
+          <div className="relative">
+            <Input
+              id="header-value"
+              type={showHeaderValue ? 'text' : 'password'}
+              value={headerValue}
+              onChange={(e) => {
+                setHeaderValue(e.target.value)
+                saveCredential({
+                  type: 'apiKey',
+                  label: '',
+                  headerName,
+                  value: e.target.value,
+                })
+              }}
+              placeholder="Enter API key value"
+              className="pr-10"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setShowHeaderValue(!showHeaderValue)}
+              className="absolute right-1 top-1/2 -translate-y-1/2"
+            >
+              {showHeaderValue ? (
+                <EyeOff className="h-4 w-4 text-gray-400" />
+              ) : (
+                <Eye className="h-4 w-4 text-gray-400" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Query Parameter
+  if (type === 'queryParam') {
+    return (
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <label htmlFor="param-name" className="block text-sm font-medium text-gray-700">
+            Parameter Name
+          </label>
+          <Input
+            id="param-name"
+            type="text"
+            value={paramName}
+            onChange={(e) => {
+              setParamName(e.target.value)
+              saveCredential({
+                type: 'queryParam',
+                label: '',
+                paramName: e.target.value,
+                value: paramValue,
+              })
+            }}
+            placeholder={detectedMetadata?.paramName ?? "api_key"}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor="param-value" className="block text-sm font-medium text-gray-700">
+            Value
+          </label>
+          <div className="relative">
+            <Input
+              id="param-value"
+              type={showParamValue ? 'text' : 'password'}
+              value={paramValue}
+              onChange={(e) => {
+                setParamValue(e.target.value)
+                saveCredential({
+                  type: 'queryParam',
+                  label: '',
+                  paramName,
+                  value: e.target.value,
+                })
+              }}
+              placeholder="Enter parameter value"
+              className="pr-10"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setShowParamValue(!showParamValue)}
+              className="absolute right-1 top-1/2 -translate-y-1/2"
+            >
+              {showParamValue ? (
+                <EyeOff className="h-4 w-4 text-gray-400" />
+              ) : (
+                <Eye className="h-4 w-4 text-gray-400" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return null
+}

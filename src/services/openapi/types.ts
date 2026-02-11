@@ -3,6 +3,8 @@
  * These types represent the cleaned, typed data structure that the UI layer consumes.
  */
 
+import type { AuthType } from '../../types/auth'
+
 export interface ParsedParameter {
   name: string
   in: 'query' | 'path' | 'header' | 'cookie'
@@ -37,10 +39,21 @@ export interface ParsedOperation {
   tags: string[]
 }
 
+export interface ParsedSecurityScheme {
+  name: string
+  authType: AuthType | null
+  metadata: {
+    headerName?: string
+    paramName?: string
+  }
+  description: string
+}
+
 export interface ParsedSpec {
   title: string
   version: string
   specVersion: string    // '2.0', '3.0.x', '3.1.x'
   baseUrl: string        // Server URL or host+basePath
   operations: ParsedOperation[]
+  securitySchemes: ParsedSecurityScheme[]
 }

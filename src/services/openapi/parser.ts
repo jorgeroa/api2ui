@@ -1,6 +1,7 @@
 import SwaggerParser from '@apidevtools/swagger-parser'
 import type { OpenAPIV3, OpenAPIV2 } from 'openapi-types'
 import type { ParsedSpec, ParsedOperation, ParsedParameter } from './types'
+import { mapSecuritySchemes } from './security-mapper'
 
 /**
  * Parse an OpenAPI/Swagger spec URL or object and extract GET operations.
@@ -34,12 +35,16 @@ export async function parseOpenAPISpec(
     // Extract operations
     const operations = extractOperations(api, isOpenAPI3)
 
+    // Extract security schemes
+    const securitySchemes = extractSecuritySchemes(api, isOpenAPI3)
+
     return {
       title,
       version,
       specVersion,
       baseUrl,
       operations,
+      securitySchemes,
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
@@ -197,5 +202,30 @@ function extractResponseSchema(
   } else {
     const resp = response200 as OpenAPIV2.ResponseObject
     return resp.schema
+  }
+}
+
+/**
+ * Extract security schemes from spec
+ */
+function extractSecuritySchemes(
+  api: OpenAPIV3.Document | OpenAPIV2.Document,
+  isOpenAPI3: boolean
+) {
+  if (isOpenAPI3) {
+    const openapi3 = api as OpenAPIV3.Document
+    const rawSchemes = openapi3.components?.securitySchemes ?? {}
+    // Filter out ReferenceObjects - we only handle concrete scheme definitions
+    const schemes: Record<string, OpenAPIV3.SecuritySchemeObject> = {}
+    for (const [name, scheme] of Object.entries(rawSchemes)) {
+      if (scheme && !('$ref' in scheme)) {
+        schemes[name] = scheme as OpenAPIV3.SecuritySchemeObject
+      }
+    }
+    return mapSecuritySchemes(schemes)
+  } else {
+    const swagger2 = api as OpenAPIV2.Document
+    const schemes = swagger2.securityDefinitions ?? {}
+    return mapSecuritySchemes(schemes)
   }
 }
