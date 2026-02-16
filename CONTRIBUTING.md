@@ -5,16 +5,16 @@
 ```bash
 git clone <repo-url>
 cd api2ui
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 ## Running Tests
 
 ```bash
-npm test              # Run all tests
-npm test -- --watch   # Watch mode
-npm test -- src/services/semantic  # Run a specific directory
+pnpm test              # Run all tests
+pnpm test -- --watch   # Watch mode
+pnpm test -- src/services/semantic  # Run a specific directory
 ```
 
 ## Adding a New Semantic Category
@@ -31,7 +31,7 @@ Semantic categories define how fields are automatically detected and formatted. 
 
 2. **Regenerate embeddings**:
    ```bash
-   npm run generate-embeddings
+   pnpm generate-embeddings
    ```
    This runs the `multilingual-e5-small` model against all tokens and outputs:
    - `src/data/category-embeddings.json` (centroids)

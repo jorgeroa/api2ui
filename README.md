@@ -5,8 +5,8 @@ Paste a JSON API URL and instantly see it rendered as a beautiful, interactive U
 ## Quick Start
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open http://localhost:5173 and paste any JSON API URL, or try a built-in example.
@@ -85,12 +85,12 @@ scripts/
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start dev server |
-| `npm run build` | Type-check and build |
-| `npm run preview` | Preview production build |
-| `npm test` | Run tests with Vitest |
-| `npm run lint` | Run ESLint |
-| `npm run generate-embeddings` | Regenerate semantic embeddings |
+| `pnpm dev` | Start dev server |
+| `pnpm build` | Type-check and build |
+| `pnpm preview` | Preview production build |
+| `pnpm test` | Run tests with Vitest |
+| `pnpm lint` | Run ESLint |
+| `pnpm generate-embeddings` | Regenerate semantic embeddings |
 
 ## Contributing
 
