@@ -22,8 +22,8 @@ export function DetailPanel({ item, schema, itemPath, onClose }: DetailPanelProp
       <div className="fixed inset-0 flex justify-end">
         <DialogPanel className="w-full max-w-2xl bg-surface text-text shadow-xl h-full overflow-y-auto">
           {/* Sticky header */}
-          <div className="sticky top-0 bg-surface border-b border-border px-6 py-4 flex items-center justify-between z-10">
-            <DialogTitle className="text-xl font-semibold">
+          <div className="sticky top-0 bg-surface border-b border-border px-6 py-3 flex items-center justify-end z-10">
+            <DialogTitle className="sr-only">
               {getItemLabel(item, 'Item Details')}
             </DialogTitle>
             <button onClick={onClose} className="text-gray-500 hover:text-gray-700" aria-label="Close panel">
@@ -36,7 +36,7 @@ export function DetailPanel({ item, schema, itemPath, onClose }: DetailPanelProp
           {/* Panel content */}
           <div className="p-6">
             {item !== null && (
-              <DynamicRenderer data={item} schema={schema} path={itemPath} depth={0} />
+              <DynamicRenderer data={item} schema={schema} path={itemPath} depth={1} />
             )}
           </div>
         </DialogPanel>
