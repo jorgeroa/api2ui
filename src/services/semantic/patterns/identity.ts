@@ -132,12 +132,19 @@ export const namePattern: SemanticPattern = {
   },
   valueValidators: [
     {
-      name: 'isNonEmptyString',
+      name: 'isNameLike',
       validator: (value: unknown): boolean => {
         if (typeof value !== 'string') return false
         const trimmed = value.trim()
-        // Reasonable name length (1-100 chars)
-        return trimmed.length > 0 && trimmed.length <= 100
+        // 2-100 chars
+        if (trimmed.length < 2 || trimmed.length > 100) return false
+        // Pure numbers fail
+        if (/^\d+$/.test(trimmed)) return false
+        // 1-5 words
+        const words = trimmed.split(/\s+/)
+        if (words.length > 5) return false
+        // Each word: only letters, hyphens, apostrophes, periods (for initials)
+        return words.every(w => /^[a-zA-Z\u00C0-\u024F][a-zA-Z\u00C0-\u024F'.\-]*$/.test(w))
       },
       weight: 0.3,
     },
@@ -165,9 +172,21 @@ export const addressPattern: SemanticPattern = {
   },
   valueValidators: [
     {
-      name: 'isString',
+      name: 'isAddressLike',
       validator: (value: unknown): boolean => {
-        return typeof value === 'string' && value.trim().length > 0
+        if (typeof value !== 'string') return false
+        const trimmed = value.trim()
+        if (trimmed.length < 5) return false
+        const lower = trimmed.toLowerCase()
+        // Contains known address tokens (multilingual)
+        const addressTokens = /\b(st|ave|rd|blvd|street|avenue|road|drive|lane|way|court|plaza|calle|rue|strasse|straße|platz|via|avenida|rua|apt|suite|floor|unit|po box)\b/i
+        if (addressTokens.test(lower)) return true
+        // Multi-word string with both a number and a letter (e.g., "123 Main St")
+        // Single-token strings like "SKU-12345" should NOT match
+        if (!/\s/.test(trimmed)) return false
+        const hasNumber = /\d/.test(trimmed)
+        const hasLetter = /[a-zA-Z]/.test(trimmed)
+        return hasNumber && hasLetter
       },
       weight: 0.3,
     },

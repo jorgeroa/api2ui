@@ -100,12 +100,18 @@ export const skuPattern: SemanticPattern = {
   },
   valueValidators: [
     {
-      name: 'isAlphanumericCode',
+      name: 'isProductCode',
       validator: (value: unknown): boolean => {
         if (typeof value !== 'string') return false
-        // Alphanumeric 4-20 chars
         const trimmed = value.trim()
-        return /^[A-Za-z0-9\-_]{4,20}$/.test(trimmed)
+        // 4-20 chars, alphanumeric with hyphens/underscores
+        if (!/^[A-Za-z0-9\-_]{4,20}$/.test(trimmed)) return false
+        // Must contain BOTH letters AND numbers (or dash-separated segments)
+        // Pure alphabetic ("hello") or pure numeric ("12345") should fail
+        const hasLetter = /[a-zA-Z]/.test(trimmed)
+        const hasDigit = /\d/.test(trimmed)
+        const hasSeparator = /[-_]/.test(trimmed)
+        return (hasLetter && hasDigit) || (hasSeparator && (hasLetter || hasDigit))
       },
       weight: 0.3,
     },

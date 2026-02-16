@@ -696,6 +696,240 @@ describe('memoization', () => {
   })
 })
 
+describe('hardened validators', () => {
+  beforeEach(() => {
+    clearSemanticCache()
+  })
+
+  describe('status validator (heuristic, not hardcoded enum)', () => {
+    test('English "active" passes', () => {
+      const results = detectSemantics('root.status', 'status', 'string', ['active'])
+      expect(results[0].category).toBe('status')
+      expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+    })
+
+    test('Spanish "activo" passes', () => {
+      const results = detectSemantics('root.estado', 'estado', 'string', ['activo'])
+      expect(results[0].category).toBe('status')
+      expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+    })
+
+    test('hyphenated "in-progress" passes', () => {
+      const results = detectSemantics('root.status', 'status', 'string', ['in-progress'])
+      expect(results[0].category).toBe('status')
+      expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+    })
+
+    test('underscored "not_started" passes', () => {
+      const results = detectSemantics('root.status', 'status', 'string', ['not_started'])
+      expect(results[0].category).toBe('status')
+      expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+    })
+
+    test('sentence "This is active" fails (has spaces)', () => {
+      const results = detectSemantics('root.status', 'status', 'string', ['This is active'])
+      const statusResult = results.find(r => r.category === 'status')
+      // Value validator should fail — spaces not allowed
+      if (statusResult) {
+        expect(statusResult.confidence).toBeLessThan(0.90)
+      }
+    })
+
+    test('numeric "12345" fails (starts with digit)', () => {
+      const results = detectSemantics('root.status', 'status', 'string', ['12345'])
+      const statusResult = results.find(r => r.category === 'status')
+      if (statusResult) {
+        expect(statusResult.confidence).toBeLessThan(0.90)
+      }
+    })
+  })
+
+  describe('rating validator (0-10 range)', () => {
+    test('4.5 passes', () => {
+      const results = detectSemantics('root.rating', 'rating', 'number', [4.5])
+      expect(results[0].category).toBe('rating')
+      expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+    })
+
+    test('0 passes', () => {
+      const results = detectSemantics('root.rating', 'rating', 'number', [0])
+      expect(results[0].category).toBe('rating')
+      expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+    })
+
+    test('10 passes', () => {
+      const results = detectSemantics('root.rating', 'rating', 'number', [10])
+      expect(results[0].category).toBe('rating')
+      expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+    })
+
+    test('75 fails (too high for rating)', () => {
+      const results = detectSemantics('root.rating', 'rating', 'number', [75])
+      const ratingResult = results.find(r => r.category === 'rating')
+      // Value validator should fail — 75 > 10
+      if (ratingResult) {
+        expect(ratingResult.confidence).toBeLessThan(0.90)
+      }
+    })
+  })
+
+  describe('SKU validator (requires mixed alphanumeric)', () => {
+    test('"SKU-12345" passes (letters + digits + dash)', () => {
+      const results = detectSemantics('root.sku', 'sku', 'string', ['SKU-12345'])
+      expect(results[0].category).toBe('sku')
+      expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+    })
+
+    test('"abc123" passes (mixed letters and digits)', () => {
+      const results = detectSemantics('root.sku', 'sku', 'string', ['abc123'])
+      expect(results[0].category).toBe('sku')
+      expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+    })
+
+    test('"hello" fails (pure alphabetic)', () => {
+      const results = detectSemantics('root.sku', 'sku', 'string', ['hello'])
+      const skuResult = results.find(r => r.category === 'sku')
+      if (skuResult) {
+        expect(skuResult.confidence).toBeLessThan(0.90)
+      }
+    })
+
+    test('"12345" fails (pure numeric)', () => {
+      const results = detectSemantics('root.sku', 'sku', 'string', ['12345'])
+      const skuResult = results.find(r => r.category === 'sku')
+      if (skuResult) {
+        expect(skuResult.confidence).toBeLessThan(0.90)
+      }
+    })
+
+    test('"A-B" fails (too short)', () => {
+      const results = detectSemantics('root.sku', 'sku', 'string', ['A-B'])
+      const skuResult = results.find(r => r.category === 'sku')
+      if (skuResult) {
+        expect(skuResult.confidence).toBeLessThan(0.90)
+      }
+    })
+  })
+
+  describe('name validator (name-like strings)', () => {
+    test('"John Doe" passes', () => {
+      const results = detectSemantics('root.name', 'name', 'string', ['John Doe'])
+      expect(['name', 'title']).toContain(results[0].category)
+      expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+    })
+
+    test('"John O\'Brien" passes (apostrophe)', () => {
+      const results = detectSemantics('root.name', 'name', 'string', ["John O'Brien"])
+      expect(['name', 'title']).toContain(results[0].category)
+      expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+    })
+
+    test('"María García" passes (accented chars)', () => {
+      const results = detectSemantics('root.nombre', 'nombre', 'string', ['María García'])
+      expect(['name', 'title']).toContain(results[0].category)
+      expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+    })
+
+    test('"12345" fails (pure numbers)', () => {
+      const results = detectSemantics('root.name', 'name', 'string', ['12345'])
+      const nameResult = results.find(r => r.category === 'name')
+      if (nameResult) {
+        expect(nameResult.confidence).toBeLessThan(0.90)
+      }
+    })
+
+    test('"a" fails (too short)', () => {
+      const results = detectSemantics('root.name', 'name', 'string', ['a'])
+      const nameResult = results.find(r => r.category === 'name')
+      if (nameResult) {
+        expect(nameResult.confidence).toBeLessThan(0.90)
+      }
+    })
+  })
+
+  describe('title validator (title-like strings)', () => {
+    test('"Product Title" passes (multi-word)', () => {
+      const results = detectSemantics('root.title', 'title', 'string', ['Product Title'])
+      expect(results[0].category).toBe('title')
+      expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+    })
+
+    test('"Introduction" passes (single capitalized word)', () => {
+      const results = detectSemantics('root.title', 'title', 'string', ['Introduction'])
+      expect(results[0].category).toBe('title')
+      expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+    })
+
+    test('URL string fails title validator', () => {
+      const results = detectSemantics('root.title', 'title', 'string', ['https://example.com'])
+      const titleResult = results.find(r => r.category === 'title')
+      if (titleResult) {
+        expect(titleResult.confidence).toBeLessThan(0.90)
+      }
+    })
+
+    test('"x" fails (too short)', () => {
+      const results = detectSemantics('root.title', 'title', 'string', ['x'])
+      const titleResult = results.find(r => r.category === 'title')
+      if (titleResult) {
+        expect(titleResult.confidence).toBeLessThan(0.90)
+      }
+    })
+  })
+
+  describe('description validator (sentence-like strings)', () => {
+    test('long sentence passes', () => {
+      const results = detectSemantics(
+        'root.description',
+        'description',
+        'string',
+        ['This is a detailed product description that provides comprehensive information about the item.']
+      )
+      expect(results[0].category).toBe('description')
+      expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+    })
+
+    test('short string "hello world" fails (< 50 chars)', () => {
+      const results = detectSemantics('root.description', 'description', 'string', ['hello world'])
+      const descResult = results.find(r => r.category === 'description')
+      if (descResult) {
+        expect(descResult.confidence).toBeLessThan(0.90)
+      }
+    })
+
+    test('long string without spaces fails', () => {
+      const longCode = 'a'.repeat(100)
+      const results = detectSemantics('root.description', 'description', 'string', [longCode])
+      const descResult = results.find(r => r.category === 'description')
+      if (descResult) {
+        expect(descResult.confidence).toBeLessThan(0.90)
+      }
+    })
+  })
+
+  describe('address validator (address-like strings)', () => {
+    test('"123 Main Street" passes (number + word)', () => {
+      const results = detectSemantics('root.address', 'address', 'string', ['123 Main Street'])
+      expect(results[0].category).toBe('address')
+      expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+    })
+
+    test('"Calle Mayor 5" passes (address token + number)', () => {
+      const results = detectSemantics('root.address', 'address', 'string', ['Calle Mayor 5'])
+      expect(results[0].category).toBe('address')
+      expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
+    })
+
+    test('"hello" fails (no number, no address token)', () => {
+      const results = detectSemantics('root.address', 'address', 'string', ['hello'])
+      const addrResult = results.find(r => r.category === 'address')
+      if (addrResult) {
+        expect(addrResult.confidence).toBeLessThan(0.90)
+      }
+    })
+  })
+})
+
 describe('performance', () => {
   test('detect 100 fields in under 100ms', () => {
     clearSemanticCache()

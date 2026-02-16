@@ -27,8 +27,8 @@ export const ratingPattern: SemanticPattern = {
       name: 'isValidRating',
       validator: (value: unknown): boolean => {
         if (typeof value !== 'number') return false
-        // Common rating scales: 0-5, 0-10, 0-100
-        return value >= 0 && value <= 100
+        // Common rating scales: 0-5, 0-10 (excludes percentages, ages, temperatures)
+        return value >= 0 && value <= 10
       },
       weight: 0.25,
     },
@@ -103,12 +103,9 @@ export const tagsPattern: SemanticPattern = {
 }
 
 /**
- * Common status values for validation.
- */
-const STATUS_VALUES = /^(active|inactive|pending|completed|draft|published|archived|deleted|approved|rejected|processing|cancelled|shipped|delivered|paid|unpaid|open|closed|enabled|disabled)$/i
-
-/**
  * Pattern for status/state fields.
+ * Uses heuristic detection instead of hardcoded English enum so
+ * multilingual status values (e.g., "activo", "actif", "aktiv") pass.
  */
 export const statusPattern: SemanticPattern = {
   category: 'status',
@@ -126,10 +123,17 @@ export const statusPattern: SemanticPattern = {
   },
   valueValidators: [
     {
-      name: 'isStatusValue',
+      name: 'isStatusLike',
       validator: (value: unknown): boolean => {
         if (typeof value !== 'string') return false
-        return STATUS_VALUES.test(value.trim())
+        const trimmed = value.trim()
+        // Heuristic: short, single-token, alphabetic with underscores/hyphens
+        // Covers English "active", Spanish "activo", French "actif", German "aktiv", etc.
+        if (trimmed.length === 0 || trimmed.length > 30) return false
+        // Must be a single token — no spaces allowed
+        if (/\s/.test(trimmed)) return false
+        // Only letters, underscores, hyphens (e.g., "in-progress", "not_started")
+        return /^[a-zA-Z][a-zA-Z_-]*$/.test(trimmed)
       },
       weight: 0.3,
     },
@@ -157,10 +161,21 @@ export const titlePattern: SemanticPattern = {
   },
   valueValidators: [
     {
-      name: 'isNonEmptyString',
+      name: 'isTitleLike',
       validator: (value: unknown): boolean => {
         if (typeof value !== 'string') return false
-        return value.trim().length > 0
+        const trimmed = value.trim()
+        // 2-200 characters
+        if (trimmed.length < 2 || trimmed.length > 200) return false
+        // Not a URL
+        if (/^https?:\/\//i.test(trimmed)) return false
+        // Not an email
+        if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return false
+        // At least 2 words, OR a single capitalized word
+        const words = trimmed.split(/\s+/)
+        if (words.length >= 2) return true
+        // Single word: must start with uppercase
+        return /^[A-Z]/.test(trimmed)
       },
       weight: 0.3,
     },
@@ -188,11 +203,13 @@ export const descriptionPattern: SemanticPattern = {
   },
   valueValidators: [
     {
-      name: 'isLongerString',
+      name: 'isDescriptionLike',
       validator: (value: unknown): boolean => {
         if (typeof value !== 'string') return false
-        // Description typically > 20 chars
-        return value.trim().length > 20
+        const trimmed = value.trim()
+        // Description: sentence/paragraph, not a code string or ID
+        // Must be > 50 chars and contain spaces (multiple words)
+        return trimmed.length > 50 && /\s/.test(trimmed)
       },
       weight: 0.3,
     },
