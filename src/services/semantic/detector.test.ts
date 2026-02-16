@@ -571,28 +571,20 @@ describe('edge cases', () => {
     expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
   })
 
-  test('underscore naming: product_price matches price', () => {
-    // Note: \bprice\b won't match product_price because _ is part of word
-    // But the price pattern uses /\b(price|cost|...)\b/i
-    // So product_price won't match. Testing actual behavior.
+  test('underscore naming: product_price matches price via embeddings', () => {
+    // With embedding strategy, "product_price" tokenizes to ["product_price", "product", "price"]
+    // "price" is in the vocabulary and strongly maps to the price centroid
     const results = detectSemantics('root.product_price', 'product_price', 'number', [29.99])
-    // Should NOT match price with high confidence - name doesn't match pattern
-    // Only type and value may contribute
-    const priceResult = results.find(r => r.category === 'price')
-    if (priceResult) {
-      // With only type (0.2) + value (0.25) / 1.0 = 0.45, less than 0.75
-      expect(priceResult.confidence).toBeLessThan(0.75)
-    }
+    expect(results[0].category).toBe('price')
+    expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
   })
 
-  test('camelCase: productPrice matches price via value/type', () => {
-    // Similar to above - productPrice won't match \bprice\b pattern
+  test('camelCase: productPrice matches price via embeddings', () => {
+    // With embedding strategy, "productPrice" tokenizes to ["productprice", "product", "price"]
+    // "price" token pulls the embedding toward the price centroid
     const results = detectSemantics('root.productPrice', 'productPrice', 'number', [29.99])
-    // May still get low-confidence price match via type + value
-    const priceResult = results.find(r => r.category === 'price')
-    if (priceResult) {
-      expect(priceResult.confidence).toBeLessThan(0.75)
-    }
+    expect(results[0].category).toBe('price')
+    expect(results[0].confidence).toBeGreaterThanOrEqual(0.75)
   })
 
   test('very long field name is processed', () => {

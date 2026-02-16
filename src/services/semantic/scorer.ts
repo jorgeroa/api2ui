@@ -1,6 +1,12 @@
 /**
  * Confidence scoring algorithm for semantic field detection.
  * Calculates weighted scores based on multi-signal pattern matching.
+ *
+ * Signals and weights:
+ *   - Name matching (embedding or regex): 0.40
+ *   - Type constraint: 0.20
+ *   - Value validators: 0.25-0.30
+ *   - Format hints: 0.10-0.15 (only counted when OpenAPI hints are present)
  */
 
 import type {
@@ -9,18 +15,18 @@ import type {
   ConfidenceLevel,
   SignalMatch,
 } from './types'
+import { getActiveStrategy } from './strategies'
+
+/** Weight allocated to the name matching signal. */
+const NAME_MATCH_WEIGHT = 0.40
 
 /**
  * Calculate confidence score for a field against a semantic pattern.
- * Uses multi-signal approach: name patterns, type constraints, value validators, and format hints.
+ * Uses multi-signal approach: name matching, type constraints, value validators, and format hints.
  *
- * Algorithm:
- * 1. For name patterns: take best match weight (not sum of all matches)
- * 2. For type constraint: add weight if field type is allowed
- * 3. For value validators: add weight if any sample value matches
- * 4. For format hints: add weight if OpenAPI format matches
- * 5. Calculate confidence = totalScore / maxPossibleScore
- * 6. Determine level: >= 0.75 = high, >= 0.50 = medium, > 0 = low, 0 = none
+ * The name matching signal uses the currently active strategy (embedding by
+ * default, regex as fallback). The strategy returns a 0.0-1.0 score which
+ * is then weighted by NAME_MATCH_WEIGHT (0.40).
  *
  * @param fieldName - The name of the field being evaluated
  * @param fieldType - The inferred type of the field (e.g., 'string', 'number', 'array')
@@ -40,36 +46,19 @@ export function calculateConfidence(
   let totalScore = 0
   let maxPossibleScore = 0
 
-  // 1. Name pattern matching - take best match only (not sum)
-  if (pattern.namePatterns.length > 0) {
-    let bestNameMatch = 0
-    let bestNameWeight = 0
-    let matchedPatternName = ''
+  // 1. Name matching via active strategy
+  const strategy = getActiveStrategy()
+  const nameScore = strategy.matchName(fieldName, pattern.category, pattern)
+  const nameContribution = nameScore * NAME_MATCH_WEIGHT
+  maxPossibleScore += NAME_MATCH_WEIGHT
 
-    for (const namePattern of pattern.namePatterns) {
-      if (namePattern.weight > bestNameWeight) {
-        bestNameWeight = namePattern.weight
-      }
-      if (namePattern.regex.test(fieldName)) {
-        if (namePattern.weight > bestNameMatch) {
-          bestNameMatch = namePattern.weight
-          matchedPatternName = namePattern.regex.source
-        }
-      }
-    }
-
-    // Max possible is the highest weight among all name patterns
-    const nameMaxWeight = Math.max(...pattern.namePatterns.map(p => p.weight))
-    maxPossibleScore += nameMaxWeight
-
-    signals.push({
-      name: matchedPatternName ? `namePattern:${matchedPatternName}` : 'namePattern',
-      matched: bestNameMatch > 0,
-      weight: nameMaxWeight,
-      contribution: bestNameMatch,
-    })
-    totalScore += bestNameMatch
-  }
+  signals.push({
+    name: `nameMatch:${strategy.name}`,
+    matched: nameScore > 0,
+    weight: NAME_MATCH_WEIGHT,
+    contribution: nameContribution,
+  })
+  totalScore += nameContribution
 
   // 2. Type constraint matching
   if (pattern.typeConstraint.weight > 0) {
@@ -113,6 +102,9 @@ export function calculateConfidence(
   }
 
   // 4. Format hint matching
+  // FIX: Only include format hints in maxPossibleScore when OpenAPI hints are
+  // actually present. Previously this always counted, deflating scores by
+  // 10-18% for non-OpenAPI APIs.
   if (openapiHints?.format && pattern.formatHints.length > 0) {
     for (const hint of pattern.formatHints) {
       maxPossibleScore += hint.weight
@@ -130,24 +122,14 @@ export function calculateConfidence(
         totalScore += hint.weight
       }
     }
-  } else {
-    // Still count format hints toward max if they exist (but won't match)
-    for (const hint of pattern.formatHints) {
-      maxPossibleScore += hint.weight
-      signals.push({
-        name: `formatHint:${hint.format}`,
-        matched: false,
-        weight: hint.weight,
-        contribution: 0,
-      })
-    }
   }
+  // When no OpenAPI hints are present, format hints are excluded entirely
+  // from both numerator and denominator — no score deflation.
 
   // Calculate final confidence (avoid division by zero)
   const confidence = maxPossibleScore > 0 ? totalScore / maxPossibleScore : 0
 
   // Determine confidence level based on thresholds
-  // User decision: >= 0.75 = high (apply smart default)
   const level = determineConfidenceLevel(confidence, pattern.thresholds)
 
   return {

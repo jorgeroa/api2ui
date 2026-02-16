@@ -3,9 +3,16 @@
  * Validates multi-signal pattern matching and score calculation.
  */
 
-import { describe, test, expect } from 'vitest'
+import { describe, test, expect, beforeAll } from 'vitest'
 import { calculateConfidence } from './scorer'
+import { setSemanticEngine } from './strategies'
 import type { SemanticPattern } from './types'
+
+// Use regex strategy for scorer tests so regex-based assertions work.
+// Embedding strategy is tested separately in embeddings.test.ts.
+beforeAll(() => {
+  setSemanticEngine('regex')
+})
 
 // Mock pattern for testing
 const createTestPattern = (overrides: Partial<SemanticPattern> = {}): SemanticPattern => ({
@@ -44,10 +51,10 @@ describe('calculateConfidence', () => {
       )
 
       // Name matches (0.4), type matches (0.2), value matches (0.25)
-      // Max possible = 0.4 + 0.2 + 0.25 + 0.15 = 1.0
+      // Max possible = 0.4 + 0.2 + 0.25 = 0.85 (format hints excluded without OpenAPI)
       // Score = 0.4 + 0.2 + 0.25 = 0.85
-      // Confidence = 0.85 / 1.0 = 0.85
-      expect(result.confidence).toBeGreaterThanOrEqual(0.80)
+      // Confidence = 0.85 / 0.85 = 1.0
+      expect(result.confidence).toBeGreaterThanOrEqual(0.90)
       expect(result.level).toBe('high')
       expect(result.category).toBe('price')
     })
@@ -79,7 +86,7 @@ describe('calculateConfidence', () => {
         pattern
       )
 
-      // Only name matches: 0.4 / 1.0 = 0.40
+      // Only name matches: 0.4 / 0.85 = 0.47
       expect(result.confidence).toBeLessThan(0.75)
       expect(result.level).toBe('low')
     })
@@ -94,7 +101,7 @@ describe('calculateConfidence', () => {
         pattern
       )
 
-      // Only type matches: 0.2 / 1.0 = 0.20
+      // Only type matches: 0.2 / 0.85 = 0.24
       expect(result.confidence).toBeLessThan(0.50)
       expect(result.level).toBe('low')
     })
@@ -110,13 +117,13 @@ describe('calculateConfidence', () => {
       )
 
       // Value still passes because 50 >= 0
-      // Only value matches: 0.25 / 1.0 = 0.25
+      // Only value matches: 0.25 / 0.85 = 0.29
       expect(result.confidence).toBeLessThan(0.50)
     })
   })
 
   describe('no match scenarios', () => {
-    test('no signals match yields confidence near 0, level none', () => {
+    test('no signals match yields confidence 0, level none', () => {
       const pattern = createTestPattern()
       const result = calculateConfidence(
         'data', // Doesn't match 'price'
@@ -156,17 +163,17 @@ describe('calculateConfidence', () => {
         pattern
       )
 
-      // Find signals
-      const nameSignal = result.signals.find(s => s.name.includes('namePattern'))
+      // Find signals by new naming convention
+      const nameSignal = result.signals.find(s => s.name.includes('nameMatch'))
       const typeSignal = result.signals.find(s => s.name === 'typeConstraint')
       const valueSignal = result.signals.find(s => s.name.includes('valueValidator'))
 
-      expect(nameSignal?.contribution).toBe(0.4)
+      expect(nameSignal?.contribution).toBe(0.4)  // 1.0 * 0.4 weight
       expect(typeSignal?.contribution).toBe(0.2)
       expect(valueSignal?.contribution).toBe(0.25)
     })
 
-    test('best-match-wins for multiple name patterns', () => {
+    test('name match uses strategy (regex in this test suite)', () => {
       const pattern = createTestPattern({
         namePatterns: [
           { regex: /\bcost\b/i, weight: 0.3, languages: ['en'] },
@@ -175,7 +182,7 @@ describe('calculateConfidence', () => {
         ],
       })
 
-      // Test that matching 'price' uses the 0.4 weight (best match)
+      // Regex strategy returns 1.0 on match, scorer applies NAME_MATCH_WEIGHT
       const result = calculateConfidence(
         'price',
         'number',
@@ -184,8 +191,8 @@ describe('calculateConfidence', () => {
         pattern
       )
 
-      const nameSignal = result.signals.find(s => s.name.includes('namePattern'))
-      expect(nameSignal?.contribution).toBe(0.4) // Best match weight
+      const nameSignal = result.signals.find(s => s.name.includes('nameMatch'))
+      expect(nameSignal?.contribution).toBe(0.4)  // 1.0 * NAME_MATCH_WEIGHT
     })
 
     test('multilingual name pattern: matching any language works', () => {
@@ -203,8 +210,8 @@ describe('calculateConfidence', () => {
         pattern
       )
 
-      expect(spanishResult.signals.find(s => s.name.includes('namePattern'))?.matched).toBe(true)
-      expect(spanishResult.signals.find(s => s.name.includes('namePattern'))?.contribution).toBe(0.4)
+      expect(spanishResult.signals.find(s => s.name.includes('nameMatch'))?.matched).toBe(true)
+      expect(spanishResult.signals.find(s => s.name.includes('nameMatch'))?.contribution).toBe(0.4)
     })
   })
 
@@ -228,12 +235,32 @@ describe('calculateConfidence', () => {
         pattern
       )
 
-      // Format hint adds 0.15 contribution
-      expect(withHint.confidence).toBeGreaterThan(withoutHint.confidence)
+      // With hint: format adds 0.15 contribution AND is included in maxPossibleScore
+      // Without hint: format is excluded from maxPossibleScore entirely
+      // Both should be high confidence, but with different denominators
+      expect(withHint.confidence).toBeGreaterThanOrEqual(0.95)
 
       const formatSignal = withHint.signals.find(s => s.name === 'formatHint:currency')
       expect(formatSignal?.matched).toBe(true)
       expect(formatSignal?.contribution).toBe(0.15)
+    })
+
+    test('format hints are excluded from maxPossibleScore without OpenAPI hints', () => {
+      const pattern = createTestPattern()
+
+      const result = calculateConfidence(
+        'price',
+        'number',
+        [29.99],
+        undefined,
+        pattern
+      )
+
+      // Without OpenAPI: maxPossibleScore = 0.4 + 0.2 + 0.25 = 0.85
+      // Score = 0.85, Confidence = 1.0
+      // No format hint signals should be present
+      const formatSignal = result.signals.find(s => s.name.includes('formatHint'))
+      expect(formatSignal).toBeUndefined()
     })
 
     test('non-matching format does not boost confidence', () => {
@@ -299,8 +326,10 @@ describe('calculateConfidence', () => {
       )
 
       // Name (0.4) + value (0.25) = 0.65
-      // 0.65 / 1.0 = 0.65
-      expect(result.level).toBe('medium')
+      // maxPossibleScore = 0.85 (no format hints)
+      // 0.65 / 0.85 = 0.76 — actually this is >= 0.75 now!
+      // With the format hint fix, this is high now, not medium
+      expect(result.level).toBe('high')
     })
 
     test('confidence > 0 but < 0.50 yields "low" level', () => {
@@ -313,7 +342,7 @@ describe('calculateConfidence', () => {
         pattern
       )
 
-      // Only type matches: 0.2 / 1.0 = 0.20
+      // Only type matches: 0.2 / 0.85 = 0.24
       expect(result.level).toBe('low')
     })
 
@@ -345,7 +374,8 @@ describe('calculateConfidence', () => {
         pattern
       )
 
-      // type (0.2) + value (0.25) / (0.2 + 0.25 + 0.15) = 0.75
+      // NAME_MATCH_WEIGHT still in maxPossible, but contribution is 0
+      // type (0.2) + value (0.25) / (0.4 + 0.2 + 0.25) = 0.53
       expect(result.confidence).toBeGreaterThan(0)
     })
 
@@ -362,7 +392,7 @@ describe('calculateConfidence', () => {
         pattern
       )
 
-      // name (0.4) + type (0.2) / (0.4 + 0.2 + 0.15) = 0.8
+      // name (0.4) + type (0.2) / (0.4 + 0.2) = 1.0
       expect(result.confidence).toBeGreaterThan(0.75)
     })
 
