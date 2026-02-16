@@ -12,55 +12,55 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 
 ### Validated
 
-- User can paste an API URL and see an instant default render — v1.0
-- Engine infers API structure from responses (or parses Swagger/OpenAPI spec) — v1.0
-- Auto sidebar navigation for multi-endpoint APIs — v1.0
-- Type-based default component mapping for responses (array->table/cards, object->detail, primitive->text) — v1.0
-- Type-based default component mapping for parameters (string->text, number->number, enum->dropdown, bool->toggle) — v1.0
-- Required params shown prominently, optional in expandable section — v1.0
-- Master-detail pattern for nested data (collection -> click -> detail view) — v1.0
-- Configurable max nesting depth — v1.0
-- Developer can override component type, props, visibility, and field mapping at each level — v1.0
-- Configure mode with settings panel (global) and inline editing (per-element) — v1.0
-- View mode with clean output, no controls — v1.0
-- CSS customizable styling — v1.0
-- Landing page with URL input and clickable example APIs — v1.0
-- Live data fetched on each page load — v1.0
-- Local storage for saving view configurations — v1.0
-- Fixed component set: tables, cards, lists, detail views, form inputs — v1.0
-- Image URLs auto-detected and rendered as images by default — v1.1
-- Cards display hero images from detected image-URL fields — v1.1
-- Tables show inline thumbnail previews for image columns — v1.1
-- Typography hierarchy distinguishes primary fields from secondary data — v1.1
-- Component type switching discoverable in View mode (not just Configure mode) — v1.1
-- Per-element contextual configuration popover — v1.1
-- Client-side pagination for large arrays (tables and cards) — v1.1
-- Configurable items-per-page with page navigation controls — v1.1
-- Detail views with hero images, two-column layout, and visual grouping — v1.1
-- Nested arrays render as horizontal card scrollers in detail views — v1.1
-- Breadcrumb navigation for nested detail drill-down — v1.1
-- Raw URL query param parsing with type inference (not just Swagger) — v1.2
-- Parameter grouping by prefix (e.g., ddcFilter[*] -> "Filters" section) — v1.2
-- Progressive param reveal: show breakdown first, then make editable — v1.2
-- Smart type inference for params (dates, coordinates, zip codes, emails) — v1.2
-- Richer input components (date pickers, sliders, tag inputs for multi-value) — v1.2
-- Contextual defaults and placeholder examples for params — v1.2
-- Inline validation feedback before submit — v1.2
-- Smooth inline re-fetch with loading/error states — v1.2
-- Parameter value persistence across sessions — v1.2
-- User-selectable page layouts (sidebar, top bar, split view, drawer) — v1.2
-- Polished UX that feels like a real product — v1.2
-- Semantic component selection (reviews -> cards, specs -> key-value, images -> gallery) — v1.3
-- Automatic section organization with accordions for complex objects — v1.3
-- Field importance hierarchy (primary/secondary/tertiary visual tiers) — v1.3
-- Smart defaults for detail views (Hero + Overview + Sections layout) — v1.3
-- Context-aware components (status badges, star ratings, currency, dates, tag chips) — v1.3
-- All existing components remain available via component switcher overrides — v1.3
-- API Key, Bearer Token, Basic Auth, Query Parameter authentication — v1.4
-- Auto-detect auth requirements from OpenAPI security schemes — v1.4
-- 401/403 error prompts with actionable recovery buttons — v1.4
-- Per-API credential scoping with sessionStorage persistence — v1.4
-- Auth configuration UI with lock icon, type selector, credential forms — v1.4
+- User can paste an API URL and see an instant default render — v0.0
+- Engine infers API structure from responses (or parses Swagger/OpenAPI spec) — v0.0
+- Auto sidebar navigation for multi-endpoint APIs — v0.0
+- Type-based default component mapping for responses (array->table/cards, object->detail, primitive->text) — v0.0
+- Type-based default component mapping for parameters (string->text, number->number, enum->dropdown, bool->toggle) — v0.0
+- Required params shown prominently, optional in expandable section — v0.0
+- Master-detail pattern for nested data (collection -> click -> detail view) — v0.0
+- Configurable max nesting depth — v0.0
+- Developer can override component type, props, visibility, and field mapping at each level — v0.0
+- Configure mode with settings panel (global) and inline editing (per-element) — v0.0
+- View mode with clean output, no controls — v0.0
+- CSS customizable styling — v0.0
+- Landing page with URL input and clickable example APIs — v0.0
+- Live data fetched on each page load — v0.0
+- Local storage for saving view configurations — v0.0
+- Fixed component set: tables, cards, lists, detail views, form inputs — v0.0
+- Image URLs auto-detected and rendered as images by default — v0.1
+- Cards display hero images from detected image-URL fields — v0.1
+- Tables show inline thumbnail previews for image columns — v0.1
+- Typography hierarchy distinguishes primary fields from secondary data — v0.1
+- Component type switching discoverable in View mode (not just Configure mode) — v0.1
+- Per-element contextual configuration popover — v0.1
+- Client-side pagination for large arrays (tables and cards) — v0.1
+- Configurable items-per-page with page navigation controls — v0.1
+- Detail views with hero images, two-column layout, and visual grouping — v0.1
+- Nested arrays render as horizontal card scrollers in detail views — v0.1
+- Breadcrumb navigation for nested detail drill-down — v0.1
+- Raw URL query param parsing with type inference (not just Swagger) — v0.2
+- Parameter grouping by prefix (e.g., ddcFilter[*] -> "Filters" section) — v0.2
+- Progressive param reveal: show breakdown first, then make editable — v0.2
+- Smart type inference for params (dates, coordinates, zip codes, emails) — v0.2
+- Richer input components (date pickers, sliders, tag inputs for multi-value) — v0.2
+- Contextual defaults and placeholder examples for params — v0.2
+- Inline validation feedback before submit — v0.2
+- Smooth inline re-fetch with loading/error states — v0.2
+- Parameter value persistence across sessions — v0.2
+- User-selectable page layouts (sidebar, top bar, split view, drawer) — v0.2
+- Polished UX that feels like a real product — v0.2
+- Semantic component selection (reviews -> cards, specs -> key-value, images -> gallery) — v0.3
+- Automatic section organization with accordions for complex objects — v0.3
+- Field importance hierarchy (primary/secondary/tertiary visual tiers) — v0.3
+- Smart defaults for detail views (Hero + Overview + Sections layout) — v0.3
+- Context-aware components (status badges, star ratings, currency, dates, tag chips) — v0.3
+- All existing components remain available via component switcher overrides — v0.3
+- API Key, Bearer Token, Basic Auth, Query Parameter authentication — v0.4
+- Auto-detect auth requirements from OpenAPI security schemes — v0.4
+- 401/403 error prompts with actionable recovery buttons — v0.4
+- Per-API credential scoping with sessionStorage persistence — v0.4
+- Auth configuration UI with lock icon, type selector, credential forms — v0.4
 
 ### Active
 
@@ -79,11 +79,11 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 
 ## Context
 
-- **Shipped v1.0 MVP** with 6,099 lines of TypeScript/TSX/CSS across 207 files
-- **Shipped v1.1 UX Polish** with smart visual defaults, discoverable component switching, pagination, and enhanced detail views
-- **Shipped v1.2 Smart Parameters & Layout System** with URL parsing, type inference, rich input components, applied filter chips, and user-selectable layouts
-- **Shipped v1.3 Smart Default Selection** with semantic field analysis (22 patterns), importance scoring, auto-grouping (prefix + semantic clustering), smart component selection heuristics, and context-aware rendering components
-- **Shipped v1.4 API Authentication** with 4 auth types (API Key, Bearer, Basic, Query Param), OpenAPI security scheme auto-detection, and smart error UX with actionable recovery
+- **Shipped v0.0 MVP** with 6,099 lines of TypeScript/TSX/CSS across 207 files
+- **Shipped v0.1 UX Polish** with smart visual defaults, discoverable component switching, pagination, and enhanced detail views
+- **Shipped v0.2 Smart Parameters & Layout System** with URL parsing, type inference, rich input components, applied filter chips, and user-selectable layouts
+- **Shipped v0.3 Smart Default Selection** with semantic field analysis (22 patterns), importance scoring, auto-grouping (prefix + semantic clustering), smart component selection heuristics, and context-aware rendering components
+- **Shipped v0.4 API Authentication** with 4 auth types (API Key, Bearer, Basic, Query Param), OpenAPI security scheme auto-detection, and smart error UX with actionable recovery
 - **Current codebase:** 24,114 lines of TypeScript/TSX/CSS, 449 tests
 - **Tech stack:** React 19, TypeScript 5.9, Vite 7, Tailwind CSS 4, Zustand, Headless UI, @dnd-kit, @apidevtools/swagger-parser, shadcn/ui, Sonner
 - The rendering engine has two symmetric sides: input (parameters -> form controls) and output (responses -> data components), both following type-based defaults with developer overrides
@@ -96,7 +96,7 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 ## Constraints
 
 - **Read-only**: v1 only renders GET responses, no write operations
-- **Authenticated APIs**: v1.4 added auth support (API Key, Bearer, Basic, Query Param)
+- **Authenticated APIs**: v0.4 added auth support (API Key, Bearer, Basic, Query Param)
 - **Client-side**: No backend required, direct API calls from browser (CORS may limit some APIs)
 - **Tech stack**: React 19, TypeScript 5.9, Vite 7, Tailwind CSS 4
 
@@ -130,4 +130,4 @@ Any API becomes instantly usable through a visual interface — paste a URL, see
 | Zero new dependencies for auth | Native browser APIs (btoa, URLSearchParams, fetch headers) keep bundle small | Good |
 
 ---
-*Last updated: 2026-02-10 after v1.4 milestone complete*
+*Last updated: 2026-02-10 after v0.4 milestone complete*

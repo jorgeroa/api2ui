@@ -532,7 +532,7 @@ Things that couldn't be fully resolved:
 - [URLSearchParams - MDN](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams) - Core parsing API
 - [Headless UI Disclosure](https://headlessui.com/react/disclosure) - Accordion component pattern
 - [Zustand persist middleware](https://zustand.docs.pmnd.rs/middlewares/persist) - State persistence pattern
-- `.planning/research/SUMMARY.md` - v1.2 architecture decisions
+- `.planning/research/SUMMARY.md` - v0.2 architecture decisions
 - `.planning/research/PITFALLS.md` - Integration risk analysis
 
 ### Secondary (MEDIUM confidence)
@@ -550,7 +550,7 @@ Things that couldn't be fully resolved:
 - Standard stack: HIGH - Uses native APIs and existing codebase patterns
 - Architecture: HIGH - Extends established patterns (configStore, Disclosure)
 - Type inference: MEDIUM - Conservative approach is sound but edge cases may emerge in testing
-- Pitfalls: HIGH - Well-documented in prior v1.2 research
+- Pitfalls: HIGH - Well-documented in prior v0.2 research
 
 **Research date:** 2026-02-05
 **Valid until:** 2026-03-05 (30 days - stable patterns, no fast-moving dependencies)

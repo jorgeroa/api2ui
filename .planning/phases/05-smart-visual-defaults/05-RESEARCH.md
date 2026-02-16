@@ -36,7 +36,7 @@ The implementation uses the existing React + TypeScript + Tailwind CSS stack wit
 | Instead of | Could Use | Tradeoff |
 |------------|-----------|----------|
 | Native browser image handling | react-lazy-load-image-component | Library adds 3+ dependencies for features already available natively via `loading="lazy"` attribute (HIGH browser support in 2026) |
-| Manual CDN pattern matching | unpic library | unpic provides 28+ CDN provider detection but adds bundle size; manual matching of common patterns (Cloudinary, Imgix domains) is sufficient for v1.1 |
+| Manual CDN pattern matching | unpic library | unpic provides 28+ CDN provider detection but adds bundle size; manual matching of common patterns (Cloudinary, Imgix domains) is sufficient for v0.1 |
 | Custom field classification | Schema-based metadata | Field name heuristics are simpler and work without schema changes; can enhance later with OpenAPI x-extensions |
 
 **Installation:**
@@ -604,7 +604,7 @@ Things that couldn't be fully resolved:
 3. **Should field classification support custom patterns via configuration?**
    - What we know: Hard-coded patterns ['name', 'title', 'label'] cover 80%+ of real APIs
    - What's unclear: Whether power users would want to customize which fields are considered "primary"
-   - Recommendation: Hard-code patterns for v1.1. If Phase 6 or 8 adds per-element config, consider allowing users to tag fields as "primary" manually.
+   - Recommendation: Hard-code patterns for v0.1. If Phase 6 or 8 adds per-element config, consider allowing users to tag fields as "primary" manually.
 
 ## Sources
 

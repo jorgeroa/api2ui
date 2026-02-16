@@ -83,7 +83,7 @@ export async function fetchWithAuth(url: string): Promise<unknown> {
 
   // Passthrough mode: no credentials configured
   if (!credential) {
-    return fetchAPI(url)  // Exact same behavior as v1.3
+    return fetchAPI(url)  // Exact same behavior as v0.3
   }
 
   // Build request with credentials

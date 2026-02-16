@@ -103,7 +103,7 @@ Mistakes that cause rewrites, security breaches, or major issues.
 - State management doesn't handle auth-optional scenarios
 
 **Consequences:**
-- v1.0-v1.3 users report "nothing works anymore"
+- v0.0-v0.3 users report "nothing works anymore"
 - Public API examples break on landing page
 - Users forced to configure auth even for public APIs
 - Loss of core value prop (paste URL, instant render)

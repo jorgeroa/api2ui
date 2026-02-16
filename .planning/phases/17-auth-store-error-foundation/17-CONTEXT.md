@@ -40,7 +40,7 @@ Credential storage infrastructure (Zustand store + sessionStorage) and error typ
 - getActiveCredential(origin) — convenience getter for Phase 18 fetch integration
 - Switching active credential is a silent store update — no auto re-fetch
 - Standard Zustand reactivity for change notifications — no custom events
-- Session-only storage — no import/export for v1.4
+- Session-only storage — no import/export for v0.4
 
 ### Claude's Discretion
 - Exact TypeScript type definitions and naming

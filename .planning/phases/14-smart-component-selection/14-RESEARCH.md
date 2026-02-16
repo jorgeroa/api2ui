@@ -255,7 +255,7 @@ function groupTimelineItems(
 - **Field count as sole decision factor:** User explicitly stated content richness trumps field count. Don't select table just because there are 10+ fields if they're mostly tertiary metadata.
 - **Timeline for chronological ordering alone:** User decision requires event-like semantics (date + title/description). Don't trigger timeline just because data has timestamps.
 - **Ignoring confidence thresholds:** Always check `confidence >= 0.75` before applying smart default. Lower confidence should fall back to type-based defaults.
-- **Breaking v1.2 behavior:** INT-01 requirement states smart defaults must not break existing behavior. User overrides (from configStore) always win.
+- **Breaking v0.2 behavior:** INT-01 requirement states smart defaults must not break existing behavior. User overrides (from configStore) always win.
 
 ## Don't Hand-Roll
 
@@ -294,7 +294,7 @@ Problems that look simple but have existing solutions:
 ### Pitfall 4: Breaking User Overrides
 **What goes wrong:** Smart defaults override user's manual component selection from configStore.
 **Why it happens:** Not checking for existing override before applying smart default.
-**How to avoid:** DynamicRenderer already checks `override` parameter first. Smart defaults only apply when override is undefined. Requirement INT-01: don't break v1.2 behavior.
+**How to avoid:** DynamicRenderer already checks `override` parameter first. Smart defaults only apply when override is undefined. Requirement INT-01: don't break v0.2 behavior.
 **Warning signs:** User sets card-list via component switcher, but it reverts to table on data refresh.
 
 ### Pitfall 5: Card Display Clutter with All Fields
@@ -334,7 +334,7 @@ export interface ComponentSelection {
  * Priority order:
  * 1. User override (from configStore) - always wins
  * 2. High-confidence semantic patterns (>= 0.75)
- * 3. Type-based defaults (current v1.2 behavior)
+ * 3. Type-based defaults (current v0.2 behavior)
  *
  * @param schema - Type signature of the data
  * @param semantics - Semantic metadata from Phase 12 detection
@@ -602,7 +602,7 @@ function selectCardOrTable(
 | Fixed table columns | Importance tier filtering | Phase 14 | Cleaner card displays |
 
 **Deprecated/outdated:**
-- None. This phase extends existing patterns without breaking v1.2 behavior.
+- None. This phase extends existing patterns without breaking v0.2 behavior.
 
 ## Open Questions
 

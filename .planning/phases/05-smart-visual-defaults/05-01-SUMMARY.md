@@ -8,7 +8,7 @@ tags: [image-detection, visual-intelligence, primitives, auto-rendering]
 
 # Dependency Graph
 requires:
-  - v1.0-complete
+  - v0.0-complete
 provides:
   - isImageUrl utility function
   - auto-image rendering in PrimitiveRenderer

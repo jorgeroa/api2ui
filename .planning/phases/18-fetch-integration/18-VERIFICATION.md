@@ -27,7 +27,7 @@ score: 13/13 must-haves verified
 | 7 | Invalid header names for API Key auth are rejected with clear error | ✓ VERIFIED | Line 121-122: validateHeaderName check confirmed. Test passes at line 121-134. |
 | 8 | fetchAndInfer uses fetchWithAuth instead of fetchAPI | ✓ VERIFIED | useAPIFetch.ts line 128: `await fetchWithAuth(url)` confirmed |
 | 9 | fetchOperation uses fetchWithAuth instead of fetchAPI | ✓ VERIFIED | useAPIFetch.ts line 94: `await fetchWithAuth(fullUrl)` confirmed |
-| 10 | Public APIs without credentials behave identically to v1.3 | ✓ VERIFIED | All 430 tests pass, build succeeds, passthrough path matches v1.3 behavior |
+| 10 | Public APIs without credentials behave identically to v0.3 | ✓ VERIFIED | All 430 tests pass, build succeeds, passthrough path matches v0.3 behavior |
 | 11 | TypeScript builds cleanly with no errors | ✓ VERIFIED | `tsc --noEmit` exits cleanly with no output |
 | 12 | Existing tests still pass | ✓ VERIFIED | All 430 tests pass (12 test files) |
 | 13 | fetchWithAuth exports alongside fetchAPI with no breaking changes | ✓ VERIFIED | Both functions exported from fetcher.ts, no imports of fetchAPI found outside fetcher.ts |

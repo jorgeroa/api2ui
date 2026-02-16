@@ -2,16 +2,16 @@
 
 **Domain:** API authentication in API exploration and testing tools
 **Researched:** 2026-02-09
-**Focus:** v1.4 API Authentication milestone — adding authentication support to api2ui
+**Focus:** v0.4 API Authentication milestone — adding authentication support to api2ui
 **Confidence:** HIGH (patterns verified across Swagger UI, Postman, Insomnia, RapidAPI)
 
 ## Summary
 
-This research examines how leading API tools (Swagger UI, Postman, Insomnia, RapidAPI) handle authentication features, credential management, and auth UX patterns. The v1.4 milestone adds authentication support to api2ui, which currently has zero auth capabilities.
+This research examines how leading API tools (Swagger UI, Postman, Insomnia, RapidAPI) handle authentication features, credential management, and auth UX patterns. The v0.4 milestone adds authentication support to api2ui, which currently has zero auth capabilities.
 
-Key findings: (1) **Auth type selection** via dedicated UI (modal/panel with "Authorize" button is standard, pioneered by Swagger UI), (2) **Visual indicators** use lock icons with states (gray unlocked = optional, black locked = active, red = failed), (3) **Per-API credential scoping** is table stakes (different APIs need different credentials), (4) **Auto-detection from OpenAPI specs** parses `components.securitySchemes` to pre-populate auth type, (5) **Auto-prompt on 401/403 errors** is a differentiator (proactively offer auth config when API returns auth error), (6) **Session storage over localStorage** is the secure default (credentials cleared on tab close), (7) **OAuth 2.0 flows are complex** and should be deferred to v1.5+ (requires redirect handling, token refresh, state management).
+Key findings: (1) **Auth type selection** via dedicated UI (modal/panel with "Authorize" button is standard, pioneered by Swagger UI), (2) **Visual indicators** use lock icons with states (gray unlocked = optional, black locked = active, red = failed), (3) **Per-API credential scoping** is table stakes (different APIs need different credentials), (4) **Auto-detection from OpenAPI specs** parses `components.securitySchemes` to pre-populate auth type, (5) **Auto-prompt on 401/403 errors** is a differentiator (proactively offer auth config when API returns auth error), (6) **Session storage over localStorage** is the secure default (credentials cleared on tab close), (7) **OAuth 2.0 flows are complex** and should be deferred to v0.5+ (requires redirect handling, token refresh, state management).
 
-The research reveals authentication UX follows clear patterns: dedicated auth UI (not inline header editing), visual feedback (lock icons), clear error messaging (401 = "check credentials", 403 = "permission denied"), and credential masking. Anti-patterns to avoid: storing credentials in localStorage by default (security risk), building OAuth flows in v1.4 (scope creep), auto-retry on 401/403 (violates best practices), and credential export/sharing features (security nightmare).
+The research reveals authentication UX follows clear patterns: dedicated auth UI (not inline header editing), visual feedback (lock icons), clear error messaging (401 = "check credentials", 403 = "permission denied"), and credential masking. Anti-patterns to avoid: storing credentials in localStorage by default (security risk), building OAuth flows in v0.4 (scope creep), auto-retry on 401/403 (violates best practices), and credential export/sharing features (security nightmare).
 
 ## Table Stakes
 
@@ -19,7 +19,7 @@ Features users expect from API authentication. Missing these means the product f
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Auth type selection | All API tools provide dropdown/tabs for API Key, Bearer, Basic Auth, OAuth | Low | Dropdown or radio buttons; 4 types for v1.4: API Key (header), Bearer Token, Basic Auth, Query Parameter |
+| Auth type selection | All API tools provide dropdown/tabs for API Key, Bearer, Basic Auth, OAuth | Low | Dropdown or radio buttons; 4 types for v0.4: API Key (header), Bearer Token, Basic Auth, Query Parameter |
 | Dedicated auth configuration UI | Users expect "Authorize" button with modal/panel (Swagger UI pattern) | Low | Modal dialog or expandable panel; NOT inline in request headers |
 | Visual indicator when auth is active | Lock icon shows if credentials are configured and will be sent | Low | Lock icon with states: gray unlocked (no auth), black locked (auth active) |
 | Per-request credential inclusion | Auth credentials automatically attached to API requests | Medium | Auto-inject into headers (`Authorization: Bearer ...`) or query params (`?api_key=...`) |
@@ -30,9 +30,9 @@ Features users expect from API authentication. Missing these means the product f
 | Credential masking in UI | API keys/tokens should show as `••••••••` after entry | Low | Input `type="password"` or custom masking (show first 4 chars: `sk-ab••••`) |
 
 **Dependencies on existing features:**
-- v1.0 API fetch service — extend to inject auth headers/params
-- v1.2 OpenAPI parser — extend to parse `securitySchemes` and operation-level `security`
-- v1.1 settings panel — add "Authorize" button to top-right or settings area
+- v0.0 API fetch service — extend to inject auth headers/params
+- v0.2 OpenAPI parser — extend to parse `securitySchemes` and operation-level `security`
+- v0.1 settings panel — add "Authorize" button to top-right or settings area
 
 **Confidence:** HIGH — These features are universal across Swagger UI, Postman, Insomnia, RapidAPI. Missing any would make auth support feel incomplete.
 
@@ -48,14 +48,14 @@ Features that would make api2ui's authentication exceptional — beyond basic cr
 | "Try without auth" toggle | Let users test public endpoints even when auth is configured globally | Low | Checkbox: "Include authentication" (default: checked if configured) |
 | Credential validation feedback | Immediate feedback that credentials are well-formed before request | Medium | Basic checks: API key not empty, Bearer token matches JWT regex, Basic auth has `username:password` |
 | Copy test token button | Help users grab example tokens for demo/testing | Low | "Copy test token" with sample Bearer token (useful for tutorials) |
-| Credential presets | Power users with multiple keys can save/switch between presets | High | "Save as preset" for credential sets; dropdown to switch (advanced, defer to v1.5+) |
+| Credential presets | Power users with multiple keys can save/switch between presets | High | "Save as preset" for credential sets; dropdown to switch (advanced, defer to v0.5+) |
 | Visual diff for auth/no-auth | Show what data is visible with vs without authentication | High | Split view or before/after toggle (very advanced, likely v2.0+) |
 
-**Recommendation for v1.4:**
+**Recommendation for v0.4:**
 - Auto-prompt on 401/403 (HIGH VALUE — guides users to configure auth when needed)
 - Per-API credential scoping (HIGH VALUE — multi-API workflow is core to api2ui)
 - Security indicator on endpoint badges (MEDIUM VALUE — helps users understand which operations need auth)
-- Defer to v1.5+: Credential presets (power user feature, low ROI for initial release), OAuth flows (complex)
+- Defer to v0.5+: Credential presets (power user feature, low ROI for initial release), OAuth flows (complex)
 
 **Confidence:** MEDIUM-HIGH — Auto-prompt and per-API scoping are differentiators based on real use cases; presets and visual diff are speculative (would need user testing).
 
@@ -65,23 +65,23 @@ Features to explicitly NOT build. Common mistakes in this domain.
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| OAuth 2.0 flow handling (in v1.4) | Requires redirect URLs, token refresh, PKCE, complex state management; major scope creep | Support manual Bearer token entry for OAuth-authenticated APIs; add OAuth flows in v1.5+ |
-| Credential storage in localStorage by default | Security risk: localStorage persists indefinitely and accessible to all scripts; API keys can leak | Use sessionStorage for v1.4 (cleared on tab close); consider encrypted localStorage + user consent in v2.0 |
+| OAuth 2.0 flow handling (in v0.4) | Requires redirect URLs, token refresh, PKCE, complex state management; major scope creep | Support manual Bearer token entry for OAuth-authenticated APIs; add OAuth flows in v0.5+ |
+| Credential storage in localStorage by default | Security risk: localStorage persists indefinitely and accessible to all scripts; API keys can leak | Use sessionStorage for v0.4 (cleared on tab close); consider encrypted localStorage + user consent in v2.0 |
 | Custom auth header builder | Over-engineering; 95% of APIs use standard patterns (Authorization header, query params) | Stick to 4 auth types: API Key (header), Bearer Token, Basic Auth, Query Parameter |
-| Multi-step auth workflows | Complex UIs like "First get token from /login, then use it" are power-user edge cases | Defer to v2.0; v1.4 focuses on static credentials (API keys, tokens) |
+| Multi-step auth workflows | Complex UIs like "First get token from /login, then use it" are power-user edge cases | Defer to v2.0; v0.4 focuses on static credentials (API keys, tokens) |
 | Credential sharing/export | Security nightmare; users might accidentally share credentials in exported configs | No export feature; credentials live in session/localStorage only (not in config JSON) |
-| Auth for non-HTTP schemes | GraphQL subscriptions, WebSockets, gRPC need different auth patterns | Scope v1.4 to REST APIs only; defer other protocols to future versions |
+| Auth for non-HTTP schemes | GraphQL subscriptions, WebSockets, gRPC need different auth patterns | Scope v0.4 to REST APIs only; defer other protocols to future versions |
 | Inline credential editing in request history | Encourages credential reuse across APIs; messy UX | Credentials configured in dedicated auth UI only (modal/panel) |
 | Auto-renewal/refresh tokens | Requires backend logic, refresh token storage, expiry detection, complex error handling | Manual re-entry if token expires (status quo for Swagger UI, Insomnia) |
 | Auto-retry on 401/403 | Violates best practices (4xx errors indicate client problem, not transient failure) | Show error message and prompt user to reconfigure credentials; do NOT retry automatically |
 
-**Key insight from research:** OAuth 2.0 is the **most requested but also most complex** auth feature. Every tool struggled with OAuth UX (redirect flows, popup blockers, token refresh). Defer to v1.5+ and focus v1.4 on **static credentials** (API keys, Bearer tokens) which cover 80% of API testing use cases.
+**Key insight from research:** OAuth 2.0 is the **most requested but also most complex** auth feature. Every tool struggled with OAuth UX (redirect flows, popup blockers, token refresh). Defer to v0.5+ and focus v0.4 on **static credentials** (API keys, Bearer tokens) which cover 80% of API testing use cases.
 
 **Confidence:** HIGH — Anti-patterns sourced from security best practices (Google Cloud API key docs, Auth0 token storage guidance) and UX patterns in Postman/Insomnia.
 
-## Authentication Type Support (v1.4 Scope)
+## Authentication Type Support (v0.4 Scope)
 
-The four auth types api2ui v1.4 will support.
+The four auth types api2ui v0.4 will support.
 
 | Auth Type | Where Applied | Example | Use Case |
 |-----------|---------------|---------|----------|
@@ -96,7 +96,7 @@ The four auth types api2ui v1.4 will support.
 - **Basic Auth:** User enters username and password; app base64-encodes to `username:password` and sets `Authorization: Basic ...`
 - **Query Parameter:** User enters param name (default: `api_key`) and value; app appends to URL
 
-**Out of scope for v1.4:**
+**Out of scope for v0.4:**
 - OAuth 2.0 flows (authorization code, implicit, client credentials, password grant)
 - OAuth 1.0a (signature-based auth)
 - AWS Signature V4 (complex signing algorithm)
@@ -168,7 +168,7 @@ How to handle authentication errors and guide users.
 
 Where and how to store credentials securely.
 
-### sessionStorage (Recommended for v1.4)
+### sessionStorage (Recommended for v0.4)
 
 **Pros:**
 - More secure: credentials cleared on tab/window close
@@ -208,7 +208,7 @@ sessionStorage.setItem('auth:https://api.github.com', JSON.stringify({
 - [Token Storage - Auth0 Docs](https://auth0.com/docs/secure/security-guidance/data-security/token-storage)
 - [Best practices for storing tokens | CyberArk](https://docs.cyberark.com/identity/latest/en/content/developer/oidc/tokens/token-storage.htm)
 
-**Recommendation:** Use sessionStorage for v1.4; revisit localStorage with encryption in v2.0 based on user feedback.
+**Recommendation:** Use sessionStorage for v0.4; revisit localStorage with encryption in v2.0 based on user feedback.
 
 **Confidence:** HIGH — sessionStorage vs localStorage tradeoff is well-documented in security best practices.
 
@@ -312,7 +312,7 @@ const baseURL = new URL(url).origin // 'https://api.github.com'
 
 **Edge case: Same base URL, different auth:**
 - Some APIs use different auth per endpoint (rare)
-- v1.4: credentials scoped to entire base URL
+- v0.4: credentials scoped to entire base URL
 - v2.0: could add per-endpoint credential override if needed
 
 **Confidence:** MEDIUM-HIGH — Per-API scoping is standard in Postman (environments) and Insomnia (workspaces). Implementation is straightforward.
@@ -322,36 +322,36 @@ const baseURL = new URL(url).origin // 'https://api.github.com'
 How features relate and recommended implementation sequence.
 
 ```
-Existing (v1.0-v1.3):
+Existing (v0.0-v0.3):
   API fetch service
   OpenAPI parser
   Settings panel
   Error display
     ↓
-v1.4 Phase 1: Foundation
+v0.4 Phase 1: Foundation
   Auth type selection UI (modal with 4 types)
   Credential entry forms (API Key, Bearer, Basic, Query)
   sessionStorage for credentials
     ↓
-v1.4 Phase 2: Integration
+v0.4 Phase 2: Integration
   Per-request credential injection (fetch service)
   Visual indicators (lock icon, auth badge)
   OpenAPI security scheme detection
     ↓
-v1.4 Phase 3: UX Polish
+v0.4 Phase 3: UX Polish
   Auto-prompt on 401/403 errors
   Per-API credential scoping
   Security indicators on endpoints
   Clear error messages
     ↓
-Future (v1.5+):
+Future (v0.5+):
   OAuth 2.0 flows (authorization code, PKCE)
   Credential presets
   Encrypted localStorage
   OAuth token refresh
 ```
 
-**Critical path for v1.4:**
+**Critical path for v0.4:**
 1. **Auth type selection + credential entry** (foundation)
 2. **Per-request injection** (core functionality)
 3. **Session storage** (persistence)
@@ -363,14 +363,14 @@ Future (v1.5+):
 - Per-API credential scoping
 - Security indicators on OpenAPI operations
 
-**Defer to v1.5+:**
+**Defer to v0.5+:**
 - OAuth 2.0 flows (major complexity)
 - Credential presets (power user feature)
 - Encrypted localStorage (needs security audit)
 
 ## MVP Recommendation
 
-For v1.4 MVP, prioritize these features:
+For v0.4 MVP, prioritize these features:
 
 ### Must Have (Table Stakes)
 
@@ -389,7 +389,7 @@ For v1.4 MVP, prioritize these features:
 10. **Auto-prompt on 401/403** (inline prompt: "This API requires authentication. Configure?")
 11. **Per-API credential scoping** (key by base URL, auto-switch when URL changes)
 
-### Defer to v1.5+ (Nice to Have)
+### Defer to v0.5+ (Nice to Have)
 
 - OAuth 2.0 flows (complex, high effort)
 - Credential presets (power user feature)
@@ -425,15 +425,15 @@ For v1.4 MVP, prioritize these features:
 
 ## Success Criteria
 
-v1.4 authentication features research is complete when these questions are answered:
+v0.4 authentication features research is complete when these questions are answered:
 
 - [x] What auth types should api2ui support? — API Key (header), Bearer Token, Basic Auth, Query Parameter (4 types cover 80-90% of use cases)
 - [x] How should credentials be entered? — Dedicated "Authorize" modal (Swagger UI pattern) with forms for each auth type
-- [x] Where should credentials be stored? — sessionStorage for v1.4 (cleared on tab close, more secure than localStorage)
+- [x] Where should credentials be stored? — sessionStorage for v0.4 (cleared on tab close, more secure than localStorage)
 - [x] How should auth state be indicated? — Lock icon (unlocked/locked states), "Authenticated" badge, per-endpoint security icons
 - [x] How should 401/403 errors be handled? — Clear messages ("check credentials" vs "permission denied"), auto-prompt to configure auth
 - [x] How should OpenAPI specs inform auth? — Parse `components.securitySchemes`, pre-populate auth type and header names
-- [x] Should OAuth 2.0 be in v1.4? — NO, defer to v1.5+ (complex flows, token refresh, scope creep)
+- [x] Should OAuth 2.0 be in v0.4? — NO, defer to v0.5+ (complex flows, token refresh, scope creep)
 - [x] How to handle multiple APIs? — Per-API credential scoping keyed by base URL, auto-switch when URL changes
 
 ## Sources
@@ -485,7 +485,7 @@ v1.4 authentication features research is complete when these questions are answe
 - OpenAPI auto-detection: HIGH — Spec structure is standardized
 - Auto-prompt on 401/403: MEDIUM — Differentiator, not verified in production tools
 - Per-API scoping: MEDIUM-HIGH — Inferred from Postman environments pattern
-- OAuth deferral to v1.5+: HIGH — Complexity confirmed across multiple tools
+- OAuth deferral to v0.5+: HIGH — Complexity confirmed across multiple tools
 
 **Research date:** 2026-02-09
 **Valid until:** ~60 days (authentication patterns are stable; unlikely to change rapidly)

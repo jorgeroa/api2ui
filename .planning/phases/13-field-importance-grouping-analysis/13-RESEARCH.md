@@ -16,7 +16,7 @@ For grouping, the research confirms that a hybrid approach combining prefix matc
 
 ## Standard Stack
 
-This phase uses zero dependencies following the v1.3 architecture decision. All libraries are already in the project from Phase 12.
+This phase uses zero dependencies following the v0.3 architecture decision. All libraries are already in the project from Phase 12.
 
 ### Core
 | Library | Version | Purpose | Why Standard |

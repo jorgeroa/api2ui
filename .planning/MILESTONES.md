@@ -1,6 +1,6 @@
 # Project Milestones: api2ui
 
-## v1.4 API Authentication (Shipped: 2026-02-10)
+## v0.4 API Authentication (Shipped: 2026-02-10)
 
 **Delivered:** Full authentication support for protected APIs — 4 auth types (API Key, Bearer Token, Basic Auth, Query Parameter) with credential injection, OpenAPI auto-detection, and smart error UX with actionable recovery prompts.
 
@@ -29,7 +29,7 @@
 
 ---
 
-## v1.3 Smart Default Selection (Shipped: 2026-02-09)
+## v0.3 Smart Default Selection (Shipped: 2026-02-09)
 
 **Delivered:** Semantic field analysis with intelligent component selection — the rendering engine now picks context-appropriate components (star ratings, currency formatting, status badges, tag chips, grouped detail views) based on field name patterns, value analysis, and importance scoring.
 
@@ -58,7 +58,7 @@
 
 ---
 
-## v1.2 Smart Parameters & Layout System (Shipped: 2026-02-07)
+## v0.2 Smart Parameters & Layout System (Shipped: 2026-02-07)
 
 **Delivered:** Smart URL parsing with type inference, user-switchable layouts (sidebar/topbar/split/drawer), rich input components (date pickers, tag inputs, sliders), applied filter chips, and polished UX with inline re-fetch.
 
@@ -91,7 +91,7 @@
 
 ---
 
-## v1.1 UX Polish (Shipped: 2026-02-05)
+## v0.1 UX Polish (Shipped: 2026-02-05)
 
 **Delivered:** Smart visual defaults, discoverable component switching, pagination, and enhanced detail views that make the rendered UI feel like a polished product.
 
@@ -115,11 +115,11 @@
 
 **Git range:** `9f1b492` → milestone tag
 
-**What's next:** v1.2 Smart Parameters & Layout System
+**What's next:** v0.2 Smart Parameters & Layout System
 
 ---
 
-## v1.0 MVP (Shipped: 2026-02-02)
+## v0.0 MVP (Shipped: 2026-02-02)
 
 **Delivered:** Complete API-to-UI rendering engine that transforms any REST API or OpenAPI spec into an interactive visual interface with customizable components, configuration persistence, and multi-endpoint navigation.
 

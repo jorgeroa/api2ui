@@ -1,6 +1,6 @@
 # Technology Stack for API Authentication
 
-**Project:** api2ui v1.4
+**Project:** api2ui v0.4
 **Researched:** 2026-02-09
 **Confidence:** HIGH
 

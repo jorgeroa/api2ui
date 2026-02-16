@@ -37,7 +37,7 @@ The implementation uses the existing React + TypeScript + Tailwind CSS + Zustand
 |------------|-----------|----------|
 | Custom usePagination hook | react-paginate library | react-paginate provides UI component but requires wrapping and adds 650KB dependencies; custom hook is 20-30 lines and integrates directly with ConfigStore |
 | Native array slice | react-window virtualization | react-window 2.x has breaking API changes and adds complexity; pagination with slice() is simpler and sufficient for datasets under 10,000 items |
-| localStorage via Zustand | URL query params (?page=2) | URL params enable shareable links but require routing infrastructure; localStorage simpler for v1.1, can add URL sync later |
+| localStorage via Zustand | URL query params (?page=2) | URL params enable shareable links but require routing infrastructure; localStorage simpler for v0.1, can add URL sync later |
 | Custom pagination component | Material-UI Pagination | Material-UI adds 200KB+ dependencies and theme conflicts; custom component matches existing Tailwind design system |
 
 **Installation:**
@@ -526,7 +526,7 @@ Things that couldn't be fully resolved:
 4. **Integration with existing react-window dependency**
    - What we know: package.json has react-window 2.2.6, but TableRenderer doesn't use it (CSS scroll instead)
    - What's unclear: Should we remove unused dependency or keep for future virtualization?
-   - Recommendation: Keep dependency, add comment to package.json; pagination sufficient for v1.1, virtualization future enhancement
+   - Recommendation: Keep dependency, add comment to package.json; pagination sufficient for v0.1, virtualization future enhancement
 
 ## Sources
 

@@ -39,7 +39,7 @@ gaps: [] # All gaps closed in 14-03
 | 6 | Only high-confidence results (>=0.75) trigger smart defaults | VERIFIED | index.ts line 59, DynamicRenderer.tsx line 125 |
 | 7 | DynamicRenderer uses smart defaults when no user override exists | VERIFIED | useSchemaAnalysis populates cache, DynamicRenderer uses currentType |
 | 8 | User overrides (configStore) always take precedence over smart defaults | VERIFIED | DynamicRenderer.tsx lines 119-132 (correct precedence order) |
-| 9 | v1.2 behavior preserved when smart selection returns low confidence | VERIFIED | DynamicRenderer.tsx line 130 falls back to getDefaultTypeName |
+| 9 | v0.2 behavior preserved when smart selection returns low confidence | VERIFIED | DynamicRenderer.tsx line 130 falls back to getDefaultTypeName |
 | 10 | CardListRenderer displays only primary + secondary tier fields | VERIFIED | importance prop passed, filtering applied in CardListRenderer lines 104-116 |
 
 **Score:** 10/10 truths verified
@@ -86,7 +86,7 @@ gaps: [] # All gaps closed in 14-03
 | ARR-04: Card vs table heuristic | SATISFIED | selectCardOrTable uses visible field count and richness |
 | ARR-05: Rating pattern triggers cards | SATISFIED | checkReviewPattern detects rating semantic |
 | ARR-06: Timeline detection | SATISFIED | checkTimelinePattern matches date + narrative |
-| INT-01: v1.2 behavior preserved | SATISFIED | Low confidence falls back to type-based defaults |
+| INT-01: v0.2 behavior preserved | SATISFIED | Low confidence falls back to type-based defaults |
 | INT-05: Component switcher works | SATISFIED | User overrides take precedence in DynamicRenderer |
 
 **Status:** 8/8 requirements satisfied

@@ -45,7 +45,7 @@ score: 5/5 must-haves verified
 | From | To | Via | Status | Details |
 |------|----|----|--------|---------|
 | layoutStore.ts | localStorage | Zustand persist middleware | ✓ WIRED | persist() wrapper with createJSONStorage(() => localStorage), name: 'api2ui-layouts', partialize includes layouts and defaultLayout |
-| LayoutSwitcher.tsx | @radix-ui/react-toggle-group | import | ✓ WIRED | Import on line 1, ToggleGroup.Root and ToggleGroup.Item used, package installed (v1.1.11) |
+| LayoutSwitcher.tsx | @radix-ui/react-toggle-group | import | ✓ WIRED | Import on line 1, ToggleGroup.Root and ToggleGroup.Item used, package installed (v0.1.11) |
 | LayoutContainer.tsx | layoutStore.ts | useLayoutStore hook | ✓ WIRED | Import on line 2, destructured { getLayout, setLayout } on line 37, called with endpoint on lines 38 and 53 |
 | LayoutContainer.tsx | useMediaQuery.ts | useMediaQuery hook | ✓ WIRED | Import on line 3, called with '(max-width: 767px)' on line 41, result used for conditional rendering |
 | LayoutContainer.tsx | All layout components | imports and conditional rendering | ✓ WIRED | Imports lines 4-8, SidebarLayout rendered line 96, TopBarLayout line 99, SplitLayout line 102, DrawerLayout line 85 |

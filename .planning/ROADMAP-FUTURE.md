@@ -30,7 +30,7 @@ All features are available in both self-hosted and hosted versions. Paid tiers d
 
 ## Semantic Engine Architecture
 
-The semantic detection engine uses a **multi-signal scoring** approach. In v1.5 it transitions from regex-based name matching to **embedding-based name matching** as the primary classification mechanism.
+The semantic detection engine uses a **multi-signal scoring** approach. In v0.5 it transitions from regex-based name matching to **embedding-based name matching** as the primary classification mechanism.
 
 ### Scoring Signals
 
@@ -51,13 +51,13 @@ The semantic detection engine uses a **multi-signal scoring** approach. In v1.5 
 
 ### Regex Patterns (Legacy, Optional)
 
-The v1.0-v1.4 regex-based name matching system is retained as an optional fallback. Embeddings are the default. Users or contributors can switch to regex mode if needed (e.g., for environments where the ~400-800KB embedding bundle is unacceptable). The regex system will not receive new language additions — multilingual expansion happens through the embedding vocabulary.
+The v0.0-v0.4 regex-based name matching system is retained as an optional fallback. Embeddings are the default. Users or contributors can switch to regex mode if needed (e.g., for environments where the ~400-800KB embedding bundle is unacceptable). The regex system will not receive new language additions — multilingual expansion happens through the embedding vocabulary.
 
 ---
 
 ## Milestones
 
-### v1.5 — Public Release & Foundation
+### v0.5 — Public Release & Foundation
 
 **Goal:** Ship-ready quality, public launch, embedding-first semantic engine, and foundational improvements for everything that follows.
 
@@ -113,14 +113,14 @@ The v1.0-v1.4 regex-based name matching system is retained as an optional fallba
 **Goal:** Users ask questions about their API data in natural language. Client-side, bring-your-own-key.
 
 **Phases:**
-1. **BYOK Key Management** — Secure client-side API key input for OpenAI/Anthropic/etc, sessionStorage persistence (same pattern as API auth in v1.4)
+1. **BYOK Key Management** — Secure client-side API key input for OpenAI/Anthropic/etc, sessionStorage persistence (same pattern as API auth in v0.4)
 2. **Query Interface** — Chat-style or search-bar query input integrated into the existing UI
 3. **Semantic Context Injection** — Feed semantic field analysis into LLM prompts (the API has a "price" field, a "rating" field, etc.) so the LLM understands the data's meaning
 4. **Response Rendering** — LLM responses rendered using existing component system (tables, cards, values) — not just plain text
 
 **Key decisions:**
 - BYOK only — no backend LLM proxy yet (that's v2.0)
-- API keys stored in sessionStorage (same security model as v1.4 auth credentials)
+- API keys stored in sessionStorage (same security model as v0.4 auth credentials)
 - Vercel AI SDK for provider-agnostic LLM abstraction
 
 ---
@@ -221,10 +221,10 @@ The v1.0-v1.4 regex-based name matching system is retained as an optional fallba
 
 | Milestone | Improvement | Approach |
 |-----------|-------------|----------|
-| v1.5 | Embedding-first name matching | Pre-computed static lookup (~400-800KB), multilingual-e5-small, cosine similarity |
-| v1.5 | Value validator hardening | Fix status enum, rating range, sku specificity, name/address/title discrimination |
-| v1.5 | Format hint weight fix | Exclude from maxPossibleScore when no OpenAPI spec present |
-| v1.5 | Regex retained as optional | Legacy regex system behind configuration flag, not default |
+| v0.5 | Embedding-first name matching | Pre-computed static lookup (~400-800KB), multilingual-e5-small, cosine similarity |
+| v0.5 | Value validator hardening | Fix status enum, rating range, sku specificity, name/address/title discrimination |
+| v0.5 | Format hint weight fix | Exclude from maxPossibleScore when no OpenAPI spec present |
+| v0.5 | Regex retained as optional | Legacy regex system behind configuration flag, not default |
 | v1.8 | User corrections | Manual reclassification, local token vocabulary expansion |
 | v2.0 | Server-side embedding API | OpenAI text-embedding-3-small for novel/unknown field names |
 | v2.0 | Shared semantic cache | Aggregate corrections + vocabulary from all users (network effect) |
@@ -232,7 +232,7 @@ The v1.0-v1.4 regex-based name matching system is retained as an optional fallba
 
 ## Sharing Model (Cross-Cutting)
 
-| Feature | v1.5 | v2.0 Free | v2.0 Pro | v2.0 Team |
+| Feature | v0.5 | v2.0 Free | v2.0 Pro | v2.0 Team |
 |---------|------|-----------|----------|-----------|
 | Public links | URL-encoded, client-side | Hosted | Hosted | Hosted |
 | Private links | -- | -- | With expiry | With expiry |
@@ -243,6 +243,6 @@ The v1.0-v1.4 regex-based name matching system is retained as an optional fallba
 ---
 
 *Drafted: 2026-02-14, updated 2026-02-14*
-*Based on: v1.0-v1.4 shipped, strategic planning session, semantic layer research*
+*Based on: v0.0-v0.4 shipped, strategic planning session, semantic layer research*
 *Architecture decisions (backend stack, hosting) are intentionally deferred to v2.0*
 *Semantic engine architecture informed by: codebase audit, Orama evaluation, server-side vector DB comparison, embedding classification research*

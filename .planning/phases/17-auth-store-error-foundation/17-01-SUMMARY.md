@@ -7,7 +7,7 @@ tags: [typescript, authentication, error-handling, credentials, bearer, basic-au
 # Dependency graph
 requires:
   - phase: none
-    provides: Starting foundation for v1.4
+    provides: Starting foundation for v0.4
 provides:
   - Discriminated union for 4 credential types (bearer, basic, apiKey, queryParam)
   - AuthError class distinguishing 401 from 403 with contextual suggestions

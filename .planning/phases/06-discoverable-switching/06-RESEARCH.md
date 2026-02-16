@@ -564,7 +564,7 @@ function AccessiblePopover({ isOpen, onClose, children }) {
 | Custom context menu libraries | Native contextmenu event + Headless UI Menu | 2024+ | Browser context menu event now widely supported; libraries only needed for complex nested menus |
 | lodash.debounce everywhere | Inline useEffect + setTimeout for single use | React Hooks era | Simpler for single-use debouncing, avoids memoization complexity |
 | Separate tooltip component libraries | Built-in popover HTML attribute | Chrome 114+ (2023) | Native popover attribute available but lacks positioning control - Headless UI still preferred |
-| Manual ARIA attributes | Headless UI automatic ARIA | v1.0+ (2021) | Components handle aria-modal, aria-labelledby, aria-expanded automatically |
+| Manual ARIA attributes | Headless UI automatic ARIA | v0.0+ (2021) | Components handle aria-modal, aria-labelledby, aria-expanded automatically |
 
 **Deprecated/outdated:**
 - react-tooltip: Replaced by Headless UI Popover with custom content - better accessibility, positioning control

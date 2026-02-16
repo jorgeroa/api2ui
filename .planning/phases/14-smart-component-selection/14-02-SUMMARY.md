@@ -58,7 +58,7 @@ completed: 2026-02-08
 
 ## Accomplishments
 - DynamicRenderer integrated with smart selection service via analysis cache
-- Three-tier component selection precedence preserves v1.2 behavior
+- Three-tier component selection precedence preserves v0.2 behavior
 - CardListRenderer filters displayed fields by importance tier
 - Analysis cache infrastructure ready for population by App.tsx
 
@@ -79,13 +79,13 @@ Each task was committed atomically:
 **Component selection precedence order:**
 - User override (configStore) always wins (INT-01, INT-05 compatibility)
 - Smart default applies when cached selection exists with confidence >= 0.75
-- Type-based default fallback preserves v1.2 behavior when no cache or low confidence
+- Type-based default fallback preserves v0.2 behavior when no cache or low confidence
 
 **CardListRenderer tier filtering:**
 - Primary + secondary tier fields displayed in card body
 - Tertiary fields hidden from card view
 - Hero image detection unchanged (uses all fields)
-- Backward compatible: when importance prop undefined, all fields displayed (v1.2 behavior)
+- Backward compatible: when importance prop undefined, all fields displayed (v0.2 behavior)
 
 **Analysis cache design:**
 - Stored per path (e.g., "$", "$[].items")

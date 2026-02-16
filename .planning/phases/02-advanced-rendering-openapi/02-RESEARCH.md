@@ -650,7 +650,7 @@ function ParameterInput({ parameter, value, onChange }: ParameterInputProps) {
 | Old Approach | Current Approach | When Changed | Impact |
 |--------------|------------------|--------------|--------|
 | Manual $ref resolution | @apidevtools/swagger-parser.dereference() | Established ~2018 | Industry standard; handles all edge cases |
-| react-modal library | Headless UI Dialog | 2021 (Headless UI v1.0) | Better accessibility, composable, Tailwind-native |
+| react-modal library | Headless UI Dialog | 2021 (Headless UI v0.0) | Better accessibility, composable, Tailwind-native |
 | details/summary HTML | Headless UI Disclosure | 2021+ | Better React integration, animations, controlled state |
 | Class-based modals | Function components + hooks | React 16.8 (2019) | Simpler code, better state management |
 | Swagger 2.0 only | OpenAPI 3.0/3.1 support | 2017-2021 | Most APIs migrated to OpenAPI 3.x by 2023 |

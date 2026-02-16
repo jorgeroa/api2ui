@@ -6,7 +6,7 @@
 <domain>
 ## Phase Boundary
 
-Wrap the existing fetch layer with `fetchWithAuth` so credentials from the auth store are injected into requests automatically. Detect 401/403 responses and throw AuthError. Public APIs without credentials must behave identically to v1.3. No UI changes in this phase (UI is Phase 19, error UX is Phase 21).
+Wrap the existing fetch layer with `fetchWithAuth` so credentials from the auth store are injected into requests automatically. Detect 401/403 responses and throw AuthError. Public APIs without credentials must behave identically to v0.3. No UI changes in this phase (UI is Phase 19, error UX is Phase 21).
 
 </domain>
 

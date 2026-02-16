@@ -1,6 +1,6 @@
-# Research Synthesis: API Authentication for api2ui v1.4
+# Research Synthesis: API Authentication for api2ui v0.4
 
-**Milestone:** v1.4 API Authentication
+**Milestone:** v0.4 API Authentication
 **Researched:** 2026-02-09
 **Confidence:** HIGH across all areas
 
@@ -42,7 +42,7 @@ Adding API authentication to api2ui requires a pure native stack approach: no ne
 
 ### From FEATURES.md: Feature Landscape
 
-**Table Stakes (required for v1.4):**
+**Table Stakes (required for v0.4):**
 1. Auth type selection (4 types: API Key header, Bearer Token, Basic Auth, Query Parameter)
 2. Dedicated auth configuration UI (modal/panel, not inline headers)
 3. Visual indicator (lock icon: gray = no auth, black = active, red = failed)
@@ -53,18 +53,18 @@ Adding API authentication to api2ui requires a pure native stack approach: no ne
 8. Session persistence (sessionStorage, cleared on tab close)
 9. Credential masking (show as `••••••`)
 
-**Differentiators for v1.4 (high value, achievable):**
+**Differentiators for v0.4 (high value, achievable):**
 1. **Auto-prompt on 401/403** — Proactively offer auth config when API returns error
 2. **Per-API credential scoping** — Key by base URL, auto-switch when URL changes
 3. **Security indicators on endpoints** — Lock icon on operations with `security` requirement
 
-**Defer to v1.5+:**
+**Defer to v0.5+:**
 - OAuth 2.0 flows (complex: redirect, token refresh, PKCE)
 - Credential presets (power user feature)
 - Encrypted localStorage (security audit needed)
 
 **Anti-patterns to avoid:**
-- ❌ OAuth 2.0 in v1.4 (scope creep)
+- ❌ OAuth 2.0 in v0.4 (scope creep)
 - ❌ localStorage for secrets (security risk)
 - ❌ Custom header builder UI (95% of APIs use standard patterns)
 - ❌ Auto-retry on 401/403 (violates HTTP semantics)
@@ -119,7 +119,7 @@ Adding API authentication to api2ui requires a pure native stack approach: no ne
    - Phase: 2 (Auth Injection)
 
 3. **Breaking public API flow (regression)**
-   - Risk: v1.0-v1.3 users report "nothing works anymore"
+   - Risk: v0.0-v0.3 users report "nothing works anymore"
    - Mitigation: Default to no-auth, test all public API examples (JSONPlaceholder, DummyJSON)
    - Phase: 3 (Integration Testing) — explicit regression validation
 
@@ -189,7 +189,7 @@ Adding API authentication to api2ui requires a pure native stack approach: no ne
 - Add HTTPS warning for http:// URLs
 - Implement session storage lifecycle indicator ("Credentials lost on refresh")
 - Add "Try without auth" toggle for testing public endpoints
-- Deliverable: v1.4 ready for release with excellent error guidance
+- Deliverable: v0.4 ready for release with excellent error guidance
 
 **Phase 6: Testing & Regression Validation (2-3 days)**
 - Unit tests: fetchWithAuth, authStore, parseSecuritySchemes
@@ -197,7 +197,7 @@ Adding API authentication to api2ui requires a pure native stack approach: no ne
 - Regression tests: Verify public APIs still work (JSONPlaceholder, DummyJSON, etc.)
 - Manual UAT: GitHub, Stripe, OpenWeatherMap, basic auth APIs
 - Browser testing: sessionStorage behavior, credential masking, error UI
-- Deliverable: v1.4 alpha ready for beta testing
+- Deliverable: v0.4 alpha ready for beta testing
 
 ---
 
@@ -217,7 +217,7 @@ Adding API authentication to api2ui requires a pure native stack approach: no ne
 1. CORS interaction with Authorization header on live APIs (needs Phase 2 testing)
 2. UI discoverability of "Authentication" section in ConfigPanel (needs Phase 3 user testing)
 3. Regression test coverage (needs explicit test suite in Phase 6)
-4. OAuth 2.0 feature requests (monitor user feedback for v1.5+ priority)
+4. OAuth 2.0 feature requests (monitor user feedback for v0.5+ priority)
 
 ---
 
@@ -239,8 +239,8 @@ Adding API authentication to api2ui requires a pure native stack approach: no ne
 1. **Validate CORS assumptions** — Confirm that common authenticated APIs support Authorization header preflight (test with GitHub, Stripe in Phase 2)
 2. **Plan regression test suite** — Document which public APIs must continue working (JSONPlaceholder, DummyJSON, OpenWeatherMap)
 3. **Sketch UI mockups** — Validate auth panel placement and credential input UX before Phase 3 implementation
-4. **Determine localStorage future** — Research user feedback to decide if "remember credentials" option is needed for v1.5+
-5. **Plan OAuth 2.0 deferral strategy** — Decide how to gracefully handle OAuth specs in v1.4 (show unsupported message vs silently ignore)
+4. **Determine localStorage future** — Research user feedback to decide if "remember credentials" option is needed for v0.5+
+5. **Plan OAuth 2.0 deferral strategy** — Decide how to gracefully handle OAuth specs in v0.4 (show unsupported message vs silently ignore)
 
 ---
 

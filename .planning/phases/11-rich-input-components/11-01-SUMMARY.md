@@ -26,7 +26,7 @@ tech-stack:
     - react-day-picker (v9.13.1)
     - date-fns (v4.1.0)
     - sonner (v2.0.7)
-    - "@radix-ui/react-toggle-group" (v1.1.11)
+    - "@radix-ui/react-toggle-group" (v0.1.11)
   patterns:
     - "Path alias pattern: @/* for clean imports"
     - "cn() utility: clsx + tailwind-merge for class composition"

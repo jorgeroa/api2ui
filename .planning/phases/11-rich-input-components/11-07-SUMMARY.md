@@ -146,7 +146,7 @@ None - no external service configuration required.
 - FETCH-07: URL preview with copy (plan 11-07)
 
 **Production Ready:**
-- v1.2 Milestone complete with all 3 phases (9, 10, 11) finished
+- v0.2 Milestone complete with all 3 phases (9, 10, 11) finished
 - Rich input components fully integrated and verified
 - No blockers or concerns
 

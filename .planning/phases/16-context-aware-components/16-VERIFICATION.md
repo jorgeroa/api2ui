@@ -92,7 +92,7 @@ No blocker anti-patterns found.
 
 Minor observations:
 - ℹ️ Info: PrimitiveRenderer has inline duplicate rating/currency rendering logic (lines 159-178 for overrides, lines 211-228 for fallback). This is intentional for precedence clarity, not a concern.
-- ℹ️ Info: CurrencyValue helper `detectCurrencyFromSiblings` uses hardcoded field names (currency_code, currency, currency_id). This is acceptable for v1.3 scope.
+- ℹ️ Info: CurrencyValue helper `detectCurrencyFromSiblings` uses hardcoded field names (currency_code, currency, currency_id). This is acceptable for v0.3 scope.
 
 **No blockers. No warnings.**
 

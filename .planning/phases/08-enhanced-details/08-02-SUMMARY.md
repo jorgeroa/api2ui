@@ -103,7 +103,7 @@ Phase 8 (Enhanced Details) is complete:
 - 08-01: Enhanced detail view with hero images and horizontal scrollers ✓
 - 08-02: Panel drilldown mode and universal breadcrumbs ✓
 
-All v1.1 requirements satisfied. Ready for production deployment or additional feature phases.
+All v0.1 requirements satisfied. Ready for production deployment or additional feature phases.
 
 ---
 *Phase: 08-enhanced-details*
