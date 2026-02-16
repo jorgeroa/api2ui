@@ -1,11 +1,10 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { RendererProps } from '../../types/components'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
-import { DetailModal } from '../detail/DetailModal'
-import { DetailPanel } from '../detail/DetailPanel'
+import { DrilldownContainer } from '../detail/DrilldownContainer'
 import { FieldConfigPopover } from '../config/FieldConfigPopover'
 import { getHeroImageField } from '../../utils/imageDetection'
-import { useNavigation } from '../../contexts/NavigationContext'
+import { useItemDrilldown } from '../../hooks/useItemDrilldown'
 import { getItemLabel } from '../../utils/itemLabel'
 import { useConfigStore } from '../../store/configStore'
 import { usePagination } from '../../hooks/usePagination'
@@ -17,14 +16,15 @@ import { PaginationControls } from '../pagination/PaginationControls'
  * Click on a card to open the DetailModal.
  */
 export function CardListRenderer({ data, schema, path, depth, importance }: RendererProps) {
-  const [selectedItem, setSelectedItem] = useState<unknown | null>(null)
   const [popoverState, setPopoverState] = useState<{
     fieldPath: string
     fieldName: string
     fieldValue: unknown
     position: { x: number; y: number }
   } | null>(null)
-  const nav = useNavigation()
+  const { selectedItem, handleItemClick, clearSelection } = useItemDrilldown(
+    schema.kind === 'array' ? schema.items : schema, path
+  )
   const { getPaginationConfig, setPaginationConfig } = useConfigStore()
 
   // Listen for cross-navigation events from ConfigPanel
@@ -136,13 +136,7 @@ export function CardListRenderer({ data, schema, path, depth, importance }: Rend
           return (
             <div
               key={globalIndex}
-              onClick={() => {
-                if (nav && nav.drilldownMode === 'page') {
-                  nav.onDrillDown(item, schema.items, title, `${path}[${globalIndex}]`)
-                } else {
-                  setSelectedItem(item)
-                }
-              }}
+              onClick={() => handleItemClick(item, globalIndex, title)}
               className="border border-border rounded-lg overflow-hidden shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer transition-all"
             >
               {/* Hero image - full width at top of card */}
@@ -251,23 +245,11 @@ export function CardListRenderer({ data, schema, path, depth, importance }: Rend
         />
       )}
 
-      {/* Detail modal - dialog mode */}
-      {(!nav || nav.drilldownMode === 'dialog') && (
-        <DetailModal
-          item={selectedItem}
-          schema={schema.items}
-          onClose={() => setSelectedItem(null)}
-        />
-      )}
-
-      {/* Detail panel - panel mode */}
-      {nav && nav.drilldownMode === 'panel' && (
-        <DetailPanel
-          item={selectedItem}
-          schema={schema.items}
-          onClose={() => setSelectedItem(null)}
-        />
-      )}
+      <DrilldownContainer
+        selectedItem={selectedItem}
+        itemSchema={schema.items}
+        onClose={clearSelection}
+      />
 
       {/* Field config popover */}
       {popoverState && (

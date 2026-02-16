@@ -6,10 +6,11 @@ import { getItemLabel } from '../../utils/itemLabel'
 interface DetailModalProps {
   item: unknown | null
   schema: TypeSignature
+  itemPath: string
   onClose: () => void
 }
 
-export function DetailModal({ item, schema, onClose }: DetailModalProps) {
+export function DetailModal({ item, schema, itemPath, onClose }: DetailModalProps) {
   const open = item !== null
 
   return (
@@ -24,12 +25,12 @@ export function DetailModal({ item, schema, onClose }: DetailModalProps) {
             {getItemLabel(item, 'Item Details')}
           </DialogTitle>
 
-          {/* Render the item details */}
+          {/* Render the item details — use actual item path for smart component selection */}
           {item !== null && (
             <DynamicRenderer
               data={item}
               schema={schema}
-              path="$.selected"
+              path={itemPath}
               depth={0}
             />
           )}

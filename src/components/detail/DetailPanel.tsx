@@ -6,10 +6,11 @@ import { getItemLabel } from '../../utils/itemLabel'
 interface DetailPanelProps {
   item: unknown | null
   schema: TypeSignature
+  itemPath: string
   onClose: () => void
 }
 
-export function DetailPanel({ item, schema, onClose }: DetailPanelProps) {
+export function DetailPanel({ item, schema, itemPath, onClose }: DetailPanelProps) {
   const open = item !== null
 
   return (
@@ -35,7 +36,7 @@ export function DetailPanel({ item, schema, onClose }: DetailPanelProps) {
           {/* Panel content */}
           <div className="p-6">
             {item !== null && (
-              <DynamicRenderer data={item} schema={schema} path="$.selected" depth={0} />
+              <DynamicRenderer data={item} schema={schema} path={itemPath} depth={0} />
             )}
           </div>
         </DialogPanel>

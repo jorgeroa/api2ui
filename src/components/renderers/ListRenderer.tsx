@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import type { RendererProps } from '../../types/components'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
-import { DetailModal } from '../detail/DetailModal'
+import { DrilldownContainer } from '../detail/DrilldownContainer'
 import { FieldConfigPopover } from '../config/FieldConfigPopover'
-import { useNavigation } from '../../contexts/NavigationContext'
+import { useItemDrilldown } from '../../hooks/useItemDrilldown'
 import { getItemLabel } from '../../utils/itemLabel'
 
 /**
@@ -12,14 +12,15 @@ import { getItemLabel } from '../../utils/itemLabel'
  * Click on an item to open the DetailModal.
  */
 export function ListRenderer({ data, schema, path, depth }: RendererProps) {
-  const [selectedItem, setSelectedItem] = useState<unknown | null>(null)
   const [popoverState, setPopoverState] = useState<{
     fieldPath: string
     fieldName: string
     fieldValue: unknown
     position: { x: number; y: number }
   } | null>(null)
-  const nav = useNavigation()
+  const { selectedItem, handleItemClick, clearSelection } = useItemDrilldown(
+    schema.kind === 'array' ? schema.items : schema, path
+  )
 
   // Listen for cross-navigation events from ConfigPanel
   useEffect(() => {
@@ -96,13 +97,7 @@ export function ListRenderer({ data, schema, path, depth }: RendererProps) {
           return (
             <div
               key={index}
-              onClick={() => {
-                if (nav && nav.drilldownMode === 'page') {
-                  nav.onDrillDown(item, schema.items, title, `${path}[${index}]`)
-                } else {
-                  setSelectedItem(item)
-                }
-              }}
+              onClick={() => handleItemClick(item, index, title)}
               className="border-b border-border last:border-b-0 px-4 py-3 hover:bg-blue-50 cursor-pointer transition-colors"
             >
               <div className="flex items-center gap-4">
@@ -160,14 +155,11 @@ export function ListRenderer({ data, schema, path, depth }: RendererProps) {
         })}
       </div>
 
-      {/* Detail modal — only shown in dialog mode */}
-      {(!nav || nav.drilldownMode === 'dialog') && (
-        <DetailModal
-          item={selectedItem}
-          schema={schema.items}
-          onClose={() => setSelectedItem(null)}
-        />
-      )}
+      <DrilldownContainer
+        selectedItem={selectedItem}
+        itemSchema={schema.items}
+        onClose={clearSelection}
+      />
 
       {/* Field config popover */}
       {popoverState && (

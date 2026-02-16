@@ -1,16 +1,14 @@
 import { useState, useEffect } from 'react'
 import type { RendererProps } from '../../types/components'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
-import { DetailModal } from '../detail/DetailModal'
-import { DetailPanel } from '../detail/DetailPanel'
+import { DrilldownContainer } from '../detail/DrilldownContainer'
 import { useConfigStore } from '../../store/configStore'
 import { FieldControls } from '../config/FieldControls'
 import { FieldConfigPopover } from '../config/FieldConfigPopover'
 import { SortableFieldList } from '../config/SortableFieldList'
 import { DraggableField } from '../config/DraggableField'
 import { isImageUrl } from '../../utils/imageDetection'
-import { useNavigation } from '../../contexts/NavigationContext'
-import { getItemLabel } from '../../utils/itemLabel'
+import { useItemDrilldown } from '../../hooks/useItemDrilldown'
 import { usePagination } from '../../hooks/usePagination'
 import { PaginationControls } from '../pagination/PaginationControls'
 
@@ -47,7 +45,6 @@ function CompactValue({ data }: { data: unknown }) {
  * This implementation provides the same UX with simpler, more reliable code.
  */
 export function TableRenderer({ data, schema, path, depth }: RendererProps) {
-  const [selectedItem, setSelectedItem] = useState<unknown | null>(null)
   const [popoverState, setPopoverState] = useState<{
     fieldPath: string
     fieldName: string
@@ -55,7 +52,9 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
     position: { x: number; y: number }
   } | null>(null)
   const { mode, fieldConfigs, reorderFields, getPaginationConfig, setPaginationConfig } = useConfigStore()
-  const nav = useNavigation()
+  const { selectedItem, handleItemClick, clearSelection } = useItemDrilldown(
+    schema.kind === 'array' ? schema.items : schema, path
+  )
 
   // Listen for cross-navigation events from ConfigPanel
   useEffect(() => {
@@ -253,14 +252,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
           return (
             <div
               key={globalIndex}
-              onClick={() => {
-                if (nav && nav.drilldownMode === 'page') {
-                  const label = getItemLabel(item)
-                  nav.onDrillDown(item, schema.items, label, `${path}[${globalIndex}]`)
-                } else {
-                  setSelectedItem(item)
-                }
-              }}
+              onClick={() => handleItemClick(item, globalIndex)}
               className={`flex border-b border-border cursor-pointer hover:bg-blue-50 ${
                 isEven ? 'bg-surface' : 'bg-background'
               }`}
@@ -350,23 +342,11 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
         />
       )}
 
-      {/* Detail modal - dialog mode */}
-      {(!nav || nav.drilldownMode === 'dialog') && (
-        <DetailModal
-          item={selectedItem}
-          schema={schema.items}
-          onClose={() => setSelectedItem(null)}
-        />
-      )}
-
-      {/* Detail panel - panel mode */}
-      {nav && nav.drilldownMode === 'panel' && (
-        <DetailPanel
-          item={selectedItem}
-          schema={schema.items}
-          onClose={() => setSelectedItem(null)}
-        />
-      )}
+      <DrilldownContainer
+        selectedItem={selectedItem}
+        itemSchema={schema.items}
+        onClose={clearSelection}
+      />
 
       {/* Field config popover */}
       {popoverState && (

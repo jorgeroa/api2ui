@@ -1,21 +1,22 @@
 import { useState, useEffect } from 'react'
 import type { RendererProps } from '../../types/components'
-import { DetailModal } from '../detail/DetailModal'
+import { DrilldownContainer } from '../detail/DrilldownContainer'
 import { FieldConfigPopover } from '../config/FieldConfigPopover'
 import { getHeroImageField } from '../../utils/imageDetection'
-import { useNavigation } from '../../contexts/NavigationContext'
+import { useItemDrilldown } from '../../hooks/useItemDrilldown'
 import { getItemLabel } from '../../utils/itemLabel'
 
 /** Renders arrays of objects as an image-forward masonry gallery */
 export function GalleryRenderer({ data, schema, path }: RendererProps) {
-  const [selectedItem, setSelectedItem] = useState<unknown | null>(null)
   const [popoverState, setPopoverState] = useState<{
     fieldPath: string
     fieldName: string
     fieldValue: unknown
     position: { x: number; y: number }
   } | null>(null)
-  const nav = useNavigation()
+  const { selectedItem, handleItemClick, clearSelection } = useItemDrilldown(
+    schema.kind === 'array' ? schema.items : schema, path
+  )
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -51,12 +52,7 @@ export function GalleryRenderer({ data, schema, path }: RendererProps) {
   const fields = Array.from(schema.items.fields.entries())
 
   const handleClick = (item: unknown, index: number) => {
-    const title = getItemLabel(item)
-    if (nav && nav.drilldownMode === 'page') {
-      nav.onDrillDown(item, schema.items, title, `${path}[${index}]`)
-    } else {
-      setSelectedItem(item)
-    }
+    handleItemClick(item, index, getItemLabel(item))
   }
 
   return (
@@ -107,13 +103,11 @@ export function GalleryRenderer({ data, schema, path }: RendererProps) {
         })}
       </div>
 
-      {(!nav || nav.drilldownMode === 'dialog') && (
-        <DetailModal
-          item={selectedItem}
-          schema={schema.items}
-          onClose={() => setSelectedItem(null)}
-        />
-      )}
+      <DrilldownContainer
+        selectedItem={selectedItem}
+        itemSchema={schema.items}
+        onClose={clearSelection}
+      />
 
       {popoverState && (
         <FieldConfigPopover
