@@ -15,6 +15,11 @@ vi.mock('../../../store/authStore', () => ({
 const mockFetch = vi.fn()
 global.fetch = mockFetch
 
+// In dev/test mode, URLs are rewritten through the CORS proxy
+function expectedProxyUrl(url: string): string {
+  return `/api-proxy/${encodeURIComponent(url)}`
+}
+
 describe('fetchWithAuth', () => {
   const testUrl = 'https://api.example.com/data'
 
@@ -46,7 +51,7 @@ describe('fetchWithAuth', () => {
       await fetchWithAuth(testUrl)
 
       expect(mockFetch).toHaveBeenCalledWith(
-        testUrl,
+        expectedProxyUrl(testUrl),
         expect.objectContaining({
           headers: expect.objectContaining({
             'Authorization': 'Bearer test-token-123',
@@ -78,7 +83,7 @@ describe('fetchWithAuth', () => {
 
       const expectedAuth = `Basic ${btoa('user:pass')}`
       expect(mockFetch).toHaveBeenCalledWith(
-        testUrl,
+        expectedProxyUrl(testUrl),
         expect.objectContaining({
           headers: expect.objectContaining({
             'Authorization': expectedAuth,
@@ -109,7 +114,7 @@ describe('fetchWithAuth', () => {
       await fetchWithAuth(testUrl)
 
       expect(mockFetch).toHaveBeenCalledWith(
-        testUrl,
+        expectedProxyUrl(testUrl),
         expect.objectContaining({
           headers: expect.objectContaining({
             'X-API-Key': 'secret-key-456',
@@ -156,7 +161,7 @@ describe('fetchWithAuth', () => {
 
       const expectedUrl = 'https://api.example.com/data?apiKey=query-key-789'
       expect(mockFetch).toHaveBeenCalledWith(
-        expectedUrl,
+        expectedProxyUrl(expectedUrl),
         expect.any(Object)
       )
     })
@@ -181,10 +186,12 @@ describe('fetchWithAuth', () => {
 
       await fetchWithAuth(urlWithParam)
 
-      const calledUrl = mockFetch.mock.calls[0][0]
-      expect(calledUrl).toContain('apiKey=new-value')
-      expect(calledUrl).not.toContain('apiKey=old-value')
-      expect(calledUrl).toContain('other=123')
+      const calledUrl = mockFetch.mock.calls[0]![0] as string
+      // URL is proxied in dev mode, so decode to check query params
+      const decodedUrl = decodeURIComponent(calledUrl.replace('/api-proxy/', ''))
+      expect(decodedUrl).toContain('apiKey=new-value')
+      expect(decodedUrl).not.toContain('apiKey=old-value')
+      expect(decodedUrl).toContain('other=123')
     })
   })
 
@@ -202,14 +209,14 @@ describe('fetchWithAuth', () => {
       await fetchWithAuth(testUrl)
 
       expect(mockFetch).toHaveBeenCalledWith(
-        testUrl,
+        expectedProxyUrl(testUrl),
         expect.objectContaining({
           mode: 'cors',
           credentials: 'omit',
         })
       )
 
-      const callHeaders = mockFetch.mock.calls[0][1]?.headers as any
+      const callHeaders = mockFetch.mock.calls[0]![1]?.headers as any
       expect(callHeaders?.Authorization).toBeUndefined()
     })
   })
