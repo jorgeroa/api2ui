@@ -2,6 +2,7 @@ import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import type { TypeSignature } from '../../types/schema'
 import { DynamicRenderer } from '../DynamicRenderer'
 import { getItemLabel } from '../../utils/itemLabel'
+import { OverlayProvider } from '../../contexts/OverlayContext'
 
 interface DetailModalProps {
   item: unknown | null
@@ -39,14 +40,16 @@ export function DetailModal({ item, schema, itemPath, onClose }: DetailModalProp
 
           {/* Content */}
           <div className="p-6">
-            {item !== null && (
-              <DynamicRenderer
-                data={item}
-                schema={schema}
-                path={itemPath}
-                depth={1}
-              />
-            )}
+            <OverlayProvider value={true}>
+              {item !== null && (
+                <DynamicRenderer
+                  data={item}
+                  schema={schema}
+                  path={itemPath}
+                  depth={1}
+                />
+              )}
+            </OverlayProvider>
           </div>
         </DialogPanel>
       </div>

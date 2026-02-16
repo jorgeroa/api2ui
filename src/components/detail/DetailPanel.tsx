@@ -2,6 +2,7 @@ import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import type { TypeSignature } from '../../types/schema'
 import { DynamicRenderer } from '../DynamicRenderer'
 import { getItemLabel } from '../../utils/itemLabel'
+import { OverlayProvider } from '../../contexts/OverlayContext'
 
 interface DetailPanelProps {
   item: unknown | null
@@ -35,9 +36,11 @@ export function DetailPanel({ item, schema, itemPath, onClose }: DetailPanelProp
 
           {/* Panel content */}
           <div className="p-6">
-            {item !== null && (
-              <DynamicRenderer data={item} schema={schema} path={itemPath} depth={1} />
-            )}
+            <OverlayProvider value={true}>
+              {item !== null && (
+                <DynamicRenderer data={item} schema={schema} path={itemPath} depth={1} />
+              )}
+            </OverlayProvider>
           </div>
         </DialogPanel>
       </div>

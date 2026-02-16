@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import type { TypeSignature } from '../types/schema'
 import { useNavigation } from '../contexts/NavigationContext'
+import { useInsideOverlay } from '../contexts/OverlayContext'
 import { getItemLabel } from '../utils/itemLabel'
 
 export interface SelectedItem {
@@ -17,17 +18,18 @@ export interface SelectedItem {
 export function useItemDrilldown(itemSchema: TypeSignature, parentPath: string) {
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null)
   const nav = useNavigation()
+  const insideOverlay = useInsideOverlay()
 
   const handleItemClick = useCallback(
     (item: unknown, index: number, label?: string) => {
       const itemPath = `${parentPath}[${index}]`
-      if (nav?.drilldownMode === 'page') {
+      if (!insideOverlay && nav?.drilldownMode === 'page') {
         nav.onDrillDown(item, itemSchema, label ?? getItemLabel(item), itemPath)
       } else {
         setSelectedItem({ data: item, path: itemPath })
       }
     },
-    [nav, itemSchema, parentPath],
+    [nav, itemSchema, parentPath, insideOverlay],
   )
 
   const clearSelection = useCallback(() => setSelectedItem(null), [])
