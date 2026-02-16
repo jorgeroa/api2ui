@@ -52,6 +52,9 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       buffer: 'buffer',
+      // Shims for Node builtins used by @apidevtools/swagger-parser (see src/shims/)
+      util: path.resolve(__dirname, './src/shims/util.ts'),
+      path: path.resolve(__dirname, './src/shims/path.ts'),
     },
   },
   optimizeDeps: {
