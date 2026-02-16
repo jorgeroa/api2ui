@@ -1,14 +1,27 @@
 import { createContext, useContext } from 'react'
+import type { TypeSignature } from '../types/schema'
 
-/**
- * Tracks whether rendering is happening inside a Dialog/Panel overlay.
- * Used to prevent stacking overlays — nested arrays inside an overlay
- * expand inline instead of opening another dialog.
- */
-const OverlayContext = createContext(false)
+export interface OverlayNavItem {
+  data: unknown
+  schema: TypeSignature
+  path: string
+  label: string
+}
 
-export const OverlayProvider = OverlayContext.Provider
+interface OverlayNavContextValue {
+  stack: OverlayNavItem[]
+  push: (item: OverlayNavItem) => void
+  goTo: (index: number) => void
+}
+
+const OverlayNavContext = createContext<OverlayNavContextValue | null>(null)
+
+export const OverlayNavProvider = OverlayNavContext.Provider
+
+export function useOverlayNav(): OverlayNavContextValue | null {
+  return useContext(OverlayNavContext)
+}
 
 export function useInsideOverlay(): boolean {
-  return useContext(OverlayContext)
+  return useContext(OverlayNavContext) !== null
 }
