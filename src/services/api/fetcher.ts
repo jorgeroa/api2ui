@@ -3,6 +3,16 @@ import { useAuthStore } from '../../store/authStore'
 import type { Credential } from '../../types/auth'
 
 /**
+ * In dev mode, rewrite absolute URLs through the Vite proxy to avoid CORS.
+ */
+function proxyUrl(url: string): string {
+  if (import.meta.env.DEV && url.startsWith('http')) {
+    return `/api-proxy/${encodeURIComponent(url)}`
+  }
+  return url
+}
+
+/**
  * Fetch JSON data from an API URL with typed error handling.
  * Detects CORS, network, HTTP, and parse errors.
  */
@@ -150,7 +160,7 @@ async function executeFetch(url: string, init: RequestInit, credential: Credenti
   let response: Response
 
   try {
-    response = await fetch(url, init)
+    response = await fetch(proxyUrl(url), init)
   } catch (error) {
     // TypeError: Failed to fetch indicates CORS or network issue
     if (error instanceof TypeError) {

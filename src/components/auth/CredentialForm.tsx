@@ -105,6 +105,17 @@ export function CredentialForm({ type, url, detectedMetadata }: CredentialFormPr
                   token: e.target.value,
                 })
               }}
+              onPaste={(e) => {
+                e.preventDefault()
+                const pasted = e.clipboardData.getData('text')
+                const cleaned = pasted.replace(/[\n\r]/g, '').trim()
+                setToken(cleaned)
+                saveCredential({
+                  type: 'bearer',
+                  label: '',
+                  token: cleaned,
+                })
+              }}
               placeholder="Enter bearer token"
               className="pr-10"
             />
