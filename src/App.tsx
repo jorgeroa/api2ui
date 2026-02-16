@@ -486,17 +486,42 @@ function App() {
                 )
               })()}
 
-              {/* Welcome Message */}
+              {/* Welcome Message with Feature Highlights */}
               {!loading && !error && !schema && !parsedSpec && (
-                <div className="text-center py-12 text-gray-500">
-                  <p className="text-xl mb-2">Welcome to api2ui</p>
-                  <p className="text-sm">
-                    Enter a JSON API URL above and click Fetch to see your data
-                    rendered as a beautiful UI.
+                <div className="py-10">
+                  <p className="text-center text-xl text-gray-600 mb-8">
+                    Paste any JSON API URL and see it rendered instantly.
                   </p>
-                  <p className="text-sm mt-2">
-                    Try one of the example links to get started!
-                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                    <div className="flex gap-3 p-3 rounded-lg">
+                      <span className="text-2xl flex-shrink-0" aria-hidden="true">~</span>
+                      <div>
+                        <p className="font-medium text-text text-sm">Semantic Detection</p>
+                        <p className="text-xs text-gray-500">Prices, emails, dates, ratings, and images auto-formatted across 5 languages</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3 p-3 rounded-lg">
+                      <span className="text-2xl flex-shrink-0" aria-hidden="true">{'{}'}</span>
+                      <div>
+                        <p className="font-medium text-text text-sm">OpenAPI Support</p>
+                        <p className="text-xs text-gray-500">Auto-discovers endpoints, generates parameter forms, executes operations</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3 p-3 rounded-lg">
+                      <span className="text-2xl flex-shrink-0" aria-hidden="true">#</span>
+                      <div>
+                        <p className="font-medium text-text text-sm">Shareable Links</p>
+                        <p className="text-xs text-gray-500">Share your API view with a single URL &mdash; no setup needed for recipients</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3 p-3 rounded-lg">
+                      <span className="text-2xl flex-shrink-0" aria-hidden="true">*</span>
+                      <div>
+                        <p className="font-medium text-text text-sm">Authentication</p>
+                        <p className="text-xs text-gray-500">Bearer token, Basic Auth, API Key, and query parameter auth built-in</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

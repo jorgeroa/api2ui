@@ -32,6 +32,12 @@ const EXAMPLES = [
     url: 'https://petstore.swagger.io/v2/swagger.json',
     type: 'OpenAPI' as const,
   },
+  {
+    title: 'GitHub Profile',
+    description: 'Single object with avatar, URLs, dates, and name detection',
+    url: 'https://api.github.com/users/octocat',
+    type: 'Object' as const,
+  },
 ]
 
 interface URLInputProps {
