@@ -41,6 +41,7 @@ const categoryNames = Object.keys(centroids) as SemanticCategory[]
  *   "price"          → ["price"]  (no splits — deduped)
  */
 export function tokenizeFieldName(name: string): string[] {
+  if (!name) return []
   const fullLower = name.toLowerCase()
 
   // Replace separators with spaces
