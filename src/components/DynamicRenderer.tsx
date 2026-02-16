@@ -11,6 +11,7 @@ import { ViewModeBadge } from './config/ViewModeBadge'
 import { OnboardingTooltip } from './config/OnboardingTooltip'
 import { Breadcrumb } from './navigation/Breadcrumb'
 import { DrilldownModeToggle } from './navigation/DrilldownModeToggle'
+import { ShareButton } from './ShareButton'
 import { getDefaultTypeName } from '../services/selection'
 
 /** Normalize indexed array paths to generic paths for cache lookup.
@@ -160,7 +161,10 @@ export function DynamicRenderer({
           ) : (
             <div />
           )}
-          <DrilldownModeToggle />
+          <div className="flex items-center gap-2">
+            <ShareButton />
+            <DrilldownModeToggle />
+          </div>
         </div>
       )}
 

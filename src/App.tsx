@@ -6,7 +6,6 @@ import { useAPIFetch } from './hooks/useAPIFetch'
 import { useSchemaAnalysis } from './hooks/useSchemaAnalysis'
 import { hydrateFromHash } from './services/sharing/hydrator'
 import { URLInput } from './components/URLInput'
-import { ShareButton } from './components/ShareButton'
 import { DynamicRenderer } from './components/DynamicRenderer'
 import { ErrorDisplay } from './components/error/ErrorDisplay'
 import { SkeletonTable } from './components/loading/SkeletonTable'
@@ -221,13 +220,6 @@ function App() {
                 <URLInput authError={authError} detectedAuth={parsedSpec?.securitySchemes} />
               </div>
 
-              {/* Share button (visible when data is loaded) */}
-              {(schema || parsedSpec) && (
-                <div className="flex justify-center mb-4">
-                  <ShareButton />
-                </div>
-              )}
-
               {/* Main Content Area */}
               <div className="bg-surface rounded-lg shadow-md p-6 max-w-6xl mx-auto">
                 {loading && !parsedSpec && <SkeletonTable />}
@@ -329,13 +321,6 @@ function App() {
             <div className="flex justify-center mb-8">
               <URLInput authError={authError} detectedAuth={parsedSpec?.securitySchemes} />
             </div>
-
-            {/* Share button (visible when data is loaded) */}
-            {(schema || parsedSpec) && (
-              <div className="flex justify-center mb-4">
-                <ShareButton />
-              </div>
-            )}
 
             {/* Main Content Area */}
             <div className="bg-surface rounded-lg shadow-md p-6">
