@@ -76,7 +76,7 @@ export function DetailPanel({ item, schema, itemPath, onClose }: DetailPanelProp
                 ))}
               </nav>
             ) : (
-              <span />
+              <span className="text-sm text-text font-medium truncate">{rootLabel}</span>
             )}
 
             <button

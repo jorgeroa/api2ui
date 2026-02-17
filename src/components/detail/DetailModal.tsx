@@ -77,7 +77,7 @@ export function DetailModal({ item, schema, itemPath, onClose }: DetailModalProp
                 ))}
               </nav>
             ) : (
-              <span />
+              <span className="text-sm text-text font-medium truncate">{rootLabel}</span>
             )}
 
             <button
