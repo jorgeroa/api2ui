@@ -1,9 +1,19 @@
 import { useState } from 'react'
 import type { RendererProps } from '../../types/components'
+import type { TypeSignature } from '../../types/schema'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DynamicRenderer } from '../DynamicRenderer'
 import { isImageUrl } from '../../utils/imageDetection'
 import { formatLabel } from '../../utils/formatLabel'
+
+/** Classify a nested object to decide rendering approach */
+function classifyNestedObject(typeSig: TypeSignature): 'small' | 'large' {
+  if (typeSig.kind !== 'object') return 'large'
+  const fields = Array.from(typeSig.fields.values())
+  const hasNested = fields.some(f => f.type.kind !== 'primitive')
+  if (!hasNested && fields.length <= 4) return 'small'
+  return 'large'
+}
 
 /** Exact primary field names (highest priority for title) */
 const PRIMARY_EXACT = new Set(['name', 'title', 'label', 'heading', 'subject'])
@@ -207,17 +217,50 @@ export function HeroRenderer({ data, schema, path, depth }: RendererProps) {
       )}
 
       {/* Nested objects/arrays */}
-      {visibleNested.map(([name, def]) => (
-        <div key={name} className="border-t border-border p-4">
-          <h3 className="text-sm font-medium text-gray-600 mb-2">{formatLabel(name)}</h3>
-          <DynamicRenderer
-            data={obj[name]}
-            schema={def.type}
-            path={`${path}.${name}`}
-            depth={depth + 1}
-          />
-        </div>
-      ))}
+      {visibleNested.map(([name, def]) => {
+        const classification = classifyNestedObject(def.type)
+        const nestedValue = obj[name]
+
+        // Small objects: flat merge into parent
+        if (
+          classification === 'small' &&
+          def.type.kind === 'object' &&
+          typeof nestedValue === 'object' && nestedValue !== null && !Array.isArray(nestedValue)
+        ) {
+          const nestedObj = nestedValue as Record<string, unknown>
+          const nestedEntries = Array.from(def.type.fields.entries())
+            .filter(([, fd]) => fd.type.kind === 'primitive')
+
+          return (
+            <div key={name} className="border-t border-gray-200 px-4 py-3">
+              <h3 className="text-sm font-semibold text-gray-500 mb-3">{formatLabel(name)}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
+                {nestedEntries.map(([fieldName, fd]) => (
+                  <div key={fieldName} className="grid grid-cols-[auto_1fr] gap-x-3 items-baseline min-w-0">
+                    <div className="text-sm font-medium text-gray-600 py-0.5 whitespace-nowrap">{formatLabel(fieldName)}:</div>
+                    <div className="py-0.5 min-w-0">
+                      <PrimitiveRenderer data={nestedObj[fieldName]} schema={fd.type} path={`${path}.${name}.${fieldName}`} depth={depth + 2} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        }
+
+        // Medium/Large: heading + DynamicRenderer
+        return (
+          <div key={name} className="border-t border-gray-200 px-4 py-3">
+            <h3 className="text-sm font-semibold text-gray-500 mb-3">{formatLabel(name)}</h3>
+            <DynamicRenderer
+              data={nestedValue}
+              schema={def.type}
+              path={`${path}.${name}`}
+              depth={depth + 1}
+            />
+          </div>
+        )
+      })}
     </div>
   )
 }

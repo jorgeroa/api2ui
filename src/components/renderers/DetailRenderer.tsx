@@ -254,7 +254,10 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
     const displayLabel = config?.label || defaultLabel
 
     // Use importance tier if available, fallback to isPrimaryField heuristic
-    const tier = importance.get(fieldPath)?.tier ?? (isPrimaryField(fieldName) ? 'primary' : 'secondary')
+    // At depth > 0 (nested objects), normalize all tiers to secondary for visual uniformity
+    // This prevents jarring size differences between fields in nested objects (e.g., Street vs Suite)
+    const rawTier = importance.get(fieldPath)?.tier ?? (isPrimaryField(fieldName) ? 'primary' : 'secondary')
+    const tier = depth > 0 ? 'secondary' : rawTier
 
     return (
       <FieldRow
@@ -485,7 +488,8 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
           return <div key={fieldName}>{imageContent}</div>
         }
 
-        const primary = isPrimaryField(fieldName)
+        // At depth > 0, disable primary field emphasis for visual uniformity
+        const primary = depth === 0 && isPrimaryField(fieldName)
 
         const contextMenuHandlers = {
           onContextMenu: (e: React.MouseEvent) => handleFieldContextMenu(e, fieldPath, fieldName, value),

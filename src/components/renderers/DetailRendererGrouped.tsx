@@ -179,7 +179,7 @@ export function DetailRendererGrouped({
 
     return (
       <div key={fieldName} className="space-y-2">
-        <div className="text-sm font-medium text-gray-700">
+        <div className="text-sm font-semibold text-gray-500">
           {displayLabel}
         </div>
         <DynamicRenderer

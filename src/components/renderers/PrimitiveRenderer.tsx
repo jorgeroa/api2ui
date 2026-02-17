@@ -329,8 +329,14 @@ export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
     }
 
     // Status string handler (before auto-detection)
+    // Guard: only render StatusBadge if the value matches known status vocabulary.
+    // The semantic detector can false-positive on single-word strings like city names.
     if (!renderMode && hasHighConfidence && semantics?.detectedCategory === 'status' && typeof data === 'string') {
-      return <StatusBadge value={data} />
+      const normalized = data.toLowerCase().trim()
+      const isKnownStatus = /^(active|success|published|verified|approved|complete|completed|enabled|paid|delivered|open|live|available|done|error|failed|deleted|banned|rejected|cancelled|canceled|inactive|disabled|closed|expired|denied|blocked|pending|processing|review|in.?review|scheduled|syncing|indexing|draft|paused|waiting|suspended|on.?hold)$/i.test(normalized)
+      if (isKnownStatus) {
+        return <StatusBadge value={data} />
+      }
     }
 
     // Apply auto-detection if no explicit override
