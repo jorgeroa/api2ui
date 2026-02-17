@@ -53,7 +53,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
   } | null>(null)
   const { mode, fieldConfigs, reorderFields, getPaginationConfig, setPaginationConfig } = useConfigStore()
   const { selectedItem, handleItemClick, clearSelection } = useItemDrilldown(
-    schema.kind === 'array' ? schema.items : schema, path
+    schema.kind === 'array' ? schema.items : schema, path, data, schema
   )
 
   // Listen for cross-navigation events from ConfigPanel

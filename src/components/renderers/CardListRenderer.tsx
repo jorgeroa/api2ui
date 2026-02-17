@@ -23,7 +23,7 @@ export function CardListRenderer({ data, schema, path, depth, importance }: Rend
     position: { x: number; y: number }
   } | null>(null)
   const { selectedItem, handleItemClick, clearSelection } = useItemDrilldown(
-    schema.kind === 'array' ? schema.items : schema, path
+    schema.kind === 'array' ? schema.items : schema, path, data, schema
   )
   const { getPaginationConfig, setPaginationConfig } = useConfigStore()
 

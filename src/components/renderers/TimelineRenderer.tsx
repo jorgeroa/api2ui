@@ -36,7 +36,7 @@ export function TimelineRenderer({ data, schema, path, depth }: RendererProps) {
     position: { x: number; y: number }
   } | null>(null)
   const { selectedItem, handleItemClick, clearSelection } = useItemDrilldown(
-    schema.kind === 'array' ? schema.items : schema, path
+    schema.kind === 'array' ? schema.items : schema, path, data, schema
   )
 
   useEffect(() => {
