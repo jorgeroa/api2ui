@@ -12,6 +12,8 @@ import { DraggableField } from '../config/DraggableField'
 import { isImageUrl, getHeroImageField } from '../../utils/imageDetection'
 import { DetailRendererGrouped } from './DetailRendererGrouped'
 import { FieldRow } from './FieldRow'
+import type { TypeSignature } from '../../types/schema'
+import { formatLabel } from '../../utils/formatLabel'
 
 /** Normalize path for cache lookup (convert indexed paths to generic) */
 function normalizePath(path: string): string {
@@ -62,6 +64,16 @@ function getFieldSummary(fieldDef: { type: { kind: string } }, value: unknown): 
     return `(${length} items)`
   }
   return '(object)'
+}
+
+/** Classify a nested object to decide rendering approach */
+function classifyNestedObject(typeSig: TypeSignature): 'small' | 'large' {
+  if (typeSig.kind !== 'object') return 'large'
+  const fields = Array.from(typeSig.fields.values())
+  const hasNested = fields.some(f => f.type.kind !== 'primitive')
+  // Small: <=4 primitive fields, no nested sub-objects — safe to flat merge
+  if (!hasNested && fields.length <= 4) return 'small'
+  return 'large'
 }
 
 export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
@@ -338,23 +350,71 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
       )
     }
 
-    // Default nested rendering (objects, arrays of primitives, empty arrays, configure mode)
+    // Classify nested objects for rendering approach
+    const classification = classifyNestedObject(fieldDef.type)
+
+    // Small objects (<=4 primitives, no sub-nesting): flat merge with divider + heading
+    if (
+      classification === 'small' &&
+      fieldDef.type.kind === 'object' &&
+      typeof value === 'object' && value !== null && !Array.isArray(value)
+    ) {
+      const nestedObj = value as Record<string, unknown>
+      const nestedEntries = Array.from(fieldDef.type.fields.entries())
+        .filter(([, fd]) => fd.type.kind === 'primitive')
+
+      return (
+        <div key={fieldName} className="border-t border-gray-200 pt-4 mt-2">
+          <h3 className="text-sm font-semibold text-gray-500 mb-3">{displayLabel}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
+            {nestedEntries.map(([name, fd]) => {
+              const nestedPath = `${fieldPath}.${name}`
+              return (
+                <div key={name} className="grid grid-cols-[auto_1fr] gap-x-3 items-baseline min-w-0">
+                  <div className="text-sm font-medium text-gray-600 py-0.5 whitespace-nowrap">{formatLabel(name)}:</div>
+                  <div className="py-0.5 min-w-0">
+                    <PrimitiveRenderer data={nestedObj[name]} schema={fd.type} path={nestedPath} depth={depth + 2} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )
+    }
+
+    // Deep nesting (depth >= 3): collapsible Disclosure as last resort
+    if (depth >= 3) {
+      return (
+        <div key={fieldName}>
+          <Disclosure defaultOpen={false}>
+            <DisclosureButton className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
+              <ChevronIcon />
+              {displayLabel} {getFieldSummary(fieldDef, value)}
+            </DisclosureButton>
+            <DisclosurePanel className="ml-4 mt-2 border-l-2 border-border pl-4">
+              <DynamicRenderer
+                data={value}
+                schema={fieldDef.type}
+                path={fieldPath}
+                depth={depth + 1}
+              />
+            </DisclosurePanel>
+          </Disclosure>
+        </div>
+      )
+    }
+
+    // Medium/Large: divider + heading + DynamicRenderer (no wrapper border)
     return (
-      <div key={fieldName}>
-        <Disclosure defaultOpen={depth === 0}>
-          <DisclosureButton className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
-            <ChevronIcon />
-            {displayLabel} {getFieldSummary(fieldDef, value)}
-          </DisclosureButton>
-          <DisclosurePanel className="ml-4 mt-2 border-l-2 border-border pl-4">
-            <DynamicRenderer
-              data={value}
-              schema={fieldDef.type}
-              path={fieldPath}
-              depth={depth + 1}
-            />
-          </DisclosurePanel>
-        </Disclosure>
+      <div key={fieldName} className="border-t border-gray-200 pt-4 mt-2">
+        <h3 className="text-sm font-semibold text-gray-500 mb-3">{displayLabel}</h3>
+        <DynamicRenderer
+          data={value}
+          schema={fieldDef.type}
+          path={fieldPath}
+          depth={depth + 1}
+        />
       </div>
     )
   }
@@ -483,27 +543,26 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
         return <div key={fieldName}>{fieldContent}</div>
       }
 
-      // Render nested objects/arrays as collapsible sections
-      const nestedContent = (
-        <Disclosure defaultOpen={depth === 0}>
-          <DisclosureButton className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
-            <ChevronIcon />
-            {displayLabel} {getFieldSummary(fieldDef, value)}
-          </DisclosureButton>
-          <DisclosurePanel className="ml-4 mt-2 border-l-2 border-border pl-4">
-            <DynamicRenderer
-              data={value}
-              schema={fieldDef.type}
-              path={fieldPath}
-              depth={depth + 1}
-            />
-          </DisclosurePanel>
-        </Disclosure>
-      )
-
-      // In Configure mode: wrap with DraggableField (hover-reveal controls)
-      // nested=true for Disclosure content - uses different alignment
+      // Render nested objects/arrays
+      // Configure mode: always collapsible Disclosure
       if (isConfigureMode) {
+        const nestedContent = (
+          <Disclosure defaultOpen={depth === 0}>
+            <DisclosureButton className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
+              <ChevronIcon />
+              {displayLabel} {getFieldSummary(fieldDef, value)}
+            </DisclosureButton>
+            <DisclosurePanel className="ml-4 mt-2 border-l-2 border-border pl-4">
+              <DynamicRenderer
+                data={value}
+                schema={fieldDef.type}
+                path={fieldPath}
+                depth={depth + 1}
+              />
+            </DisclosurePanel>
+          </Disclosure>
+        )
+
         return (
           <DraggableField key={fieldName} id={fieldPath} fieldPath={fieldPath} isVisible={isVisible} nested>
             {nestedContent}
@@ -511,7 +570,73 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
         )
       }
 
-      return <div key={fieldName}>{nestedContent}</div>
+      // View mode: use same hybrid logic as renderNestedField
+      const classification = classifyNestedObject(fieldDef.type)
+
+      // Small objects: flat merge with divider + heading
+      if (
+        classification === 'small' &&
+        fieldDef.type.kind === 'object' &&
+        typeof value === 'object' && value !== null && !Array.isArray(value)
+      ) {
+        const nestedObj = value as Record<string, unknown>
+        const nestedEntries = Array.from(fieldDef.type.fields.entries())
+          .filter(([, fd]) => fd.type.kind === 'primitive')
+
+        return (
+          <div key={fieldName} className="border-t border-gray-200 pt-4 mt-2">
+            <h3 className="text-sm font-semibold text-gray-500 mb-3">{displayLabel}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
+              {nestedEntries.map(([name, fd]) => {
+                const nestedPath = `${fieldPath}.${name}`
+                return (
+                  <div key={name} className="grid grid-cols-[auto_1fr] gap-x-3 items-baseline min-w-0">
+                    <div className="text-sm font-medium text-gray-600 py-0.5 whitespace-nowrap">{formatLabel(name)}:</div>
+                    <div className="py-0.5 min-w-0">
+                      <PrimitiveRenderer data={nestedObj[name]} schema={fd.type} path={nestedPath} depth={depth + 2} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      }
+
+      // Deep nesting: collapsible Disclosure fallback
+      if (depth >= 3) {
+        return (
+          <div key={fieldName}>
+            <Disclosure defaultOpen={false}>
+              <DisclosureButton className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
+                <ChevronIcon />
+                {displayLabel} {getFieldSummary(fieldDef, value)}
+              </DisclosureButton>
+              <DisclosurePanel className="ml-4 mt-2 border-l-2 border-border pl-4">
+                <DynamicRenderer
+                  data={value}
+                  schema={fieldDef.type}
+                  path={fieldPath}
+                  depth={depth + 1}
+                />
+              </DisclosurePanel>
+            </Disclosure>
+          </div>
+        )
+      }
+
+      // Medium/Large: divider + heading + DynamicRenderer (no wrapper border)
+      return (
+        <div key={fieldName} className="border-t border-gray-200 pt-4 mt-2">
+          <h3 className="text-sm font-semibold text-gray-500 mb-3">{displayLabel}</h3>
+          <DynamicRenderer
+            data={value}
+            schema={fieldDef.type}
+            path={fieldPath}
+            depth={depth + 1}
+          />
+        </div>
+      )
     })
   }
 
@@ -564,9 +689,11 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
     )
   }
 
-  // View mode: flat ungrouped layout (original view mode rendering)
+  // View mode: flat ungrouped layout
+  // Depth 0: card with border for top-level framing
+  // Depth > 0: borderless — parent already provides visual context
   return (
-    <div className="space-y-6 border border-border rounded-lg p-4">
+    <div className={depth === 0 ? "space-y-6 border border-border rounded-lg p-4" : "space-y-4"}>
       {/* Toggle buttons: null fields and grouping */}
       <div className="flex justify-end items-center gap-2 -mt-2 -mr-2 mb-2">
           {/* Empty fields toggle — only shown when there are empty fields */}
