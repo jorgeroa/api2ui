@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 .planning
+.playwright-mcp
 
 # Editor directories and files
 .vscode/*
