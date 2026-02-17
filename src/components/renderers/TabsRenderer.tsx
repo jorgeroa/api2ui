@@ -4,6 +4,7 @@ import type { RendererProps } from '../../types/components'
 import { PrimitiveRenderer } from './PrimitiveRenderer'
 import { DynamicRenderer } from '../DynamicRenderer'
 import { formatLabel } from '../../utils/formatLabel'
+import { useAppStore } from '../../store/appStore'
 
 /** Check if a value is empty (null, undefined, or empty string) */
 function isEmptyValue(value: unknown): boolean {
@@ -13,6 +14,7 @@ function isEmptyValue(value: unknown): boolean {
 /** Renders a single object with primitive summary header and tabbed nested sections */
 export function TabsRenderer({ data, schema, path, depth }: RendererProps) {
   const [showNullFields, setShowNullFields] = useState(false)
+  const { getTabSelection, setTabSelection } = useAppStore()
 
   if (schema.kind !== 'object') {
     return <div className="text-red-500">TabsRenderer expects object schema</div>
@@ -87,7 +89,10 @@ export function TabsRenderer({ data, schema, path, depth }: RendererProps) {
 
       {/* Tabs for nested fields */}
       {nestedFields.length > 0 ? (
-        <TabGroup>
+        <TabGroup
+          selectedIndex={Math.min(getTabSelection(path), nestedFields.length - 1)}
+          onChange={(index) => setTabSelection(path, index)}
+        >
           <TabList className="flex border-b border-border bg-white">
             {nestedFields.map(([name]) => (
               <Tab

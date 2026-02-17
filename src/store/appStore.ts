@@ -33,6 +33,11 @@ interface AppState {
   getAnalysisCache: (path: string) => AnalysisCacheEntry | null
   clearAnalysisCache: () => void
 
+  // Tab selection memory (session-only, keyed by path)
+  tabSelections: Map<string, number>
+  setTabSelection: (path: string, index: number) => void
+  getTabSelection: (path: string) => number
+
   // Actions
   startFetch: () => void
   fetchSuccess: (data: unknown, schema: UnifiedSchema) => void
@@ -57,6 +62,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   selectedOperationIndex: 0,
   parameterValues: {},
   analysisCache: new Map(),
+  tabSelections: new Map(),
 
   setUrl: (url) => set({ url }),
   startFetch: () => set({ loading: true, error: null, data: null, schema: null }),
@@ -85,6 +91,14 @@ export const useAppStore = create<AppState>()((set, get) => ({
     return cache.get(path) ?? null
   },
   clearAnalysisCache: () => set({ analysisCache: new Map() }),
+
+  // Tab selection memory
+  setTabSelection: (path, index) => set((state) => {
+    const newSelections = new Map(state.tabSelections)
+    newSelections.set(path, index)
+    return { tabSelections: newSelections }
+  }),
+  getTabSelection: (path) => get().tabSelections.get(path) ?? 0,
 
   // OpenAPI actions
   clearSpec: () => set({
