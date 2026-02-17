@@ -38,6 +38,24 @@ const EXAMPLES = [
     url: 'https://api.github.com/users/octocat',
     type: 'Object' as const,
   },
+  {
+    title: 'User Profiles',
+    description: 'Phone numbers, birth dates, emails, and physical stats',
+    url: 'https://dummyjson.com/users',
+    type: 'Array' as const,
+  },
+  {
+    title: 'Todo List',
+    description: 'Boolean checkboxes, status indicators, and user references',
+    url: 'https://dummyjson.com/todos',
+    type: 'Array' as const,
+  },
+  {
+    title: 'Quotes',
+    description: 'Long text content suitable for markdown rendering',
+    url: 'https://dummyjson.com/quotes',
+    type: 'Array' as const,
+  },
 ]
 
 interface URLInputProps {
@@ -174,7 +192,7 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
       </form>
 
       {/* Example API cards */}
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {EXAMPLES.map((example) => {
           const isLoading = lastClickedExample === example.url && loading
           return (
