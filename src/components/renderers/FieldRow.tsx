@@ -68,6 +68,16 @@ export function getFieldStyles(tier: ImportanceTier): TierStyles {
   }
 }
 
+/** Check if a string value is a media URL (video/audio) that needs full-width rendering */
+function isMediaUrl(value: unknown): boolean {
+  if (typeof value !== 'string') return false
+  return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(value)
+    || /youtube\.com\/(watch\?v=|embed\/)/i.test(value)
+    || /youtu\.be\//i.test(value)
+    || /vimeo\.com\/\d+/i.test(value)
+    || /\.(mp3|wav|ogg|flac|aac|m4a)(\?|$)/i.test(value)
+}
+
 /**
  * Shared field row component with importance-tier visual hierarchy.
  * Renders primitive fields with consistent styling based on their importance tier.
@@ -83,6 +93,7 @@ export function FieldRow({
   onContextMenu,
 }: FieldRowProps) {
   const styles = getFieldStyles(tier)
+  const stacked = isMediaUrl(value)
 
   // Context menu and long-press handlers
   const contextMenuHandlers = onContextMenu
@@ -114,12 +125,26 @@ export function FieldRow({
       }
     : {}
 
+  if (stacked) {
+    return (
+      <div
+        className={`min-w-0 ${styles.row}`}
+        {...contextMenuHandlers}
+      >
+        <div className={`${styles.label} mb-1`}>{displayLabel}:</div>
+        <div className={`${styles.value} min-w-0`}>
+          <PrimitiveRenderer data={value} schema={fieldDef.type} path={fieldPath} depth={depth} />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
-      className={`grid grid-cols-[auto_1fr] gap-x-3 items-baseline min-w-0 ${styles.row}`}
+      className={`grid grid-cols-[auto_1fr] gap-x-3 items-start min-w-0 ${styles.row}`}
       {...contextMenuHandlers}
     >
-      <div className={`${styles.label} whitespace-nowrap`}>{displayLabel}:</div>
+      <div className={`${styles.label} whitespace-nowrap pt-0.5`}>{displayLabel}:</div>
       <div className={`${styles.value} min-w-0`}>
         <PrimitiveRenderer data={value} schema={fieldDef.type} path={fieldPath} depth={depth} />
       </div>
