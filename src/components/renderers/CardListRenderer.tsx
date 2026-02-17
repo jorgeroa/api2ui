@@ -81,10 +81,15 @@ export function CardListRenderer({ data, schema, path, depth, importance }: Rend
   }
 
   // Pagination state
+  const cardPageOptions = [12, 24, 48, 96]
   const paginationConfig = getPaginationConfig(path, 12)
+  // Snap to nearest valid option if persisted value isn't in the list (e.g. migrated from old defaults)
+  const effectivePerPage = cardPageOptions.includes(paginationConfig.itemsPerPage)
+    ? paginationConfig.itemsPerPage
+    : cardPageOptions.reduce((a, b) => Math.abs(b - paginationConfig.itemsPerPage) < Math.abs(a - paginationConfig.itemsPerPage) ? b : a)
   const pagination = usePagination({
     totalItems: data.length,
-    itemsPerPage: paginationConfig.itemsPerPage,
+    itemsPerPage: effectivePerPage,
     currentPage: paginationConfig.currentPage,
   })
 
@@ -238,10 +243,11 @@ export function CardListRenderer({ data, schema, path, depth, importance }: Rend
           currentPage={pagination.currentPage}
           totalPages={pagination.totalPages}
           totalItems={data.length}
-          itemsPerPage={paginationConfig.itemsPerPage}
+          itemsPerPage={effectivePerPage}
           pageNumbers={pagination.pageNumbers}
           onPageChange={handlePageChange}
           onItemsPerPageChange={handleItemsPerPageChange}
+          itemsPerPageOptions={cardPageOptions}
         />
       )}
 

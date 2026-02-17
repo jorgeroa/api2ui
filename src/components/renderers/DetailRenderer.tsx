@@ -33,9 +33,9 @@ function isMetadataField(fieldName: string): boolean {
   return /created|updated|modified|timestamp|date/i.test(fieldName)
 }
 
-/** Check if a value is null or undefined (not empty string, 0, false, or empty array) */
-function isNullOrUndefined(value: unknown): boolean {
-  return value === null || value === undefined
+/** Check if a value is empty (null, undefined, or empty string) */
+function isEmptyValue(value: unknown): boolean {
+  return value === null || value === undefined || value === ''
 }
 
 /** Chevron icon that rotates when disclosure is open */
@@ -165,12 +165,12 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
   const visibleFields = isConfigureMode || showNullFields
     ? visibilityFiltered
     : visibilityFiltered.filter(([fieldName]) => {
-        return !isNullOrUndefined(obj[fieldName])
+        return !isEmptyValue(obj[fieldName])
       })
 
   // Count null fields that are hidden (for toggle button text)
   const nullFieldCount = isConfigureMode ? 0 : visibilityFiltered.filter(([fieldName]) => {
-    return isNullOrUndefined(obj[fieldName])
+    return isEmptyValue(obj[fieldName])
   }).length
 
   if (visibleFields.length === 0 && !isConfigureMode) {
@@ -568,27 +568,26 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
   return (
     <div className="space-y-6 border border-border rounded-lg p-4">
       {/* Toggle buttons: null fields and grouping */}
-      {(nullFieldCount > 0 || (grouping && grouping.groups.length > 0 && !showGrouped && visibleFields.length > 8)) && (
-        <div className="flex justify-end items-center gap-2 -mt-2 -mr-2 mb-2">
-          {/* Null fields toggle */}
+      <div className="flex justify-end items-center gap-2 -mt-2 -mr-2 mb-2">
+          {/* Empty fields toggle — only shown when there are empty fields */}
           {nullFieldCount > 0 && (
-            <button
-              onClick={() => setShowNullFields(prev => !prev)}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
-              title={showNullFields ? "Hide empty fields" : `Show ${nullFieldCount} empty field${nullFieldCount === 1 ? '' : 's'}`}
-            >
-              {showNullFields ? (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                </svg>
-              ) : (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-              )}
-              <span>{showNullFields ? 'Hide empty' : `Show ${nullFieldCount} empty`}</span>
-            </button>
+          <button
+            onClick={() => setShowNullFields(prev => !prev)}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+            title={showNullFields ? "Hide empty fields" : `Show ${nullFieldCount} empty field${nullFieldCount === 1 ? '' : 's'}`}
+          >
+            {showNullFields ? (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            )}
+            <span>{showNullFields ? 'Hide empty' : `Show ${nullFieldCount} empty`}</span>
+          </button>
           )}
           {/* Grouping toggle */}
           {grouping && grouping.groups.length > 0 && !showGrouped && visibleFields.length > 8 && (
@@ -604,7 +603,6 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
             </button>
           )}
         </div>
-      )}
       {heroImage && (
         <div className="w-full">
           <img

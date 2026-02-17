@@ -54,9 +54,9 @@ function ListIcon() {
   )
 }
 
-/** Check if a value is null or undefined (not empty string, 0, false, or empty array) */
-function isNullOrUndefined(value: unknown): boolean {
-  return value === null || value === undefined
+/** Check if a value is empty (null, undefined, or empty string) */
+function isEmptyValue(value: unknown): boolean {
+  return value === null || value === undefined || value === ''
 }
 
 export function DetailRendererGrouped({
@@ -201,7 +201,7 @@ export function DetailRendererGrouped({
       const value = data[fieldInfo.name]
 
       // Filter out null/undefined fields when showNullFields is false
-      if (!showNullFields && isNullOrUndefined(value)) {
+      if (!showNullFields && isEmptyValue(value)) {
         return null
       }
 
@@ -224,25 +224,25 @@ export function DetailRendererGrouped({
     <div className="space-y-6 border border-border rounded-lg p-4">
       {/* Toggle buttons at top-right */}
       <div className="flex justify-end items-center gap-2 -mt-2 -mr-2">
-        {/* Null fields toggle */}
+        {/* Empty fields toggle — only shown when there are empty fields */}
         {nullFieldCount > 0 && (
-          <button
-            onClick={onToggleNullFields}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
-            title={showNullFields ? "Hide empty fields" : `Show ${nullFieldCount} empty field${nullFieldCount === 1 ? '' : 's'}`}
-          >
-            {showNullFields ? (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-              </svg>
-            ) : (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-            )}
-            <span>{showNullFields ? 'Hide empty' : `Show ${nullFieldCount} empty`}</span>
-          </button>
+        <button
+          onClick={onToggleNullFields}
+          className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+          title={showNullFields ? "Hide empty fields" : `Show ${nullFieldCount} empty field${nullFieldCount === 1 ? '' : 's'}`}
+        >
+          {showNullFields ? (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          )}
+          <span>{showNullFields ? 'Hide empty' : `Show ${nullFieldCount} empty`}</span>
+        </button>
         )}
         {/* Grouping toggle */}
         <button
@@ -278,7 +278,7 @@ export function DetailRendererGrouped({
             const value = data[fieldInfo.name]
 
             // Filter out null/undefined fields when showNullFields is false
-            if (!showNullFields && isNullOrUndefined(value)) {
+            if (!showNullFields && isEmptyValue(value)) {
               return null
             }
 
@@ -318,7 +318,7 @@ export function DetailRendererGrouped({
             // Check if group has any visible fields (when showNullFields is false)
             const hasVisibleFields = showNullFields || group.fields.some(fieldInfo => {
               const value = data[fieldInfo.name]
-              return !isNullOrUndefined(value)
+              return !isEmptyValue(value)
             })
 
             // Skip empty groups
@@ -353,7 +353,7 @@ export function DetailRendererGrouped({
             {ungroupedTertiary.map((fieldInfo) => {
               const value = data[fieldInfo.name]
               // Filter out null/undefined fields when showNullFields is false
-              if (!showNullFields && isNullOrUndefined(value)) {
+              if (!showNullFields && isEmptyValue(value)) {
                 return null
               }
               return renderPrimitiveField(fieldInfo)

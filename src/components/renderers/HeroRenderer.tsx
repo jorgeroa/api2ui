@@ -19,9 +19,9 @@ function isSubtitleField(fieldName: string): boolean {
   return /description|bio|summary|subtitle|about|tagline/i.test(fieldName)
 }
 
-/** Check if a value is null or undefined */
-function isNullOrUndefined(value: unknown): boolean {
-  return value === null || value === undefined
+/** Check if a value is empty (null, undefined, or empty string) */
+function isEmptyValue(value: unknown): boolean {
+  return value === null || value === undefined || value === ''
 }
 
 /** Helper: field has a usable non-null, non-empty value */
@@ -110,20 +110,20 @@ export function HeroRenderer({ data, schema, path, depth }: RendererProps) {
   // Null-field filtering
   const visibleNumberFields = showNullFields
     ? numberFields
-    : numberFields.filter(([name]) => !isNullOrUndefined(obj[name]))
+    : numberFields.filter(([name]) => !isEmptyValue(obj[name]))
 
   const visiblePrimitives = showNullFields
     ? remainingPrimitives
-    : remainingPrimitives.filter(([name]) => !isNullOrUndefined(obj[name]))
+    : remainingPrimitives.filter(([name]) => !isEmptyValue(obj[name]))
 
   const visibleNested = showNullFields
     ? nestedFields
-    : nestedFields.filter(([name]) => !isNullOrUndefined(obj[name]))
+    : nestedFields.filter(([name]) => !isEmptyValue(obj[name]))
 
   const nullFieldCount = [
-    ...numberFields.filter(([name]) => isNullOrUndefined(obj[name])),
-    ...remainingPrimitives.filter(([name]) => isNullOrUndefined(obj[name])),
-    ...nestedFields.filter(([name]) => isNullOrUndefined(obj[name])),
+    ...numberFields.filter(([name]) => isEmptyValue(obj[name])),
+    ...remainingPrimitives.filter(([name]) => isEmptyValue(obj[name])),
+    ...nestedFields.filter(([name]) => isEmptyValue(obj[name])),
   ].length
 
   return (
@@ -149,27 +149,27 @@ export function HeroRenderer({ data, schema, path, depth }: RendererProps) {
         </div>
       )}
 
-      {/* Null fields toggle */}
+      {/* Empty fields toggle — only shown when there are empty fields */}
       {nullFieldCount > 0 && (
-        <div className="flex justify-end px-4 pt-2 border-t border-border">
-          <button
-            onClick={() => setShowNullFields(prev => !prev)}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
-            title={showNullFields ? "Hide empty fields" : `Show ${nullFieldCount} empty field${nullFieldCount === 1 ? '' : 's'}`}
-          >
-            {showNullFields ? (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-              </svg>
-            ) : (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-            )}
-            <span>{showNullFields ? 'Hide empty' : `Show ${nullFieldCount} empty`}</span>
-          </button>
-        </div>
+      <div className="flex justify-end px-4 pt-2 border-t border-border">
+        <button
+          onClick={() => setShowNullFields(prev => !prev)}
+          className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+          title={showNullFields ? "Hide empty fields" : `Show ${nullFieldCount} empty field${nullFieldCount === 1 ? '' : 's'}`}
+        >
+          {showNullFields ? (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          )}
+          <span>{showNullFields ? 'Hide empty' : `Show ${nullFieldCount} empty`}</span>
+        </button>
+      </div>
       )}
 
       {/* Stats row */}

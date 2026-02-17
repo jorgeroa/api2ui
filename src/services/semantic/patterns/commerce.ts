@@ -14,7 +14,8 @@ export const pricePattern: SemanticPattern = {
   namePatterns: [
     {
       // English, Spanish, French, German
-      regex: /\b(price|cost|amount|fee|total|subtotal|precio|costo|importe|prix|cout|montant|preis|kosten|betrag)\b/i,
+      // "total" alone excluded — too ambiguous (pagination count vs monetary total)
+      regex: /\b(price|cost|amount|fee|subtotal|precio|costo|importe|prix|cout|montant|preis|kosten|betrag)\b/i,
       weight: 0.4,
       languages: ['en', 'es', 'fr', 'de'],
     },

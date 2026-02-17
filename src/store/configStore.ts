@@ -201,7 +201,7 @@ export const useConfigStore = create<ConfigStore>()(
       // Pagination
       setPaginationConfig: (path, config) =>
         set((state) => {
-          const existing = state.paginationConfigs[path] ?? { itemsPerPage: 20, currentPage: 1 }
+          const existing = state.paginationConfigs[path] ?? { itemsPerPage: 12, currentPage: 1 }
           return {
             paginationConfigs: {
               ...state.paginationConfigs,

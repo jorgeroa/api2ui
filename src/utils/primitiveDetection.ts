@@ -22,7 +22,9 @@ export function isRatingField(fieldName: string, value: number): boolean {
 
 /** Check if a field represents a currency amount */
 export function isCurrencyField(fieldName: string): boolean {
-  return /price|cost|amount|fee|salary|budget|revenue|total/i.test(fieldName)
+  // "total" alone is too ambiguous (pagination count vs monetary total) — require
+  // explicit price-related words. Compound forms like "totalPrice" still match via "price".
+  return /price|cost|amount|fee|salary|budget|revenue|subtotal/i.test(fieldName)
 }
 
 /** Check if a field represents a code/identifier value */
