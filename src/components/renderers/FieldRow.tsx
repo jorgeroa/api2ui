@@ -56,8 +56,8 @@ export function getFieldStyles(tier: ImportanceTier): TierStyles {
     case 'secondary':
       return {
         row: 'py-1',
-        label: 'text-sm font-medium text-gray-600',
-        value: 'text-base text-gray-800',
+        label: 'text-sm font-medium text-gray-500',
+        value: 'text-sm text-gray-900',
       }
     case 'tertiary':
       return {
