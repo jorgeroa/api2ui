@@ -291,6 +291,9 @@ const modeToPluginId: Record<string, string> = {
   dot: 'core/dot-indicator',
   markdown: 'core/markdown',
   checkbox: 'core/checkbox',
+  video: 'core/video-player',
+  audio: 'core/audio-player',
+  'stat-card': 'core/stat-card',
 }
 
 /**

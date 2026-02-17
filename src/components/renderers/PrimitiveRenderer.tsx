@@ -39,6 +39,19 @@ function isURL(value: string): boolean {
   return /^https?:\/\//i.test(value)
 }
 
+/** Check if a URL points to a video (file or embed platform) */
+function isVideoUrl(value: string): boolean {
+  return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(value)
+    || /youtube\.com\/(watch\?v=|embed\/)/i.test(value)
+    || /youtu\.be\//i.test(value)
+    || /vimeo\.com\/\d+/i.test(value)
+}
+
+/** Check if a URL points to an audio file */
+function isAudioUrl(value: string): boolean {
+  return /\.(mp3|wav|ogg|flac|aac|m4a|wma|opus)(\?|$)/i.test(value)
+}
+
 /** Check if a string value looks like a date */
 function isDateLike(value: string, fieldName: string): boolean {
   const isoPattern = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2})?)?$/
@@ -73,6 +86,9 @@ const modeToPlugin: Record<string, string> = {
   dot: 'core/dot-indicator',
   markdown: 'core/markdown',
   checkbox: 'core/checkbox',
+  video: 'core/video-player',
+  audio: 'core/audio-player',
+  'stat-card': 'core/stat-card',
 }
 
 /**
@@ -94,7 +110,10 @@ export function getAvailableRenderModes(value: unknown, fieldName: string = ''):
   }
 
   if (isURL(value)) {
-    return ['text', 'link', 'image']
+    const modes = ['text', 'link', 'image']
+    if (isVideoUrl(value)) modes.push('video')
+    if (isAudioUrl(value)) modes.push('audio')
+    return modes
   }
 
   if (isDateLike(value, fieldName)) {
@@ -305,6 +324,14 @@ export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
             onError={() => setImageError(true)}
           />
         )
+      }
+      // Video URL detection
+      if (isVideoUrl(data) && overrideMode !== 'text') {
+        return renderViaPlugin('core/video-player', props) ?? <span title={data}>{data}</span>
+      }
+      // Audio URL detection
+      if (isAudioUrl(data) && overrideMode !== 'text') {
+        return renderViaPlugin('core/audio-player', props) ?? <span title={data}>{data}</span>
       }
       // Non-image URL: show as truncated text (link mode is an override handled above)
       const truncated = data.length > 100 ? `${data.slice(0, 100)}...` : data
