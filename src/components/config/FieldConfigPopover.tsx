@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useConfigStore } from '../../store/configStore'
 import { getAvailableRenderModes } from '../renderers/PrimitiveRenderer'
+import { registry } from '../registry/pluginRegistry'
 
 interface FieldConfigPopoverProps {
   fieldPath: string
@@ -10,8 +11,13 @@ interface FieldConfigPopoverProps {
   onClose: () => void
 }
 
+/** Normalize path for config storage (convert indexed to generic) */
+function normalizePath(path: string): string {
+  return path.replace(/\[\d+\]/g, '[]')
+}
+
 export function FieldConfigPopover({
-  fieldPath,
+  fieldPath: rawFieldPath,
   fieldName,
   fieldValue,
   position,
@@ -19,6 +25,9 @@ export function FieldConfigPopover({
 }: FieldConfigPopoverProps) {
   const { getFieldConfig, toggleFieldVisibility, setFieldLabel, setFieldComponentType } =
     useConfigStore()
+
+  // Normalize path so config is stored/looked up with generic [] indices
+  const fieldPath = normalizePath(rawFieldPath)
 
   // Initialize staged state from current config
   const currentConfig = getFieldConfig(fieldPath)
@@ -93,7 +102,11 @@ export function FieldConfigPopover({
 
   // Get available component types for this field value
   const availableTypes = getAvailableRenderModes(fieldValue, fieldName)
-  const showComponentType = availableTypes.length > 1
+
+  // Also include external plugins compatible with this data type
+  const dataType = typeof fieldValue === 'number' ? 'number' : typeof fieldValue === 'boolean' ? 'boolean' : 'string'
+  const externalPlugins = registry.getCompatible(dataType as any).filter(p => p.source !== 'core')
+  const showComponentType = availableTypes.length > 1 || externalPlugins.length > 0
 
   // Format the field name for display
   const displayFieldName = fieldName
@@ -162,6 +175,11 @@ export function FieldConfigPopover({
               {availableTypes.map((type) => (
                 <option key={type} value={type}>
                   {type.charAt(0).toUpperCase() + type.slice(1)}
+                </option>
+              ))}
+              {externalPlugins.map((plugin) => (
+                <option key={plugin.id} value={plugin.id}>
+                  {plugin.name}
                 </option>
               ))}
             </select>

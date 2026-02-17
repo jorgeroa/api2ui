@@ -33,7 +33,7 @@ export function CardListRenderer({ data, schema, path, depth, importance }: Rend
       const { fieldPath } = (e as CustomEvent).detail
       if (schema.kind === 'array' && schema.items.kind === 'object') {
         const columns = Array.from(schema.items.fields.entries())
-        const match = columns.find(([name]) => `$[].${name}` === fieldPath)
+        const match = columns.find(([name]) => `${path}[].${name}` === fieldPath)
         if (match) {
           const [fieldName] = match
           const firstRow = Array.isArray(data) && data.length > 0 ? data[0] as Record<string, unknown> : null
@@ -183,14 +183,14 @@ export function CardListRenderer({ data, schema, path, depth, importance }: Rend
                       <div
                         key={fieldName}
                         className="text-sm"
-                        onContextMenu={(e) => handleFieldContextMenu(e, `$[].${fieldName}`, fieldName, value)}
+                        onContextMenu={(e) => handleFieldContextMenu(e, `${path}[].${fieldName}`, fieldName, value)}
                         onTouchStart={(e) => {
                           const touch = e.touches[0]
                           if (!touch) return
                           const touchX = touch.clientX
                           const touchY = touch.clientY
                           const timer = setTimeout(() => {
-                            setPopoverState({ fieldPath: `$[].${fieldName}`, fieldName, fieldValue: value, position: { x: touchX, y: touchY } })
+                            setPopoverState({ fieldPath: `${path}[].${fieldName}`, fieldName, fieldValue: value, position: { x: touchX, y: touchY } })
                           }, 800)
                           ;(e.currentTarget as HTMLElement).dataset.longPressTimer = String(timer)
                         }}

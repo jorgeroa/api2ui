@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import { usePluginStore } from '../../store/pluginStore'
 import { registry } from '../registry/pluginRegistry'
+import { loadPlugin } from '../../services/plugins/loader'
 import type { PluginManifest } from '../../types/pluginManifest'
 
 /** Trash icon */
@@ -60,6 +61,15 @@ export function PluginSettings() {
     installPlugin(manifest)
     setInstallForm({ name: '', source: 'npm', value: '' })
     setShowInstall(false)
+
+    // Load plugin immediately so user doesn't need to refresh
+    loadPlugin(manifest).then(result => {
+      if (result.error) {
+        usePluginStore.getState().setLoadError(manifest.id, result.error)
+      } else {
+        result.plugins.forEach(p => registry.register(p))
+      }
+    })
   }
 
   return (

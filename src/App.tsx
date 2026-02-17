@@ -2,9 +2,11 @@ import { useEffect } from 'react'
 import { useAppStore } from './store/appStore'
 import { useConfigStore } from './store/configStore'
 import { useParameterStore } from './store/parameterStore'
+import { usePluginStore } from './store/pluginStore'
 import { useAPIFetch } from './hooks/useAPIFetch'
 import { useSchemaAnalysis } from './hooks/useSchemaAnalysis'
 import { hydrateFromHash } from './services/sharing/hydrator'
+import { loadAndRegisterPlugins } from './services/plugins/loader'
 import { URLInput } from './components/URLInput'
 import { DynamicRenderer } from './components/DynamicRenderer'
 import { ErrorDisplay } from './components/error/ErrorDisplay'
@@ -41,6 +43,18 @@ function App() {
 
   // Run semantic analysis pipeline when schema/data changes
   useSchemaAnalysis(schema, data)
+
+  // Load installed external plugins on startup
+  useEffect(() => {
+    const { installed } = usePluginStore.getState()
+    if (installed.length > 0) {
+      loadAndRegisterPlugins(installed).then(results => {
+        for (const r of results) {
+          if (r.error) usePluginStore.getState().setLoadError(r.manifest.id, r.error)
+        }
+      })
+    }
+  }, [])
 
   // Derive auth error from error state
   const authError = error && error instanceof AuthError

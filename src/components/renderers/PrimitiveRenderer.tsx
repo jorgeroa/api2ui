@@ -223,7 +223,8 @@ export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
   }
 
   // --- User override (highest precedence) ---
-  const config = fieldConfigs[path]
+  // Check both exact path and normalized path (config may be stored with generic [] indices)
+  const config = fieldConfigs[path] || fieldConfigs[normalizedPath]
   const overrideMode = config?.componentType
 
   if (overrideMode) {

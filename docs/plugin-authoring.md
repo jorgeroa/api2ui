@@ -2,6 +2,18 @@
 
 Build custom field renderers for api2ui. Plugins extend how data fields are displayed — from simple text formatting to interactive maps, charts, and media players.
 
+## Working Example
+
+A complete, buildable template plugin lives in [`examples/api2ui-plugin-example/`](../examples/api2ui-plugin-example/). It renders a Confidence Gauge (semicircular SVG arc, red → yellow → green) and demonstrates both detection strategies: `semanticHints` and `customCategories`.
+
+```bash
+cd examples/api2ui-plugin-example
+npm install
+npm run build        # → dist/index.mjs
+```
+
+Copy the example directory as a starting point for your own plugin. See its [README](../examples/api2ui-plugin-example/README.md) for loading instructions.
+
 ## Quick Start
 
 ```bash

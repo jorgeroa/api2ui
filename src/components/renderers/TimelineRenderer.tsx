@@ -44,7 +44,7 @@ export function TimelineRenderer({ data, schema, path, depth }: RendererProps) {
       const { fieldPath } = (e as CustomEvent).detail
       if (schema.kind === 'array' && schema.items.kind === 'object') {
         const columns = Array.from(schema.items.fields.entries())
-        const match = columns.find(([name]) => `$[].${name}` === fieldPath)
+        const match = columns.find(([name]) => `${path}[].${name}` === fieldPath)
         if (match) {
           const [fieldName] = match
           const firstRow = Array.isArray(data) && data.length > 0 ? data[0] as Record<string, unknown> : null

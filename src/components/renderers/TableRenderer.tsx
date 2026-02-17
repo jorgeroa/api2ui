@@ -63,7 +63,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
       // Check if this renderer owns this field (table columns use $[].fieldName pattern)
       if (schema.kind === 'array' && schema.items.kind === 'object') {
         const columns = Array.from(schema.items.fields.entries())
-        const match = columns.find(([name]) => `$[].${name}` === fieldPath)
+        const match = columns.find(([name]) => `${path}[].${name}` === fieldPath)
         if (match) {
           const [fieldName] = match
           // Get sample value from first row if available
@@ -134,8 +134,8 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
 
   // Apply field ordering: sort by order if set, maintain original order otherwise
   const sortedColumns = [...allColumns].sort((a, b) => {
-    const pathA = `$[].${a[0]}`
-    const pathB = `$[].${b[0]}`
+    const pathA = `${path}[].${a[0]}`
+    const pathB = `${path}[].${b[0]}`
     const configA = fieldConfigs[pathA]
     const configB = fieldConfigs[pathB]
 
@@ -155,7 +155,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
   const visibleColumns = isConfigureMode
     ? sortedColumns  // Show all in Configure mode
     : sortedColumns.filter(([fieldName]) => {
-        const fieldPath = `$[].${fieldName}`
+        const fieldPath = `${path}[].${fieldName}`
         const config = fieldConfigs[fieldPath]
         return config?.visible !== false
       })
@@ -168,7 +168,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
   const totalWidth = columnWidth * visibleColumns.length
 
   // Column paths for drag-and-drop ordering
-  const columnPaths = visibleColumns.map(([fieldName]) => `$[].${fieldName}`)
+  const columnPaths = visibleColumns.map(([fieldName]) => `${path}[].${fieldName}`)
 
   const handleReorder = (orderedPaths: string[]) => {
     reorderFields(orderedPaths)
@@ -178,7 +178,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
     const headerRow = (
       <div className="flex bg-background border-b-2 border-border font-semibold sticky top-0 z-10" style={{ minWidth: totalWidth }}>
         {visibleColumns.map(([fieldName]) => {
-          const fieldPath = `$[].${fieldName}`
+          const fieldPath = `${path}[].${fieldName}`
           const config = fieldConfigs[fieldPath]
           const isVisible = config?.visible !== false
 
@@ -261,7 +261,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
               {visibleColumns.map(([fieldName, fieldDef]) => {
                 const value = row[fieldName]
                 const cellPath = `${path}[${globalIndex}].${fieldName}`
-                const columnFieldPath = `$[].${fieldName}`
+                const columnFieldPath = `${path}[].${fieldName}`
 
                 // Check if this cell contains an image URL
                 const isImage = fieldDef.type.kind === 'primitive' &&

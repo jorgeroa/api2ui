@@ -130,7 +130,7 @@ export function unloadPlugin(manifestId: string): void {
  * Extract FieldPlugin instances from a loaded module.
  * Looks for: `plugins` (array), `default` (array or single), or any exported FieldPlugin.
  */
-function extractPlugins(module: Record<string, unknown>): FieldPlugin[] {
+export function extractPlugins(module: Record<string, unknown>): FieldPlugin[] {
   // Preferred: named `plugins` export
   if (Array.isArray(module.plugins)) {
     return module.plugins.filter(isFieldPlugin)
@@ -157,7 +157,7 @@ function extractPlugins(module: Record<string, unknown>): FieldPlugin[] {
 }
 
 /** Runtime check that a value looks like a FieldPlugin */
-function isFieldPlugin(value: unknown): value is FieldPlugin {
+export function isFieldPlugin(value: unknown): value is FieldPlugin {
   if (!value || typeof value !== 'object') return false
   const obj = value as Record<string, unknown>
   return (
