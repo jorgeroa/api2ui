@@ -57,6 +57,11 @@ export function useItemDrilldown(
         }
         overlayNav.push({ data: item, schema: itemSchema, path: itemPath, label: itemLabel })
       } else if (nav?.drilldownMode === 'page') {
+        // Push section breadcrumb if drilling from a named section
+        const sectionName = extractSectionName(parentPath)
+        if (sectionName && parentData !== undefined && parentSchema) {
+          nav.onDrillDown(parentData, parentSchema, formatLabel(sectionName), parentPath)
+        }
         nav.onDrillDown(item, itemSchema, itemLabel, itemPath)
       } else {
         // Top-level dialog/panel: set local state for DrilldownContainer

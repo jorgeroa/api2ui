@@ -20,7 +20,7 @@ export function Breadcrumb({ rootLabel, stack, onNavigate }: BreadcrumbProps) {
         const isLast = i === stack.length - 1
         return (
           <span key={i} className="flex items-center gap-1">
-            <span className="text-gray-400" aria-hidden="true">&rsaquo;</span>
+            <span className="text-gray-400 shrink-0" aria-hidden="true">&rsaquo;</span>
             {isLast ? (
               <span className="text-gray-800 font-medium">{entry.label}</span>
             ) : (

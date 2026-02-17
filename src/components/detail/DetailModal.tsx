@@ -62,7 +62,7 @@ export function DetailModal({ item, schema, itemPath, onClose }: DetailModalProp
                 </button>
                 {stack.map((entry, i) => (
                   <span key={i} className="flex items-center gap-1 min-w-0">
-                    <span className="text-gray-400 shrink-0">/</span>
+                    <span className="text-gray-400 shrink-0">&rsaquo;</span>
                     {i < stack.length - 1 ? (
                       <button
                         onClick={() => goTo(i + 1)}
