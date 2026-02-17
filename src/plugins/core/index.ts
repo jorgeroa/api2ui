@@ -32,6 +32,24 @@ import { Markdown } from './fields/Markdown'
 import { RelativeTime } from './fields/RelativeTime'
 import { CheckboxField } from './fields/CheckboxField'
 
+// Core composite components
+import { MapPin } from './composite/MapPin'
+import { MapLink } from './composite/MapLink'
+import { Coordinates } from './composite/Coordinates'
+import { FormattedAddress } from './composite/FormattedAddress'
+import { StatCard } from './composite/StatCard'
+import { Sparkline } from './composite/Sparkline'
+
+// Core chart components
+import { LineChartPlugin } from './charts/LineChartPlugin'
+import { BarChartPlugin } from './charts/BarChartPlugin'
+import { PieChartPlugin } from './charts/PieChartPlugin'
+
+// Core media components
+import { VideoPlayer } from './media/VideoPlayer'
+import { AudioPlayer } from './media/AudioPlayer'
+import { ImageGallery } from './media/ImageGallery'
+
 /** All core field plugins */
 export const corePlugins: FieldPlugin[] = [
   {
@@ -290,6 +308,195 @@ export const corePlugins: FieldPlugin[] = [
     version: '0.6.0',
     tags: ['boolean', 'checkbox'],
   },
+
+  // --- Composite components ---
+  {
+    id: 'core/map-pin',
+    name: 'Map Pin',
+    description: 'Interactive map with pin marker (OpenStreetMap)',
+    icon: '📍',
+    accepts: {
+      dataTypes: [DataType.Object, DataType.Array],
+      semanticHints: ['geo'],
+      validate: (value) => {
+        if (Array.isArray(value) && value.length === 2) {
+          const [a, b] = value
+          return typeof a === 'number' && typeof b === 'number' && a >= -90 && a <= 90 && b >= -180 && b <= 180
+        }
+        if (value && typeof value === 'object') {
+          const obj = value as Record<string, unknown>
+          const lat = obj.lat ?? obj.latitude ?? obj.Lat ?? obj.Latitude
+          const lng = obj.lng ?? obj.lon ?? obj.longitude ?? obj.Lng ?? obj.Lon ?? obj.Longitude
+          return typeof lat === 'number' && typeof lng === 'number'
+        }
+        return false
+      },
+    },
+    component: MapPin,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['map', 'geo', 'coordinates', 'location'],
+  },
+  {
+    id: 'core/map-link',
+    name: 'Map Link',
+    description: 'Open location in Google Maps',
+    icon: '🗺️',
+    accepts: {
+      dataTypes: [DataType.Object, DataType.Array, DataType.String],
+      semanticHints: ['geo'],
+    },
+    component: MapLink,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['map', 'link', 'geo', 'location'],
+  },
+  {
+    id: 'core/coordinates',
+    name: 'Coordinates',
+    description: 'Formatted "40.71°N, 74.01°W" display',
+    accepts: {
+      dataTypes: [DataType.Object, DataType.Array],
+      semanticHints: ['geo'],
+    },
+    component: Coordinates,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['coordinates', 'geo', 'lat', 'lng'],
+  },
+  {
+    id: 'core/formatted-address',
+    name: 'Formatted Address',
+    description: 'Smart multi-line postal address layout',
+    accepts: {
+      dataTypes: [DataType.Object],
+      validate: (value) => {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+        const obj = value as Record<string, unknown>
+        const keys = Object.keys(obj).map((k) => k.toLowerCase())
+        return keys.some((k) => ['street', 'address', 'city', 'zip', 'zipcode', 'postalcode'].includes(k))
+      },
+    },
+    component: FormattedAddress,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['address', 'postal', 'location'],
+  },
+  {
+    id: 'core/stat-card',
+    name: 'Stat Card',
+    description: 'Big number with label — KPI metric display',
+    icon: '📈',
+    accepts: { dataTypes: [DataType.Number, DataType.String] },
+    component: StatCard,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['stat', 'kpi', 'metric', 'number'],
+  },
+  {
+    id: 'core/sparkline',
+    name: 'Sparkline',
+    description: 'Inline mini line chart for numeric arrays',
+    icon: '📉',
+    accepts: {
+      dataTypes: [DataType.Array],
+      validate: (value) => Array.isArray(value) && value.length >= 2 && value.every((v) => typeof v === 'number'),
+    },
+    component: Sparkline,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['sparkline', 'chart', 'trend'],
+  },
+
+  // --- Chart components ---
+  {
+    id: 'core/line-chart',
+    name: 'Line Chart',
+    description: 'Line chart for time-series or x/y data',
+    icon: '📊',
+    accepts: {
+      dataTypes: [DataType.Array],
+      validate: (value) => Array.isArray(value) && value.length >= 2,
+    },
+    component: LineChartPlugin,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['chart', 'line', 'time-series', 'trend'],
+  },
+  {
+    id: 'core/bar-chart',
+    name: 'Bar Chart',
+    description: 'Bar chart for categorical + numeric data',
+    icon: '📊',
+    accepts: {
+      dataTypes: [DataType.Array],
+      validate: (value) => Array.isArray(value) && value.length >= 1 && value.every((v) => v && typeof v === 'object'),
+    },
+    component: BarChartPlugin,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['chart', 'bar', 'categorical'],
+  },
+  {
+    id: 'core/pie-chart',
+    name: 'Pie Chart',
+    description: 'Pie chart for category + number data (best with ≤8 items)',
+    icon: '🥧',
+    accepts: {
+      dataTypes: [DataType.Array],
+      validate: (value) => Array.isArray(value) && value.length >= 1 && value.length <= 12,
+    },
+    component: PieChartPlugin,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['chart', 'pie', 'distribution'],
+  },
+
+  // --- Media components ---
+  {
+    id: 'core/video-player',
+    name: 'Video Player',
+    description: 'Video embed for MP4/WebM, YouTube, and Vimeo URLs',
+    icon: '🎬',
+    accepts: {
+      dataTypes: [DataType.String],
+      semanticHints: ['video'],
+      validate: (value) => typeof value === 'string' && /\.(mp4|webm|ogg|mov)|youtube\.com|youtu\.be|vimeo\.com/i.test(value),
+    },
+    component: VideoPlayer,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['video', 'media', 'player'],
+  },
+  {
+    id: 'core/audio-player',
+    name: 'Audio Player',
+    description: 'Compact audio player for MP3/WAV/OGG URLs',
+    icon: '🎵',
+    accepts: {
+      dataTypes: [DataType.String],
+      semanticHints: ['audio'],
+      validate: (value) => typeof value === 'string' && /\.(mp3|wav|ogg|flac|aac|m4a|wma|opus)/i.test(value),
+    },
+    component: AudioPlayer,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['audio', 'media', 'player', 'music'],
+  },
+  {
+    id: 'core/image-gallery',
+    name: 'Image Gallery',
+    description: 'Thumbnail grid with click-to-expand for image URL arrays',
+    icon: '🖼️',
+    accepts: {
+      dataTypes: [DataType.Array],
+      validate: (value) => Array.isArray(value) && value.length >= 1 && value.every((v) => typeof v === 'string' && /^https?:\/\//i.test(v)),
+    },
+    component: ImageGallery,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['gallery', 'image', 'media', 'grid'],
+  },
 ]
 
 /**
@@ -314,4 +521,7 @@ export function registerCorePlugins(): void {
   registry.setDefault('timestamp', 'core/formatted-date')
   registry.setDefault('phone', 'core/phone-link')
   registry.setDefault('uuid', 'core/copyable')
+  registry.setDefault('geo', 'core/map-link')
+  registry.setDefault('video', 'core/video-player')
+  registry.setDefault('audio', 'core/audio-player')
 }
