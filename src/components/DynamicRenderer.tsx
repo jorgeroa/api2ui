@@ -69,7 +69,11 @@ export function DynamicRenderer({
   // Drill-down handler passed via context
   const handleDrillDown = useCallback(
     (item: unknown, itemSchema: TypeSignature, label: string, itemPath: string) => {
-      setNavStack(prev => [...prev, { data: item, schema: itemSchema, label, path: itemPath }])
+      setNavStack(prev => {
+        // Prevent duplicate entries with the same path (e.g. section breadcrumb pushed twice)
+        if (prev.some(entry => entry.path === itemPath)) return prev
+        return [...prev, { data: item, schema: itemSchema, label, path: itemPath }]
+      })
     },
     []
   )
