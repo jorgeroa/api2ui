@@ -56,6 +56,11 @@ interface ConfigStore extends ConfigState {
   setPaginationConfig: (path: string, config: Partial<PaginationConfig>) => void
   getPaginationConfig: (path: string, defaultItemsPerPage: number) => PaginationConfig
 
+  // Plugin preferences
+  setPluginPreference: (semanticCategory: string, pluginId: string) => void
+  removePluginPreference: (semanticCategory: string) => void
+  getPluginPreference: (semanticCategory: string) => string | undefined
+
   // Utility
   clearFieldConfigs: () => void
   resetConfig: () => void
@@ -80,6 +85,7 @@ export const useConfigStore = create<ConfigStore>()(
       endpointOverrides: {},
       panelOpen: false,
       paginationConfigs: {},
+      pluginPreferences: {},
 
       // Mode
       setMode: (mode) => set({ mode }),
@@ -215,6 +221,22 @@ export const useConfigStore = create<ConfigStore>()(
         return state.paginationConfigs[path] ?? { itemsPerPage: defaultItemsPerPage, currentPage: 1 }
       },
 
+      // Plugin preferences
+      setPluginPreference: (semanticCategory, pluginId) =>
+        set((state) => ({
+          pluginPreferences: { ...state.pluginPreferences, [semanticCategory]: pluginId },
+        })),
+
+      removePluginPreference: (semanticCategory) =>
+        set((state) => {
+          const { [semanticCategory]: _, ...rest } = state.pluginPreferences
+          return { pluginPreferences: rest }
+        }),
+
+      getPluginPreference: (semanticCategory) => {
+        return get().pluginPreferences[semanticCategory]
+      },
+
       // Utility
       clearFieldConfigs: () => set({ fieldConfigs: {} }),
       resetConfig: () =>
@@ -224,6 +246,7 @@ export const useConfigStore = create<ConfigStore>()(
           endpointOverrides: {},
           globalTheme: 'light' as ThemePreset,
           paginationConfigs: {},
+          pluginPreferences: {},
         }),
 
       getHiddenFieldCount: () => {
@@ -247,6 +270,7 @@ export const useConfigStore = create<ConfigStore>()(
         styleOverrides: state.styleOverrides,
         endpointOverrides: state.endpointOverrides,
         paginationConfigs: state.paginationConfigs,
+        pluginPreferences: state.pluginPreferences,
       }),
       merge: (persistedState, currentState) => {
         if (!persistedState || typeof persistedState !== 'object') return currentState

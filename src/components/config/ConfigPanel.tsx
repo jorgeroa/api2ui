@@ -5,6 +5,7 @@ import { useAppStore } from '../../store/appStore'
 import { FieldListPanel } from './FieldListPanel'
 import { ComponentOverridePanel } from './ComponentOverridePanel'
 import { StylePanel } from './StylePanel'
+import { PluginSettings } from './PluginSettings'
 
 export function ConfigPanel() {
   const { panelOpen, togglePanel, resetConfig } = useConfigStore()
@@ -151,6 +152,14 @@ export function ConfigPanel() {
                 Style
               </h3>
               <StylePanel />
+            </section>
+
+            {/* Plugins Section */}
+            <section>
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+                Plugins
+              </h3>
+              <PluginSettings />
             </section>
           </div>
 
