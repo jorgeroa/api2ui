@@ -65,6 +65,14 @@ const modeToPlugin: Record<string, string> = {
   link: 'core/link',
   image: 'core/image',
   text: 'core/text',
+  phone: 'core/phone-link',
+  copyable: 'core/copyable',
+  progress: 'core/progress-bar',
+  percentage: 'core/percentage',
+  compact: 'core/compact-number',
+  dot: 'core/dot-indicator',
+  markdown: 'core/markdown',
+  checkbox: 'core/checkbox',
 }
 
 /**
@@ -323,6 +331,16 @@ export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
       if (isKnownStatus) {
         return renderViaPlugin('core/status-badge', props) ?? <StatusBadge value={data} />
       }
+    }
+
+    // Phone detection (semantic)
+    if (category === 'phone') {
+      return renderViaPlugin('core/phone-link', props) ?? <span>{data}</span>
+    }
+
+    // UUID/ID detection (semantic)
+    if (category === 'uuid') {
+      return renderViaPlugin('core/copyable', props) ?? <span>{data}</span>
     }
 
     // Heuristic detection

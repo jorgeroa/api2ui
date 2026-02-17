@@ -22,6 +22,15 @@ import { LinkValue } from './fields/LinkValue'
 import { ImageValue } from './fields/ImageValue'
 import { ColorSwatch } from './fields/ColorSwatch'
 import { CodeBlock } from './fields/CodeBlock'
+import { Copyable } from './fields/Copyable'
+import { ProgressBar } from './fields/ProgressBar'
+import { Percentage } from './fields/Percentage'
+import { CompactNumber } from './fields/CompactNumber'
+import { DotIndicator } from './fields/DotIndicator'
+import { PhoneLink } from './fields/PhoneLink'
+import { Markdown } from './fields/Markdown'
+import { RelativeTime } from './fields/RelativeTime'
+import { CheckboxField } from './fields/CheckboxField'
 
 /** All core field plugins */
 export const corePlugins: FieldPlugin[] = [
@@ -175,6 +184,112 @@ export const corePlugins: FieldPlugin[] = [
     version: '0.6.0',
     tags: ['code', 'monospace'],
   },
+  {
+    id: 'core/copyable',
+    name: 'Copyable',
+    description: 'Text with click-to-copy button for IDs and tokens',
+    icon: '📋',
+    accepts: {
+      dataTypes: [DataType.String],
+      semanticHints: ['uuid'],
+    },
+    component: Copyable,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['copy', 'id', 'uuid', 'token'],
+  },
+  {
+    id: 'core/progress-bar',
+    name: 'Progress Bar',
+    description: 'Horizontal bar fill for 0-100 or 0-1 values',
+    icon: '📊',
+    accepts: { dataTypes: [DataType.Number] },
+    component: ProgressBar,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['progress', 'bar', 'percentage'],
+  },
+  {
+    id: 'core/percentage',
+    name: 'Percentage',
+    description: 'Number displayed as percentage with auto 0-1 detection',
+    accepts: { dataTypes: [DataType.Number] },
+    component: Percentage,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['percentage', 'number'],
+  },
+  {
+    id: 'core/compact-number',
+    name: 'Compact Number',
+    description: 'Abbreviated large numbers: 1.2K, 3.4M, 1.5B',
+    accepts: { dataTypes: [DataType.Number] },
+    component: CompactNumber,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['number', 'compact', 'abbreviation'],
+  },
+  {
+    id: 'core/dot-indicator',
+    name: 'Dot Indicator',
+    description: 'Small colored dot + text for compact status display',
+    accepts: {
+      dataTypes: [DataType.String],
+      semanticHints: ['status'],
+    },
+    component: DotIndicator,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['status', 'dot', 'indicator'],
+  },
+  {
+    id: 'core/phone-link',
+    name: 'Phone Link',
+    description: 'Clickable tel: link for phone numbers',
+    icon: '📞',
+    accepts: {
+      dataTypes: [DataType.String],
+      semanticHints: ['phone'],
+    },
+    component: PhoneLink,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['phone', 'link', 'tel'],
+  },
+  {
+    id: 'core/markdown',
+    name: 'Markdown',
+    description: 'Rendered markdown content with prose styling',
+    accepts: { dataTypes: [DataType.String] },
+    component: Markdown,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['markdown', 'rich-text'],
+  },
+  {
+    id: 'core/relative-time',
+    name: 'Relative Time',
+    description: 'Relative time display: "3 days ago", "in 2 hours"',
+    icon: '🕐',
+    accepts: {
+      dataTypes: [DataType.String, DataType.Date],
+      semanticHints: ['timestamp'],
+    },
+    component: RelativeTime,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['time', 'relative', 'ago'],
+  },
+  {
+    id: 'core/checkbox',
+    name: 'Checkbox',
+    description: 'Read-only checkbox icon for boolean values',
+    accepts: { dataTypes: [DataType.Boolean] },
+    component: CheckboxField,
+    source: PluginSource.Core,
+    version: '0.6.0',
+    tags: ['boolean', 'checkbox'],
+  },
 ]
 
 /**
@@ -197,4 +312,6 @@ export function registerCorePlugins(): void {
   registry.setDefault('avatar', 'core/image')
   registry.setDefault('date', 'core/formatted-date')
   registry.setDefault('timestamp', 'core/formatted-date')
+  registry.setDefault('phone', 'core/phone-link')
+  registry.setDefault('uuid', 'core/copyable')
 }

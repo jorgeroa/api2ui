@@ -273,61 +273,66 @@ function ArrayPrimitivePreview({
   )
 }
 
+/** Mode string → plugin ID mapping (mirrors PrimitiveRenderer's modeToPlugin) */
+const modeToPluginId: Record<string, string> = {
+  rating: 'core/star-rating',
+  currency: 'core/currency',
+  email: 'core/email-link',
+  color: 'core/color-swatch',
+  code: 'core/code-block',
+  link: 'core/link',
+  image: 'core/image',
+  text: 'core/text',
+  phone: 'core/phone-link',
+  copyable: 'core/copyable',
+  progress: 'core/progress-bar',
+  percentage: 'core/percentage',
+  compact: 'core/compact-number',
+  dot: 'core/dot-indicator',
+  markdown: 'core/markdown',
+  checkbox: 'core/checkbox',
+}
+
 /**
- * Preview for primitive field render modes (text, link, image, absolute, relative).
- * Shows a small inline preview of how the value would render.
+ * Preview for primitive field render modes.
+ * Renders live plugin component with actual field data when possible.
+ * Falls back to static previews for modes without plugins (absolute/relative dates).
  */
 function PrimitiveRenderModePreview({
   type,
   value,
+  fieldName,
 }: {
   type: string
   value: unknown
   fieldName: string
 }) {
+  // Resolve plugin ID: direct plugin ID or mode string → plugin ID
+  const pluginId = type.includes('/') ? type : modeToPluginId[type]
+  const plugin = pluginId ? registry.get(pluginId) : null
+
+  // Live preview via plugin component
+  if (plugin) {
+    const Component = plugin.component
+    return (
+      <div className="pointer-events-none">
+        <Component
+          value={value}
+          fieldName={fieldName}
+          fieldPath="$.preview"
+          schema={{ kind: 'primitive', type: typeof value === 'number' ? 'number' : typeof value === 'boolean' ? 'boolean' : 'string' } as any}
+        />
+      </div>
+    )
+  }
+
+  // Static fallbacks for modes that don't have plugins yet
   const stringValue = typeof value === 'string' ? value : String(value)
 
   switch (type) {
-    case 'text':
-      return (
-        <div className="text-sm text-gray-600 truncate" title={stringValue}>
-          {stringValue}
-        </div>
-      )
-
-    case 'link':
-      return (
-        <div className="text-sm text-blue-600 underline truncate" title={stringValue}>
-          {stringValue}
-        </div>
-      )
-
-    case 'image':
-      return (
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <svg
-            className="w-8 h-8 text-gray-400"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
-              clipRule="evenodd"
-            />
-          </svg>
-          <span className="text-xs">Image preview</span>
-        </div>
-      )
-
     case 'absolute':
       try {
-        const date = new Date(stringValue)
-        return (
-          <div className="text-sm text-gray-600">
-            {date.toLocaleString()}
-          </div>
-        )
+        return <div className="text-sm text-gray-600">{new Date(stringValue).toLocaleString()}</div>
       } catch {
         return <div className="text-sm text-gray-600">{stringValue}</div>
       }
@@ -335,9 +340,7 @@ function PrimitiveRenderModePreview({
     case 'relative':
       try {
         const date = new Date(stringValue)
-        const now = new Date()
-        const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
-        const hours = Math.floor(seconds / 3600)
+        const hours = Math.floor(Math.abs(Date.now() - date.getTime()) / 3600000)
         return (
           <div className="text-sm text-gray-600">
             {hours < 24 ? `${hours} hours ago` : `${Math.floor(hours / 24)} days ago`}
@@ -347,53 +350,7 @@ function PrimitiveRenderModePreview({
         return <div className="text-sm text-gray-600">2 hours ago</div>
       }
 
-    case 'rating':
-      return (
-        <div className="text-sm">
-          <span className="text-yellow-400">&#9733;&#9733;&#9733;&#9733;</span>
-          <span className="text-gray-300">&#9733;</span>
-          <span className="text-xs text-gray-500 ml-1">4.0</span>
-        </div>
-      )
-
-    case 'currency':
-      return <div className="text-sm text-gray-700">$1,234.56</div>
-
-    case 'code':
-      return (
-        <div className="text-sm">
-          <code className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-xs text-gray-800">
-            {stringValue.slice(0, 24)}
-          </code>
-        </div>
-      )
-
-    case 'email':
-      return <div className="text-sm text-blue-600 underline">{stringValue}</div>
-
-    case 'color': {
-      const colorVal = /^#|^rgb|^hsl/i.test(stringValue) ? stringValue : '#6366f1'
-      return (
-        <div className="flex items-center gap-2 text-sm">
-          <span className="w-4 h-4 rounded border border-gray-300" style={{ backgroundColor: colorVal }} />
-          <code className="text-xs font-mono">{stringValue || colorVal}</code>
-        </div>
-      )
-    }
-
-    default: {
-      // Check if it's a plugin ID and show its description
-      if (type.includes('/')) {
-        const plugin = registry.get(type)
-        if (plugin) {
-          return (
-            <div className="text-xs text-gray-600">
-              {plugin.description}
-            </div>
-          )
-        }
-      }
+    default:
       return <div className="text-xs text-gray-500 italic">Preview not available</div>
-    }
   }
 }
