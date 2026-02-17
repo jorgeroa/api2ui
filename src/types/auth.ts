@@ -1,5 +1,11 @@
 /** Authentication type identifiers */
-export type AuthType = 'bearer' | 'basic' | 'apiKey' | 'queryParam'
+export const AuthType = {
+  Bearer: 'bearer',
+  Basic: 'basic',
+  ApiKey: 'apiKey',
+  QueryParam: 'queryParam',
+} as const
+export type AuthType = typeof AuthType[keyof typeof AuthType]
 
 /** Base credential interface with shared fields */
 interface BaseCredential {
@@ -44,7 +50,12 @@ export type Credential =
   | QueryParamCredential
 
 /** Authentication status for tracking per-API auth state */
-export type AuthStatus = 'untested' | 'success' | 'failed'
+export const AuthStatus = {
+  Untested: 'untested',
+  Success: 'success',
+  Failed: 'failed',
+} as const
+export type AuthStatus = typeof AuthStatus[keyof typeof AuthStatus]
 
 /** Per-origin credential storage and active selection */
 export interface ApiCredentials {

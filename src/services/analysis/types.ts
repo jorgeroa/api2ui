@@ -11,7 +11,12 @@ import type { SemanticCategory } from '../semantic/types'
  * - secondary: Supporting fields (50-79% score) - displayed normally
  * - tertiary: Metadata/utility fields (<50% score) - de-emphasized
  */
-export type ImportanceTier = 'primary' | 'secondary' | 'tertiary'
+export const ImportanceTier = {
+  Primary: 'primary',
+  Secondary: 'secondary',
+  Tertiary: 'tertiary',
+} as const
+export type ImportanceTier = typeof ImportanceTier[keyof typeof ImportanceTier]
 
 /**
  * Represents a single signal that contributed to the importance score.

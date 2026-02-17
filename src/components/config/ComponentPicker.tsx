@@ -12,6 +12,7 @@ import { GalleryRenderer } from '../renderers/GalleryRenderer'
 import { TimelineRenderer } from '../renderers/TimelineRenderer'
 import { StatsRenderer } from '../renderers/StatsRenderer'
 import { getAvailableRenderModes } from '../renderers/PrimitiveRenderer'
+import { registry } from '../registry/pluginRegistry'
 
 interface ComponentPickerProps {
   currentType: string
@@ -47,13 +48,30 @@ export function ComponentPicker({
   const isObjectComponent = sampleSchema.kind === 'object'
   const isPrimitiveField = sampleSchema.kind === 'primitive'
 
-  // For primitive fields, use getAvailableRenderModes to determine options
+  // For primitive fields, combine mode-based options with registry plugins
   const primitiveRenderModes = isPrimitiveField && fieldValue !== undefined
     ? getAvailableRenderModes(fieldValue, fieldName)
     : []
 
+  // Get compatible plugins from registry for primitive fields
+  const dataType = isPrimitiveField
+    ? (typeof fieldValue === 'number' ? 'number' : typeof fieldValue === 'boolean' ? 'boolean' : 'string')
+    : undefined
+  const registryPlugins = isPrimitiveField && dataType
+    ? registry.getCompatible(dataType)
+    : []
+
+  // Merge: use render modes as base, add any registry plugins not already represented
+  const modePluginIds = new Set(primitiveRenderModes)
+  for (const plugin of registryPlugins) {
+    // Add plugin ID if not already covered by a render mode
+    if (!modePluginIds.has(plugin.id)) {
+      modePluginIds.add(plugin.id)
+    }
+  }
+
   const actualAvailableTypes = isPrimitiveField && primitiveRenderModes.length > 1
-    ? primitiveRenderModes
+    ? [...modePluginIds]
     : availableTypes
 
   // Sample data for array previews (limit to 3 items for preview)
@@ -92,7 +110,7 @@ export function ComponentPicker({
                 >
                   {/* Type label */}
                   <div className="font-semibold text-gray-800 mb-2 capitalize">
-                    {type}
+                    {type.includes('/') ? (registry.get(type)?.name ?? type.split('/').pop()) : type}
                   </div>
 
                   {/* Preview */}
@@ -363,7 +381,19 @@ function PrimitiveRenderModePreview({
       )
     }
 
-    default:
+    default: {
+      // Check if it's a plugin ID and show its description
+      if (type.includes('/')) {
+        const plugin = registry.get(type)
+        if (plugin) {
+          return (
+            <div className="text-xs text-gray-600">
+              {plugin.description}
+            </div>
+          )
+        }
+      }
       return <div className="text-xs text-gray-500 italic">Preview not available</div>
+    }
   }
 }

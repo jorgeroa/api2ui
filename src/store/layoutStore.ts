@@ -1,7 +1,12 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
-export type LayoutMode = 'sidebar' | 'topbar' | 'split'
+export const LayoutMode = {
+  Sidebar: 'sidebar',
+  Topbar: 'topbar',
+  Split: 'split',
+} as const
+export type LayoutMode = typeof LayoutMode[keyof typeof LayoutMode]
 
 interface LayoutState {
   // endpoint -> layout preference
@@ -39,7 +44,8 @@ export const useLayoutStore = create<LayoutStore>()(
 
       clearLayout: (endpoint) =>
         set((state) => {
-          const { [endpoint]: _, ...rest } = state.layouts
+          const { [endpoint]: _removed, ...rest } = state.layouts
+          void _removed
           return {
             layouts: rest,
           }

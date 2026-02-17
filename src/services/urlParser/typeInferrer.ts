@@ -6,21 +6,28 @@
  * false positives that destroy user trust.
  */
 
-export type InferredType =
-  | 'string'
-  | 'number'
-  | 'boolean'
-  | 'date'
-  | 'email'
-  | 'url'
-  | 'coordinates'
-  | 'zip'
+export const InferredType = {
+  String: 'string',
+  Number: 'number',
+  Boolean: 'boolean',
+  Date: 'date',
+  Email: 'email',
+  Url: 'url',
+  Coordinates: 'coordinates',
+  Zip: 'zip',
+} as const
+export type InferredType = typeof InferredType[keyof typeof InferredType]
 
-export type ConfidenceLevel = 'LOW' | 'MEDIUM' | 'HIGH'
+export const UrlConfidenceLevel = {
+  Low: 'LOW',
+  Medium: 'MEDIUM',
+  High: 'HIGH',
+} as const
+export type UrlConfidenceLevel = typeof UrlConfidenceLevel[keyof typeof UrlConfidenceLevel]
 
 export interface TypeInferenceResult {
   type: InferredType
-  confidence: ConfidenceLevel
+  confidence: UrlConfidenceLevel
   reasons: string[]
 }
 

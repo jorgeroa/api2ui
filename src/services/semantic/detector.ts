@@ -6,11 +6,39 @@
 import { getAllPatterns, getCompositePatterns } from './patterns'
 import { calculateConfidence } from './scorer'
 import { createMemoizedDetector, type MemoizedDetector } from './cache'
-import type { ConfidenceResult, CompositePattern } from './types'
+import type { ConfidenceResult, CompositePattern, SemanticPattern } from './types'
+import { DEFAULT_THRESHOLDS } from './types'
+import { registry } from '../../components/registry/pluginRegistry'
+import type { PluginSemanticCategory } from '../../types/plugins'
+
+/**
+ * Convert a plugin-declared semantic category into a SemanticPattern
+ * so it can compete in the same scoring pipeline as core patterns.
+ * Uses regex name matching (Tier 2) instead of embeddings (Tier 1).
+ */
+function pluginCategoryToPattern(cat: PluginSemanticCategory): SemanticPattern {
+  return {
+    category: cat.id as any,
+    namePatterns: cat.namePatterns.map(regex => ({
+      regex,
+      weight: 0.40,
+      languages: ['en'],
+    })),
+    typeConstraint: { allowed: ['string', 'number', 'boolean', 'array', 'object'], weight: 0.10 },
+    valueValidators: [{
+      name: `plugin:${cat.id}`,
+      validator: (value: unknown) => cat.validate(value, { fieldName: '', fieldPath: '', parentObject: undefined }),
+      weight: 0.30,
+    }],
+    formatHints: [],
+    thresholds: { high: DEFAULT_THRESHOLDS.high, medium: DEFAULT_THRESHOLDS.medium },
+  }
+}
 
 /**
  * Internal detection function (before memoization).
  * Runs all patterns against a field and returns sorted results.
+ * Evaluates both core patterns (Tier 1) and plugin-declared categories (Tier 2).
  */
 function detectSemanticsInternal(
   _fieldPath: string,
@@ -22,6 +50,7 @@ function detectSemanticsInternal(
   const patterns = getAllPatterns()
   const results: ConfidenceResult[] = []
 
+  // Tier 1: Core patterns (embedding-based name matching)
   for (const pattern of patterns) {
     const result = calculateConfidence(
       fieldName,
@@ -32,6 +61,23 @@ function detectSemanticsInternal(
     )
 
     // Only include results with positive confidence
+    if (result.confidence > 0) {
+      results.push(result)
+    }
+  }
+
+  // Tier 2: Plugin-declared custom categories (regex/keyword name matching)
+  const customCategories = registry.getCustomCategories()
+  for (const customCat of customCategories) {
+    const pattern = pluginCategoryToPattern(customCat)
+    const result = calculateConfidence(
+      fieldName,
+      fieldType,
+      sampleValues,
+      openapiHints,
+      pattern
+    )
+
     if (result.confidence > 0) {
       results.push(result)
     }

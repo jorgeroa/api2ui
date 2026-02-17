@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { inferParameterType, type InferredType, type ConfidenceLevel } from './typeInferrer'
+import { inferParameterType, type InferredType, type UrlConfidenceLevel } from './typeInferrer'
 
 describe('inferParameterType', () => {
   describe('boolean detection', () => {

@@ -1,10 +1,14 @@
 import { useState } from 'react'
 import type { RendererProps } from '../../types/components'
 import type { FieldType } from '../../types/schema'
+import type { FieldRenderProps } from '../../types/plugins'
 import { useConfigStore } from '../../store/configStore'
 import { useAppStore } from '../../store/appStore'
 import { isImageUrl } from '../../utils/imageDetection'
 import { isEmail, isColorValue, isCurrencyField, isRatingField, detectPrimitiveMode } from '../../utils/primitiveDetection'
+import { registry } from '../registry/pluginRegistry'
+
+// Existing semantic components (used directly when no plugin is registered yet)
 import { StatusBadge } from './semantic/StatusBadge'
 import { StarRating } from './semantic/StarRating'
 import { CurrencyValue, detectCurrencyFromSiblings } from './semantic/CurrencyValue'
@@ -37,13 +41,10 @@ function isURL(value: string): boolean {
 
 /** Check if a string value looks like a date */
 function isDateLike(value: string, fieldName: string): boolean {
-  // Check ISO 8601 pattern
   const isoPattern = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2})?)?$/
   if (isoPattern.test(value)) {
     return !isNaN(Date.parse(value))
   }
-
-  // Check if field name suggests a date
   const dateKeywords = ['date', 'created', 'updated', 'timestamp', 'time', 'at']
   const lowerFieldName = fieldName.toLowerCase()
   return dateKeywords.some((keyword) => lowerFieldName.includes(keyword))
@@ -54,16 +55,27 @@ function normalizePath(path: string): string {
   return path.replace(/\[\d+\]/g, '[]')
 }
 
+/** Map render mode strings to plugin IDs */
+const modeToPlugin: Record<string, string> = {
+  rating: 'core/star-rating',
+  currency: 'core/currency',
+  email: 'core/email-link',
+  color: 'core/color-swatch',
+  code: 'core/code-block',
+  link: 'core/link',
+  image: 'core/image',
+  text: 'core/text',
+}
+
 /**
  * Get available render modes for a value.
- * This is exported for ComponentPicker to determine what options to show.
+ * Exported for ComponentPicker to determine what options to show.
  */
 export function getAvailableRenderModes(value: unknown, fieldName: string = ''): string[] {
   if (typeof value === 'number') {
     const modes: string[] = ['text']
     if (isRatingField(fieldName, value)) modes.push('rating')
     if (isCurrencyField(fieldName)) modes.push('currency')
-    // Always offer these as manual options for any number
     if (!modes.includes('rating')) modes.push('rating')
     if (!modes.includes('currency')) modes.push('currency')
     return modes
@@ -88,6 +100,48 @@ export function getAvailableRenderModes(value: unknown, fieldName: string = ''):
   return modes
 }
 
+/**
+ * Build FieldRenderProps for a plugin component.
+ */
+function buildRenderProps(
+  data: unknown,
+  path: string,
+  schema: RendererProps['schema'],
+  parentObject?: Record<string, unknown>,
+): FieldRenderProps {
+  const pathParts = path.split('.')
+  const fieldName = pathParts[pathParts.length - 1] || ''
+  return {
+    value: data,
+    fieldName,
+    fieldPath: path,
+    schema,
+    context: parentObject ? { parentObject } : undefined,
+  }
+}
+
+/**
+ * Try to render via a plugin from the registry. Returns null if plugin not found.
+ */
+function renderViaPlugin(pluginId: string, props: FieldRenderProps): React.ReactElement | null {
+  const plugin = registry.get(pluginId)
+  if (!plugin) return null
+  const Component = plugin.component
+  return <Component {...props} />
+}
+
+/**
+ * PrimitiveRenderer — thin registry router.
+ *
+ * Resolution precedence:
+ *   1. User override (fieldConfigs.componentType)
+ *   2. Semantic detection (analysis cache, high confidence)
+ *   3. Heuristic detection (detectPrimitiveMode)
+ *   4. Data-type default (core/text, core/number, core/boolean-badge)
+ *
+ * All rendering is delegated to plugin components when available,
+ * with inline fallbacks for backward compatibility.
+ */
 export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
   const { fieldConfigs } = useConfigStore()
   const { getAnalysisCache, data: rootData } = useAppStore()
@@ -98,13 +152,11 @@ export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
   }
 
   const type: FieldType = schema.type
-
-  // Semantic-aware rendering: check analysis cache for high-confidence detection
   const pathParts = path.split('.')
   const fieldPath = path
   const fieldName = pathParts[pathParts.length - 1] || ''
 
-  // Try multiple parent paths for cache lookup (most specific to least)
+  // --- Cache lookup for semantic detection ---
   const parentPath = pathParts.length > 1 ? pathParts.slice(0, -1).join('.') : path
   const normalizedPath = normalizePath(fieldPath)
   const normalizedParent = normalizePath(parentPath)
@@ -117,172 +169,122 @@ export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
   const semantics = cached?.semantics?.get(fieldPath)
     || cached?.semantics?.get(normalizedPath)
   const hasHighConfidence = semantics && semantics.level === 'high'
+  const category = hasHighConfidence ? semantics?.detectedCategory : null
 
-  // Handle null
+  // --- Resolve parent object for currency detection ---
+  let parentObj: Record<string, unknown> | undefined
+  if (parentPath !== '$' && parentPath !== path) {
+    let obj: any = rootData
+    const parts = parentPath.replace(/^\$\.?/, '').split('.')
+    for (const part of parts) {
+      if (!obj) break
+      const match = part.match(/^(.+?)\[(\d+)\]$/)
+      if (match) {
+        obj = obj?.[match[1]!]?.[parseInt(match[2]!, 10)]
+      } else {
+        obj = obj[part]
+      }
+    }
+    if (obj && typeof obj === 'object') parentObj = obj
+  }
+
+  const props = buildRenderProps(data, path, schema, parentObj)
+
+  // --- Handle null ---
   if (data === null || data === undefined) {
     return <span className="text-gray-400 italic">null</span>
   }
 
-  // Handle boolean
+  // --- User override (highest precedence) ---
+  const config = fieldConfigs[path]
+  const overrideMode = config?.componentType
+
+  if (overrideMode) {
+    // Direct plugin ID (e.g. 'core/star-rating')
+    if (overrideMode.includes('/')) {
+      const result = renderViaPlugin(overrideMode, props)
+      if (result) return result
+    }
+    // Mode string mapped to plugin ID (e.g. 'rating' → 'core/star-rating')
+    const pluginId = modeToPlugin[overrideMode]
+    if (pluginId) {
+      const result = renderViaPlugin(pluginId, props)
+      if (result) return result
+    }
+    // Fallback for overrides that don't map to plugins yet (e.g. 'relative', 'absolute')
+    if (overrideMode === 'relative' && typeof data === 'string') {
+      try { return <span title={data}>{timeAgo(new Date(data))}</span> } catch { /* fall through */ }
+    }
+    if (overrideMode === 'absolute' && typeof data === 'string') {
+      try { return <span title={data}>{new Date(data).toLocaleString()}</span> } catch { /* fall through */ }
+    }
+  }
+
+  // --- Boolean ---
   if (type === 'boolean' && typeof data === 'boolean') {
-    // Check if this is a status-related boolean (semantic detection or field name pattern)
-    const isStatusBoolean = (hasHighConfidence && semantics?.detectedCategory === 'status')
+    const isStatusBoolean = category === 'status'
       || /^(is_|has_|can_)?(active|enabled|verified|published|approved|visible|available|blocked|banned|deleted|suspended)/i.test(fieldName)
 
     if (isStatusBoolean) {
-      return <StatusBadge value={data} />
+      return renderViaPlugin('core/status-badge', props) ?? <StatusBadge value={data} />
     }
-
-    // Default boolean rendering
-    return (
-      <span
-        className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-          data
-            ? 'bg-green-100 text-green-800'
-            : 'bg-gray-100 text-gray-600'
-        }`}
-      >
-        {String(data)}
-      </span>
+    return renderViaPlugin('core/boolean-badge', props) ?? (
+      <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+        data ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+      }`}>{String(data)}</span>
     )
   }
 
-  // Handle number
+  // --- Number ---
   if (type === 'number' && typeof data === 'number') {
-    const config = fieldConfigs[path]
-
-    // Check for user override first (highest precedence)
-    if (config?.componentType) {
-      const renderMode = config.componentType
-
-      if (renderMode === 'rating') {
-        const clamped = Math.min(5, Math.max(0, data))
-        const fullStars = Math.floor(clamped)
-        const hasHalf = (clamped - fullStars) >= 0.25
-        const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0)
-        return (
-          <span className="inline-flex items-center gap-0.5" title={String(data)}>
-            {Array.from({ length: fullStars }, (_, i) => <span key={`f${i}`} className="text-yellow-400">&#9733;</span>)}
-            {hasHalf && <span className="text-yellow-300">&#9733;</span>}
-            {Array.from({ length: emptyStars }, (_, i) => <span key={`e${i}`} className="text-gray-300">&#9733;</span>)}
-            <span className="text-xs text-gray-500 ml-1">{data.toFixed(1)}</span>
-          </span>
-        )
-      }
-
-      if (renderMode === 'currency') {
-        return <span>${data.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-      }
-
-      // Other overrides fall through to default
-      return <span>{data.toLocaleString()}</span>
+    // Semantic detection
+    if (category === 'rating') {
+      return renderViaPlugin('core/star-rating', props) ?? <StarRating value={data} />
     }
-
-    // No user override - check semantic detection
-    if (hasHighConfidence && semantics?.detectedCategory === 'rating') {
-      return <StarRating value={data} />
-    }
-
-    if (hasHighConfidence && semantics?.detectedCategory === 'price') {
-      // Detect currency from sibling fields
-      // Navigate to parent object using parentPath
-      let parentObj: any = rootData
-      if (parentPath !== '$' && parentPath !== path) {
-        const parts = parentPath.replace(/^\$\.?/, '').split('.')
-        for (const part of parts) {
-          if (!parentObj) break
-          // Handle array indices like [0]
-          const match = part.match(/^(.+?)\[(\d+)\]$/)
-          if (match) {
-            const key = match[1]
-            const idx = match[2]
-            parentObj = parentObj?.[key!]?.[parseInt(idx!, 10)]
-          } else {
-            parentObj = parentObj[part]
-          }
-        }
-      }
-      const detectedCurrency = parentObj ? detectCurrencyFromSiblings(fieldName, parentObj) : null
-      return <CurrencyValue amount={data} currencyCode={detectedCurrency ?? undefined} />
-    }
-
-    // Fallback to existing heuristic detection
-    const renderMode = detectPrimitiveMode(data, fieldName)
-
-    if (renderMode === 'rating') {
-      const clamped = Math.min(5, Math.max(0, data))
-      const fullStars = Math.floor(clamped)
-      const hasHalf = (clamped - fullStars) >= 0.25
-      const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0)
-      return (
-        <span className="inline-flex items-center gap-0.5" title={String(data)}>
-          {Array.from({ length: fullStars }, (_, i) => <span key={`f${i}`} className="text-yellow-400">&#9733;</span>)}
-          {hasHalf && <span className="text-yellow-300">&#9733;</span>}
-          {Array.from({ length: emptyStars }, (_, i) => <span key={`e${i}`} className="text-gray-300">&#9733;</span>)}
-          <span className="text-xs text-gray-500 ml-1">{data.toFixed(1)}</span>
-        </span>
+    if (category === 'price') {
+      return renderViaPlugin('core/currency', props) ?? (
+        <CurrencyValue
+          amount={data}
+          currencyCode={parentObj ? detectCurrencyFromSiblings(fieldName, parentObj) : undefined}
+        />
       )
     }
 
-    if (renderMode === 'currency') {
-      return <span>${data.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+    // Heuristic detection
+    const heuristicMode = detectPrimitiveMode(data, fieldName)
+    if (heuristicMode === 'rating') {
+      return renderViaPlugin('core/star-rating', props) ?? <StarRating value={data} />
+    }
+    if (heuristicMode === 'currency') {
+      return renderViaPlugin('core/currency', props) ?? (
+        <CurrencyValue
+          amount={data}
+          currencyCode={parentObj ? detectCurrencyFromSiblings(fieldName, parentObj) : undefined}
+        />
+      )
     }
 
-    return <span>{data.toLocaleString()}</span>
+    return renderViaPlugin('core/number', props) ?? <span>{data.toLocaleString()}</span>
   }
 
-  // Handle date
+  // --- Date ---
   if (type === 'date' && typeof data === 'string') {
-    // Check for render mode override
-    const config = fieldConfigs[path]
-    const renderMode = config?.componentType
-
     try {
-      const date = new Date(data)
-
-      if (renderMode === 'relative') {
-        return <span title={data}>{timeAgo(date)}</span>
+      if (category === 'date' || category === 'timestamp') {
+        return renderViaPlugin('core/formatted-date', props) ?? <FormattedDate value={data} />
       }
-
-      // Check semantic detection for FormattedDate component
-      if (!renderMode && hasHighConfidence && (semantics?.detectedCategory === 'date' || semantics?.detectedCategory === 'timestamp')) {
-        return <FormattedDate value={data} />
-      }
-
-      // Default: absolute
-      return <span title={data}>{date.toLocaleString()}</span>
+      return <span title={data}>{new Date(data).toLocaleString()}</span>
     } catch {
       return <span>{data}</span>
     }
   }
 
-  // Handle string
+  // --- String ---
   if (typeof data === 'string') {
-    // Check for render mode override
-    const config = fieldConfigs[path]
-    const renderMode = config?.componentType
-    const fieldName = path.split('.').pop() || ''
-
-    // URL detection and render modes
+    // URL detection
     if (isURL(data)) {
-      // Explicit link override takes precedence
-      if (renderMode === 'link') {
-        return (
-          <a
-            href={data}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-800 underline"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {data}
-          </a>
-        )
-      }
-
-      // Auto-detect image URLs or explicit image mode
-      const shouldAutoImage = isImageUrl(data) && renderMode !== 'text'
-      if (shouldAutoImage || renderMode === 'image') {
+      const shouldAutoImage = isImageUrl(data) && overrideMode !== 'text'
+      if (shouldAutoImage) {
         if (imageError) {
           return <span className="text-gray-500" title={data}>{data}</span>
         }
@@ -296,89 +298,60 @@ export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
           />
         )
       }
-
-      // Default: text
+      // Non-image URL: show as truncated text (link mode is an override handled above)
       const truncated = data.length > 100 ? `${data.slice(0, 100)}...` : data
       return <span title={data}>{truncated}</span>
     }
 
-    // Date-like string detection and render modes
+    // Date-like string detection
     if (isDateLike(data, fieldName)) {
       try {
         const date = new Date(data)
         if (!isNaN(date.getTime())) {
-          if (renderMode === 'relative') {
-            return <span title={data}>{timeAgo(date)}</span>
+          if (category === 'date' || category === 'timestamp') {
+            return renderViaPlugin('core/formatted-date', props) ?? <FormattedDate value={data} />
           }
-
-          if (renderMode === 'absolute') {
-            return <span title={data}>{date.toLocaleString()}</span>
-          }
-
-          // Check semantic detection for FormattedDate component
-          if (!renderMode && hasHighConfidence && (semantics?.detectedCategory === 'date' || semantics?.detectedCategory === 'timestamp')) {
-            return <FormattedDate value={data} />
-          }
-
-          // Default: absolute
           return <span title={data}>{date.toLocaleString()}</span>
         }
-      } catch {
-        // Fall through to default string handling
-      }
+      } catch { /* fall through */ }
     }
 
-    // Status string handler (before auto-detection)
-    // Guard: only render StatusBadge if the value matches known status vocabulary.
-    // The semantic detector can false-positive on single-word strings like city names.
-    if (!renderMode && hasHighConfidence && semantics?.detectedCategory === 'status' && typeof data === 'string') {
+    // Status string guard
+    if (category === 'status') {
       const normalized = data.toLowerCase().trim()
       const isKnownStatus = /^(active|success|published|verified|approved|complete|completed|enabled|paid|delivered|open|live|available|done|error|failed|deleted|banned|rejected|cancelled|canceled|inactive|disabled|closed|expired|denied|blocked|pending|processing|review|in.?review|scheduled|syncing|indexing|draft|paused|waiting|suspended|on.?hold)$/i.test(normalized)
       if (isKnownStatus) {
-        return <StatusBadge value={data} />
+        return renderViaPlugin('core/status-badge', props) ?? <StatusBadge value={data} />
       }
     }
 
-    // Apply auto-detection if no explicit override
-    const effectiveMode = renderMode || detectPrimitiveMode(data, fieldName)
-
-    if (effectiveMode === 'email' || (!effectiveMode && isEmail(data))) {
-      return (
-        <a
-          href={`mailto:${data}`}
-          className="text-blue-600 hover:text-blue-800 underline"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {data}
-        </a>
+    // Heuristic detection
+    const effectiveMode = detectPrimitiveMode(data, fieldName)
+    if (effectiveMode === 'email' || isEmail(data)) {
+      return renderViaPlugin('core/email-link', props) ?? (
+        <a href={`mailto:${data}`} className="text-blue-600 hover:text-blue-800 underline" onClick={(e) => e.stopPropagation()}>{data}</a>
       )
     }
-
     if (effectiveMode === 'color') {
-      return (
+      return renderViaPlugin('core/color-swatch', props) ?? (
         <span className="inline-flex items-center gap-2">
-          <span
-            className="w-5 h-5 rounded border border-gray-300 inline-block shrink-0"
-            style={{ backgroundColor: data }}
-          />
+          <span className="w-5 h-5 rounded border border-gray-300 inline-block shrink-0" style={{ backgroundColor: data }} />
           <code className="text-xs font-mono text-gray-700">{data}</code>
         </span>
       )
     }
-
-    if (effectiveMode === 'code' || renderMode === 'code') {
-      return (
-        <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-xs font-mono">
-          {data}
-        </code>
+    if (effectiveMode === 'code') {
+      return renderViaPlugin('core/code-block', props) ?? (
+        <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-xs font-mono">{data}</code>
       )
     }
 
-    // Default string handling with truncation
-    const truncated = data.length > 100 ? `${data.slice(0, 100)}...` : data
-    return <span title={data}>{truncated}</span>
+    // Default text
+    return renderViaPlugin('core/text', props) ?? (
+      <span title={data.length > 100 ? data : undefined}>{data.length > 100 ? `${data.slice(0, 100)}...` : data}</span>
+    )
   }
 
-  // Fallback: stringify unknown types
+  // Fallback
   return <span className="text-gray-500">{JSON.stringify(data)}</span>
 }

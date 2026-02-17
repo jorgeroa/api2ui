@@ -1,5 +1,13 @@
 /** Primitive field types detected from JSON values */
-export type FieldType = 'string' | 'number' | 'boolean' | 'null' | 'date' | 'unknown'
+export const FieldType = {
+  String: 'string',
+  Number: 'number',
+  Boolean: 'boolean',
+  Null: 'null',
+  Date: 'date',
+  Unknown: 'unknown',
+} as const
+export type FieldType = typeof FieldType[keyof typeof FieldType]
 
 /** Type signature for a field -- can be primitive, object, or array */
 export type TypeSignature =
@@ -8,7 +16,12 @@ export type TypeSignature =
   | { kind: 'object'; fields: Map<string, FieldDefinition> }
 
 /** Confidence level based on multi-sample consistency */
-export type Confidence = 'high' | 'medium' | 'low'
+export const Confidence = {
+  High: 'high',
+  Medium: 'medium',
+  Low: 'low',
+} as const
+export type Confidence = typeof Confidence[keyof typeof Confidence]
 
 /**
  * Semantic detection metadata for a field.

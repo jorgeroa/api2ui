@@ -5,37 +5,43 @@
 
 /**
  * Semantic category representing the detected meaning of a field.
- * Categories cover commerce, media, engagement, identity, and temporal domains.
+ * Categories cover commerce, media, engagement, identity, temporal, and spatial domains.
+ * Use as a value namespace (SemanticCategory.Price) or as a type.
  */
-export type SemanticCategory =
+export const SemanticCategory = {
   // Commerce
-  | 'price'
-  | 'currency_code'
-  | 'sku'
-  | 'quantity'
+  Price: 'price',
+  CurrencyCode: 'currency_code',
+  Sku: 'sku',
+  Quantity: 'quantity',
   // Engagement
-  | 'rating'
-  | 'reviews'
-  | 'tags'
-  | 'status'
+  Rating: 'rating',
+  Reviews: 'reviews',
+  Tags: 'tags',
+  Status: 'status',
   // Media
-  | 'image'
-  | 'video'
-  | 'thumbnail'
-  | 'avatar'
+  Image: 'image',
+  Video: 'video',
+  Thumbnail: 'thumbnail',
+  Avatar: 'avatar',
+  Audio: 'audio',
   // Identity
-  | 'email'
-  | 'phone'
-  | 'uuid'
-  | 'name'
-  | 'address'
-  | 'url'
+  Email: 'email',
+  Phone: 'phone',
+  Uuid: 'uuid',
+  Name: 'name',
+  Address: 'address',
+  Url: 'url',
   // Temporal
-  | 'date'
-  | 'timestamp'
+  Date: 'date',
+  Timestamp: 'timestamp',
   // Content
-  | 'description'
-  | 'title'
+  Description: 'description',
+  Title: 'title',
+  // Spatial
+  Geo: 'geo',
+} as const
+export type SemanticCategory = typeof SemanticCategory[keyof typeof SemanticCategory]
 
 /**
  * Confidence level based on pattern match strength.
@@ -44,7 +50,13 @@ export type SemanticCategory =
  * - low: > 0 (weak signal)
  * - none: 0 (no match)
  */
-export type ConfidenceLevel = 'high' | 'medium' | 'low' | 'none'
+export const ConfidenceLevel = {
+  High: 'high',
+  Medium: 'medium',
+  Low: 'low',
+  None: 'none',
+} as const
+export type ConfidenceLevel = typeof ConfidenceLevel[keyof typeof ConfidenceLevel]
 
 /**
  * Represents a single signal that contributed to the confidence score.

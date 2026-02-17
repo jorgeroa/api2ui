@@ -5,7 +5,13 @@ export interface FieldConfig {
   order: number            // sort order for drag-and-drop reordering
 }
 
-export type ThemePreset = 'light' | 'dark' | 'compact' | 'spacious'
+export const ThemePreset = {
+  Light: 'light',
+  Dark: 'dark',
+  Compact: 'compact',
+  Spacious: 'spacious',
+} as const
+export type ThemePreset = typeof ThemePreset[keyof typeof ThemePreset]
 
 export interface StyleOverrides {
   '--color-primary'?: string
@@ -21,7 +27,12 @@ export interface StyleOverrides {
   [key: `--${string}`]: string | undefined  // allow additional CSS vars
 }
 
-export type DrilldownMode = 'page' | 'dialog' | 'panel'
+export const DrilldownMode = {
+  Page: 'page',
+  Dialog: 'dialog',
+  Panel: 'panel',
+} as const
+export type DrilldownMode = typeof DrilldownMode[keyof typeof DrilldownMode]
 
 export interface PaginationConfig {
   itemsPerPage: number

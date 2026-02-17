@@ -41,7 +41,12 @@ function getPrimitiveType(type: TypeSignature): string {
 /**
  * Schema kind discriminator for analysis.
  */
-type SchemaKind = 'array-of-objects' | 'object' | 'primitive-array'
+const SchemaKind = {
+  ArrayOfObjects: 'array-of-objects',
+  Object: 'object',
+  PrimitiveArray: 'primitive-array',
+} as const
+type SchemaKind = typeof SchemaKind[keyof typeof SchemaKind]
 
 /**
  * Walk schema and find all analyzable paths (arrays of objects, objects, primitive arrays).

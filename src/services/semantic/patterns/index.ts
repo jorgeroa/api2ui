@@ -29,7 +29,13 @@ import {
   videoPattern,
   thumbnailPattern,
   avatarPattern,
+  audioPattern,
 } from './media'
+
+// Spatial patterns
+import {
+  geoPattern,
+} from './spatial'
 
 // Engagement patterns
 import {
@@ -49,7 +55,7 @@ import {
 
 /**
  * All standard semantic patterns (excludes composite patterns).
- * Total: 21 patterns across 5 categories.
+ * Total: 23 patterns across 6 domains.
  */
 const allPatterns: SemanticPattern[] = [
   // Commerce (4)
@@ -64,11 +70,14 @@ const allPatterns: SemanticPattern[] = [
   namePattern,
   addressPattern,
   urlPattern,
-  // Media (4)
+  // Media (5)
   imagePattern,
   videoPattern,
   thumbnailPattern,
   avatarPattern,
+  audioPattern,
+  // Spatial (1)
+  geoPattern,
   // Engagement (5, excluding reviewsPattern which is composite)
   ratingPattern,
   tagsPattern,
@@ -143,6 +152,9 @@ export {
   videoPattern,
   thumbnailPattern,
   avatarPattern,
+  audioPattern,
+  // Spatial
+  geoPattern,
   // Engagement
   ratingPattern,
   reviewsPattern,

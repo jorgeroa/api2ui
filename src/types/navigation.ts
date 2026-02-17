@@ -9,4 +9,4 @@ export interface NavStackEntry {
 }
 
 /** Navigation mode: page replaces view inline, dialog opens modal, panel opens side drawer */
-export type DrilldownMode = 'page' | 'dialog' | 'panel'
+export { DrilldownMode } from './config'

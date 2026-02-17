@@ -1,6 +1,6 @@
 /**
  * Media-related semantic patterns.
- * Patterns for image, video, thumbnail, and avatar fields.
+ * Patterns for image, video, audio, thumbnail, and avatar fields.
  */
 
 import type { SemanticPattern } from '../types'
@@ -162,6 +162,48 @@ export const avatarPattern: SemanticPattern = {
         }
         // Check for image extensions or image hosting domains
         return IMAGE_EXTENSIONS.test(trimmed) || IMAGE_HOSTS.test(trimmed)
+      },
+      weight: 0.25,
+    },
+  ],
+  formatHints: [
+    { format: 'uri', weight: 0.15 },
+  ],
+  thresholds: { high: 0.75, medium: 0.50 },
+}
+
+/**
+ * Common audio URL extensions and hosting domains.
+ */
+const AUDIO_EXTENSIONS = /\.(mp3|wav|ogg|flac|aac|m4a|wma|opus)(\?.*)?$/i
+const AUDIO_HOSTS = /\b(soundcloud|spotify|anchor|castbox|podbean|buzzsprout|transistor)\b/i
+
+/**
+ * Pattern for audio URL fields.
+ */
+export const audioPattern: SemanticPattern = {
+  category: 'audio',
+  namePatterns: [
+    {
+      regex: /\b(audio|sound|podcast|recording|voice|track|song|music|sonido|son|klang|som|audio_url|audio_file|audio_link)\b/i,
+      weight: 0.4,
+      languages: ['en', 'es', 'fr', 'de', 'pt'],
+    },
+  ],
+  typeConstraint: {
+    allowed: ['string'],
+    weight: 0.2,
+  },
+  valueValidators: [
+    {
+      name: 'isAudioURL',
+      validator: (value: unknown): boolean => {
+        if (typeof value !== 'string') return false
+        const trimmed = value.trim()
+        if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+          return false
+        }
+        return AUDIO_EXTENSIONS.test(trimmed) || AUDIO_HOSTS.test(trimmed)
       },
       weight: 0.25,
     },

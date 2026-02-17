@@ -2,13 +2,38 @@ import type { TypeSignature } from './schema'
 import type { ImportanceScore } from '../services/analysis/types'
 
 /** Available component types for rendering */
-export type ComponentType =
-  | 'table' | 'card-list' | 'list' | 'gallery' | 'timeline' | 'stats'
-  | 'detail' | 'hero' | 'tabs' | 'split'
-  | 'primitive' | 'primitive-list' | 'chips' | 'inline' | 'grid'
-  | 'text' | 'number' | 'boolean' | 'date' | 'badge'
-  | 'rating' | 'currency' | 'code' | 'email' | 'color'
-  | 'json'
+export const ComponentType = {
+  // Layout components (object/array level)
+  Table: 'table',
+  CardList: 'card-list',
+  List: 'list',
+  Gallery: 'gallery',
+  Timeline: 'timeline',
+  Stats: 'stats',
+  Detail: 'detail',
+  Hero: 'hero',
+  Tabs: 'tabs',
+  Split: 'split',
+  // Collection components
+  Primitive: 'primitive',
+  PrimitiveList: 'primitive-list',
+  Chips: 'chips',
+  Inline: 'inline',
+  Grid: 'grid',
+  // Field-level components
+  Text: 'text',
+  Number: 'number',
+  Boolean: 'boolean',
+  Date: 'date',
+  Badge: 'badge',
+  Rating: 'rating',
+  Currency: 'currency',
+  Code: 'code',
+  Email: 'email',
+  Color: 'color',
+  Json: 'json',
+} as const
+export type ComponentType = typeof ComponentType[keyof typeof ComponentType]
 
 /** Mapping from a schema path to a component */
 export interface ComponentMapping {
