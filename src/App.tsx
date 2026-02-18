@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppStore } from './store/appStore'
 import { useConfigStore } from './store/configStore'
 import { useParameterStore } from './store/parameterStore'
@@ -22,6 +22,7 @@ import { LayoutContainer } from './components/layout/LayoutContainer'
 import { parseUrlParameters, reconstructQueryString } from './services/urlParser/parser'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
+import { ExamplesPage } from './pages/ExamplesPage'
 import { AuthError } from './services/api/errors'
 import 'react-loading-skeleton/dist/skeleton.css'
 
@@ -40,6 +41,19 @@ function App() {
   const { mode, setMode, clearFieldConfigs } = useConfigStore()
   const { getValues, clearValue, clearEndpoint } = useParameterStore()
   const { fetchAndInfer, fetchOperation } = useAPIFetch()
+
+  // Hash-based routing for /examples page
+  const [page, setPage] = useState<'main' | 'examples'>(
+    window.location.hash === '#/examples' ? 'examples' : 'main'
+  )
+
+  useEffect(() => {
+    const onHashChange = () => {
+      setPage(window.location.hash === '#/examples' ? 'examples' : 'main')
+    }
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
 
   // Run semantic analysis pipeline when schema/data changes
   useSchemaAnalysis(schema, data)
@@ -166,6 +180,30 @@ function App() {
 
   // Determine if we should show the sidebar
   const showSidebar = parsedSpec !== null && parsedSpec.operations.length >= 2
+
+  // Examples page route
+  if (page === 'examples') {
+    return (
+      <>
+        <ThemeApplier />
+        <ExamplesPage
+          onExampleClick={(exampleUrl) => {
+            setUrl(exampleUrl)
+            window.location.hash = ''
+            const newBrowserUrl = new URL(window.location.href)
+            newBrowserUrl.searchParams.set('api', exampleUrl)
+            newBrowserUrl.hash = ''
+            window.history.pushState({}, '', newBrowserUrl.toString())
+            fetchAndInfer(exampleUrl)
+          }}
+          onBack={() => {
+            window.location.hash = ''
+          }}
+        />
+        <Toaster position="bottom-right" />
+      </>
+    )
+  }
 
   return (
     <>
