@@ -39,7 +39,7 @@ export function Sidebar({ parsedSpec, selectedIndex, onSelect }: SidebarProps) {
       {/* Sidebar header */}
       <div className="p-4 border-b border-border">
         <h2 className="font-semibold text-sm text-text mb-1">{parsedSpec.title}</h2>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted-foreground">
           {parsedSpec.operations.length} endpoint{parsedSpec.operations.length !== 1 ? 's' : ''}
         </p>
       </div>

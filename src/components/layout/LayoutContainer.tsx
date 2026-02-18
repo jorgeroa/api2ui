@@ -61,7 +61,7 @@ export function LayoutContainer({
           {/* Floating action button to open drawer */}
           <button
             onClick={() => setDrawerOpen(true)}
-            className="fixed bottom-6 right-6 bg-blue-600 text-white rounded-full p-3 shadow-lg hover:bg-blue-700 transition-colors z-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+            className="fixed bottom-6 right-6 bg-primary text-primary-foreground rounded-full p-3 shadow-lg hover:bg-primary/90 transition-colors z-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2"
             aria-label="Open parameters"
           >
             {/* Filter/sliders icon */}

@@ -72,7 +72,7 @@ export function CardListRenderer({ data, schema, path, depth, importance }: Rend
 
   // Handle empty arrays
   if (data.length === 0) {
-    return <div className="text-gray-500 italic p-4">No data</div>
+    return <div className="text-muted-foreground italic p-4">No data</div>
   }
 
   // Extract fields from the item schema (must be object)
@@ -142,11 +142,11 @@ export function CardListRenderer({ data, schema, path, depth, importance }: Rend
             <div
               key={globalIndex}
               onClick={() => handleItemClick(item, globalIndex, title)}
-              className="border border-border rounded-lg overflow-hidden shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer transition-all"
+              className="border border-border rounded-lg overflow-hidden shadow-sm hover:shadow-md hover:border-foreground/20 hover:-translate-y-0.5 cursor-pointer transition-all duration-150"
             >
               {/* Hero image - full width at top of card */}
               {heroImage && (
-                <div className="w-full h-48 bg-gray-100 overflow-hidden">
+                <div className="w-full h-48 bg-muted overflow-hidden">
                   <img
                     src={heroImage.url}
                     alt={title}
@@ -203,7 +203,7 @@ export function CardListRenderer({ data, schema, path, depth, importance }: Rend
                           if (timer) clearTimeout(Number(timer))
                         }}
                       >
-                        <span className="text-gray-600 font-medium">
+                        <span className="text-muted-foreground font-medium">
                           {displayLabel}:{' '}
                         </span>
                         {fieldDef.type.kind === 'primitive' ? (
@@ -214,7 +214,7 @@ export function CardListRenderer({ data, schema, path, depth, importance }: Rend
                             depth={depth + 1}
                           />
                         ) : (
-                          <span className="text-gray-500 text-xs">
+                          <span className="text-muted-foreground text-xs">
                             {Array.isArray(value)
                               ? `[${value.length} items]`
                               : typeof value === 'object'
@@ -226,7 +226,7 @@ export function CardListRenderer({ data, schema, path, depth, importance }: Rend
                     )
                   })}
                   {fieldsToDisplay.length > 5 && (
-                    <div className="text-xs text-gray-400 italic">
+                    <div className="text-xs text-muted-foreground italic">
                       +{fieldsToDisplay.length - 5} more fields
                     </div>
                   )}

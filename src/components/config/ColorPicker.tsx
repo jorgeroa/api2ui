@@ -19,7 +19,7 @@ const CURATED_PALETTE = [
 export function ColorPicker({ label, value, onChange }: ColorPickerProps) {
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">{label}</label>
+      <label className="block text-sm font-medium text-muted-foreground">{label}</label>
 
       {/* Curated swatches */}
       <div className="grid grid-cols-4 gap-2">
@@ -44,7 +44,7 @@ export function ColorPicker({ label, value, onChange }: ColorPickerProps) {
 
       {/* Custom color input */}
       <div className="flex items-center gap-2 pt-1">
-        <label htmlFor={`custom-${label}`} className="text-xs text-gray-600">
+        <label htmlFor={`custom-${label}`} className="text-xs text-muted-foreground">
           Custom:
         </label>
         <input
@@ -52,10 +52,10 @@ export function ColorPicker({ label, value, onChange }: ColorPickerProps) {
           type="color"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-12 h-8 rounded border border-gray-300 cursor-pointer"
+          className="w-12 h-8 rounded border border-border cursor-pointer"
           aria-label={`Custom ${label} color`}
         />
-        <span className="text-xs text-gray-500 font-mono">{value}</span>
+        <span className="text-xs text-muted-foreground font-mono">{value}</span>
       </div>
     </div>
   )

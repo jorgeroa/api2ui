@@ -62,7 +62,7 @@ function VimeoIcon() {
 /** Generic video icon */
 function VideoFileIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <polygon points="23 7 16 12 23 17 23 7" />
       <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
     </svg>
@@ -72,7 +72,7 @@ function VideoFileIcon() {
 /** External link icon */
 function ExternalLinkIcon() {
   return (
-    <svg viewBox="0 0 20 20" className="w-3.5 h-3.5 text-gray-400" fill="currentColor">
+    <svg viewBox="0 0 20 20" className="w-3.5 h-3.5 text-muted-foreground" fill="currentColor">
       <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
       <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
     </svg>
@@ -83,7 +83,7 @@ function ExternalLinkIcon() {
 const platforms = {
   youtube: { Icon: YouTubeIcon, label: 'YouTube', bg: 'bg-red-50 hover:bg-red-100 border-red-200' },
   vimeo: { Icon: VimeoIcon, label: 'Vimeo', bg: 'bg-sky-50 hover:bg-sky-100 border-sky-200' },
-  video: { Icon: VideoFileIcon, label: 'Video', bg: 'bg-gray-50 hover:bg-gray-100 border-gray-200' },
+  video: { Icon: VideoFileIcon, label: 'Video', bg: 'bg-muted hover:bg-muted border-border' },
 } as const
 
 /** Width threshold: below this, render compact badge; above, render embedded player */
@@ -111,7 +111,7 @@ export function VideoPlayer({ value }: FieldRenderProps) {
   }, [])
 
   if (typeof value !== 'string') {
-    return <span className="text-gray-500 text-sm">{JSON.stringify(value)}</span>
+    return <span className="text-muted-foreground text-sm">{JSON.stringify(value)}</span>
   }
 
   const info = getVideoInfo(value)
@@ -121,7 +121,7 @@ export function VideoPlayer({ value }: FieldRenderProps) {
         href={value}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-blue-600 hover:text-blue-800 text-sm underline"
+        className="text-primary hover:text-primary/80 text-sm underline"
         onClick={(e) => e.stopPropagation()}
       >
         {value}
@@ -144,7 +144,7 @@ export function VideoPlayer({ value }: FieldRenderProps) {
           title={info.watchUrl}
         >
           <Icon />
-          <span className="text-gray-700">{label}</span>
+          <span className="text-foreground">{label}</span>
           <ExternalLinkIcon />
         </a>
       ) : info.platform === 'video' ? (
@@ -153,14 +153,14 @@ export function VideoPlayer({ value }: FieldRenderProps) {
           src={info.embedSrc}
           controls
           preload="metadata"
-          className="w-full max-w-lg max-h-64 rounded-lg border border-gray-200"
+          className="w-full max-w-lg max-h-64 rounded-lg border border-border"
         >
           Your browser does not support the video tag.
         </video>
       ) : (
         // Embedded player with link to open externally
         <div className="space-y-1.5">
-          <div className="w-full max-w-lg aspect-video rounded-lg overflow-hidden border border-gray-200">
+          <div className="w-full max-w-lg aspect-video rounded-lg overflow-hidden border border-border">
             <iframe
               src={info.embedSrc}
               className="w-full h-full"
@@ -175,7 +175,7 @@ export function VideoPlayer({ value }: FieldRenderProps) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 no-underline"
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground no-underline"
           >
             <Icon />
             <span>Watch on {label}</span>

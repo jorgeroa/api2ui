@@ -28,7 +28,7 @@ export function TabsRenderer({ data, schema, path, depth }: RendererProps) {
   const allFields = Array.from(schema.fields.entries())
 
   if (allFields.length === 0) {
-    return <div className="text-gray-500 italic">Empty object</div>
+    return <div className="text-muted-foreground italic">Empty object</div>
   }
 
   const allPrimitiveFields = allFields.filter(([, def]) => def.type.kind === 'primitive')
@@ -46,13 +46,13 @@ export function TabsRenderer({ data, schema, path, depth }: RendererProps) {
     <div className="border border-border rounded-lg overflow-hidden">
       {/* Summary header — primitive fields */}
       {primitiveFields.length > 0 && (
-        <div className="p-4 bg-gray-50 border-b border-border">
+        <div className="p-4 bg-muted border-b border-border">
           {/* Empty fields toggle — only shown when there are empty fields */}
           {nullFieldCount > 0 && (
             <div className="flex justify-end -mt-1 mb-2">
               <button
                 onClick={() => setShowNullFields(prev => !prev)}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
                 title={showNullFields ? "Hide empty fields" : `Show ${nullFieldCount} empty field${nullFieldCount === 1 ? '' : 's'}`}
               >
                 {showNullFields ? (
@@ -72,7 +72,7 @@ export function TabsRenderer({ data, schema, path, depth }: RendererProps) {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {primitiveFields.map(([name, def]) => (
               <div key={name}>
-                <div className="text-xs text-gray-500 font-medium">{formatLabel(name)}</div>
+                <div className="text-xs text-muted-foreground font-medium">{formatLabel(name)}</div>
                 <div className="mt-0.5">
                   <PrimitiveRenderer
                     data={obj[name]}
@@ -93,11 +93,11 @@ export function TabsRenderer({ data, schema, path, depth }: RendererProps) {
           selectedIndex={Math.min(getTabSelection(path), nestedFields.length - 1)}
           onChange={(index) => setTabSelection(path, index)}
         >
-          <TabList className="flex border-b border-border bg-white">
+          <TabList className="flex border-b border-border bg-background">
             {nestedFields.map(([name]) => (
               <Tab
                 key={name}
-                className="px-4 py-2.5 text-sm font-medium border-b-2 border-transparent data-[selected]:border-blue-500 data-[selected]:text-blue-600 text-gray-600 hover:text-gray-800 outline-none cursor-pointer"
+                className="px-4 py-2.5 text-sm font-medium border-b-2 border-transparent data-[selected]:border-foreground data-[selected]:text-foreground text-muted-foreground hover:text-foreground outline-none cursor-pointer"
               >
                 {formatLabel(name)}
               </Tab>
@@ -119,7 +119,7 @@ export function TabsRenderer({ data, schema, path, depth }: RendererProps) {
       ) : (
         // No nested fields — just show primitives in the header
         primitiveFields.length === 0 && (
-          <div className="p-4 text-gray-500 italic">No nested data to display in tabs</div>
+          <div className="p-4 text-muted-foreground italic">No nested data to display in tabs</div>
         )
       )}
     </div>

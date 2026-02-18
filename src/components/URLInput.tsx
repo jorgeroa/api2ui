@@ -159,7 +159,7 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
               setValidationError(null)
             }}
             placeholder="https://jsonplaceholder.typicode.com/users"
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 px-4 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus-visible:ring-ring/50 focus:border-transparent"
             disabled={loading}
           />
           <LockIcon
@@ -170,7 +170,7 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-2 bg-primary text-primary-foreground font-medium rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? 'Fetching...' : 'Fetch'}
           </button>
@@ -200,29 +200,29 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
               key={example.url}
               onClick={() => handleExampleClick(example.url)}
               disabled={loading}
-              className="group relative p-4 border border-border rounded-lg text-left transition-all hover:border-blue-400 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed bg-surface"
+              className="group relative p-4 border border-border rounded-lg text-left transition-all duration-150 hover:border-foreground/20 hover:shadow-sm hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed bg-card"
             >
               {/* Type badge */}
-              <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded mb-2 ${
+              <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded mb-2 border ${
                 example.type === 'OpenAPI'
-                  ? 'bg-purple-100 text-purple-700'
+                  ? 'border-purple-300 text-purple-700 dark:text-purple-400 dark:border-purple-700'
                   : example.type === 'Array'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-blue-100 text-blue-700'
+                    ? 'border-green-300 text-green-700 dark:text-green-400 dark:border-green-700'
+                    : 'border-border text-muted-foreground'
               }`}>
                 {example.type}
               </span>
 
               {/* Title */}
-              <h3 className="font-semibold text-text text-sm mb-1">{example.title}</h3>
+              <h3 className="font-semibold text-foreground text-sm mb-1">{example.title}</h3>
 
               {/* Description */}
-              <p className="text-xs text-gray-500 leading-relaxed">{example.description}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">{example.description}</p>
 
               {/* Loading overlay */}
               {isLoading && (
-                <div className="absolute inset-0 bg-white/70 rounded-lg flex items-center justify-center">
-                  <svg className="animate-spin h-5 w-5 text-blue-600" viewBox="0 0 24 24" fill="none">
+                <div className="absolute inset-0 bg-background/70 rounded-lg flex items-center justify-center">
+                  <svg className="animate-spin h-5 w-5 text-foreground" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>

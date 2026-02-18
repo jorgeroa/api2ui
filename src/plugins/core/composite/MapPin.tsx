@@ -75,13 +75,13 @@ export function MapPin({ value }: FieldRenderProps) {
   }, [coords?.lat, coords?.lng])
 
   if (!coords) {
-    return <span className="text-gray-500 text-sm">{JSON.stringify(value)}</span>
+    return <span className="text-muted-foreground text-sm">{JSON.stringify(value)}</span>
   }
 
   return (
     <div
       ref={mapRef}
-      className="w-full h-48 rounded-lg border border-gray-200 overflow-hidden"
+      className="w-full h-48 rounded-lg border border-border overflow-hidden"
       style={{ minHeight: '192px' }}
     />
   )

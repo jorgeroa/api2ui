@@ -46,7 +46,7 @@ export function StatsRenderer({ data, schema, path }: RendererProps) {
   }
 
   if (!Array.isArray(data) || data.length === 0) {
-    return <div className="text-gray-500 italic p-4">No data</div>
+    return <div className="text-muted-foreground italic p-4">No data</div>
   }
 
   const fields = Array.from(schema.items.fields.entries())
@@ -80,7 +80,7 @@ export function StatsRenderer({ data, schema, path }: RendererProps) {
             <div
               key={index}
               onClick={() => handleClick(item, index)}
-              className="border border-border rounded-lg p-6 text-center hover:shadow-md hover:border-blue-300 cursor-pointer transition-all"
+              className="border border-border rounded-lg p-6 text-center hover:shadow-md hover:border-foreground/20 hover:-translate-y-0.5 cursor-pointer transition-all duration-150"
             >
               <div className="text-3xl font-bold text-text">
                 {typeof metricValue === 'number'
@@ -89,12 +89,12 @@ export function StatsRenderer({ data, schema, path }: RendererProps) {
                     ? String(metricValue)
                     : '--'}
               </div>
-              <div className="text-sm text-gray-600 mt-2 truncate" title={label}>
+              <div className="text-sm text-muted-foreground mt-2 truncate" title={label}>
                 {label}
               </div>
               {secondaryValue != null && (
-                <div className="text-xs text-gray-400 mt-1 truncate">
-                  {metricField && <span className="text-gray-500">{formatLabel(metricField[0])}: </span>}
+                <div className="text-xs text-muted-foreground mt-1 truncate">
+                  {metricField && <span className="text-muted-foreground">{formatLabel(metricField[0])}: </span>}
                   {secondaryField && (
                     <span>{formatLabel(secondaryField[0])}: {String(secondaryValue)}</span>
                   )}

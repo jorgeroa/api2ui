@@ -67,7 +67,7 @@ export function TimelineRenderer({ data, schema, path, depth }: RendererProps) {
   }
 
   if (!Array.isArray(data) || data.length === 0) {
-    return <div className="text-gray-500 italic p-4">No data</div>
+    return <div className="text-muted-foreground italic p-4">No data</div>
   }
 
   const fields = Array.from(schema.items.fields.entries())
@@ -88,7 +88,7 @@ export function TimelineRenderer({ data, schema, path, depth }: RendererProps) {
     <div>
       <div className="relative ml-4">
         {/* Vertical line */}
-        <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-gray-200" />
+        <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-muted" />
 
         <div className="space-y-6">
           {data.map((item, index) => {
@@ -119,13 +119,13 @@ export function TimelineRenderer({ data, schema, path, depth }: RendererProps) {
                 className="flex items-start cursor-pointer group"
               >
                 {/* Dot on the timeline */}
-                <div className="w-3 h-3 rounded-full bg-blue-500 border-2 border-white shadow shrink-0 mt-1.5 relative z-10 -ml-[5px]" />
+                <div className="w-3 h-3 rounded-full bg-primary border-2 border-white shadow shrink-0 mt-1.5 relative z-10 -ml-[5px]" />
 
                 {/* Content card */}
-                <div className="ml-4 flex-1 border border-border rounded-lg p-3 group-hover:border-blue-300 transition-colors">
+                <div className="ml-4 flex-1 border border-border rounded-lg p-3 group-hover:border-foreground/20 transition-colors">
                   <div className="flex items-center justify-between mb-1">
                     <div className="font-medium text-text">{title}</div>
-                    <div className="text-xs text-gray-500 shrink-0 ml-2">{dateDisplay}</div>
+                    <div className="text-xs text-muted-foreground shrink-0 ml-2">{dateDisplay}</div>
                   </div>
                   {contentFields.length > 0 && (
                     <div className="space-y-1 mt-2">
@@ -134,7 +134,7 @@ export function TimelineRenderer({ data, schema, path, depth }: RendererProps) {
                         if (value === null || value === undefined) return null
                         return (
                           <div key={fieldName} className="text-sm flex gap-2">
-                            <span className="text-gray-500 shrink-0">{formatLabel(fieldName)}:</span>
+                            <span className="text-muted-foreground shrink-0">{formatLabel(fieldName)}:</span>
                             <PrimitiveRenderer
                               data={value}
                               schema={fieldDef.type}

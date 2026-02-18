@@ -5,34 +5,34 @@ export function DrilldownModeToggle() {
 
   return (
     <div className="flex items-center gap-2 text-xs">
-      <span className="text-gray-500">Click:</span>
-      <div className="inline-flex rounded-md border border-gray-300 overflow-hidden">
+      <span className="text-muted-foreground">Click:</span>
+      <div className="inline-flex rounded-md border border-border overflow-hidden">
         <button
           onClick={() => setDrilldownMode('page')}
           className={`px-2.5 py-1 transition-colors ${
             drilldownMode === 'page'
-              ? 'bg-blue-100 text-blue-800 font-medium'
-              : 'bg-white text-gray-600 hover:bg-gray-50'
+              ? 'bg-muted text-muted-foreground font-medium'
+              : 'bg-background text-muted-foreground hover:bg-muted'
           }`}
         >
           Page
         </button>
         <button
           onClick={() => setDrilldownMode('dialog')}
-          className={`px-2.5 py-1 border-l border-gray-300 transition-colors ${
+          className={`px-2.5 py-1 border-l border-border transition-colors ${
             drilldownMode === 'dialog'
-              ? 'bg-blue-100 text-blue-800 font-medium'
-              : 'bg-white text-gray-600 hover:bg-gray-50'
+              ? 'bg-muted text-muted-foreground font-medium'
+              : 'bg-background text-muted-foreground hover:bg-muted'
           }`}
         >
           Dialog
         </button>
         <button
           onClick={() => setDrilldownMode('panel')}
-          className={`px-2.5 py-1 border-l border-gray-300 transition-colors ${
+          className={`px-2.5 py-1 border-l border-border transition-colors ${
             drilldownMode === 'panel'
-              ? 'bg-blue-100 text-blue-800 font-medium'
-              : 'bg-white text-gray-600 hover:bg-gray-50'
+              ? 'bg-muted text-muted-foreground font-medium'
+              : 'bg-background text-muted-foreground hover:bg-muted'
           }`}
         >
           Panel

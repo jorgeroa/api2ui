@@ -15,11 +15,11 @@ import { PaginationControls } from '../pagination/PaginationControls'
 /** Compact inline display for non-primitive values in table cells */
 function CompactValue({ data }: { data: unknown }) {
   if (data === null || data === undefined) {
-    return <span className="text-gray-400 italic">null</span>
+    return <span className="text-muted-foreground italic">null</span>
   }
   if (Array.isArray(data)) {
     return (
-      <span className="text-gray-500 text-xs" title={JSON.stringify(data)}>
+      <span className="text-muted-foreground text-xs" title={JSON.stringify(data)}>
         [{data.length} items]
       </span>
     )
@@ -27,7 +27,7 @@ function CompactValue({ data }: { data: unknown }) {
   if (typeof data === 'object') {
     const keys = Object.keys(data)
     return (
-      <span className="text-gray-500 text-xs" title={JSON.stringify(data)}>
+      <span className="text-muted-foreground text-xs" title={JSON.stringify(data)}>
         {'{'}
         {keys.slice(0, 2).join(', ')}
         {keys.length > 2 ? ', ...' : ''}
@@ -104,7 +104,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
 
   // Handle empty arrays
   if (data.length === 0) {
-    return <div className="text-gray-500 italic p-4">No data</div>
+    return <div className="text-muted-foreground italic p-4">No data</div>
   }
 
   // Extract columns from the item schema (must be object)
@@ -161,7 +161,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
       })
 
   if (visibleColumns.length === 0 && !isConfigureMode) {
-    return <div className="text-gray-500 italic p-4">All fields hidden</div>
+    return <div className="text-muted-foreground italic p-4">All fields hidden</div>
   }
 
   const columnWidth = Math.max(150, Math.floor(900 / visibleColumns.length))
@@ -253,7 +253,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
             <div
               key={globalIndex}
               onClick={() => handleItemClick(item, globalIndex)}
-              className={`flex border-b border-border cursor-pointer hover:bg-blue-50 ${
+              className={`flex border-b border-border cursor-pointer hover:bg-muted ${
                 isEven ? 'bg-surface' : 'bg-background'
               }`}
               style={{ minWidth: totalWidth }}
@@ -303,7 +303,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
                           className="h-8 w-8 rounded object-cover flex-shrink-0"
                           onError={(e) => { e.currentTarget.style.display = 'none' }}
                         />
-                        <span className="text-xs text-gray-500 truncate" title={value as string}>
+                        <span className="text-xs text-muted-foreground truncate" title={value as string}>
                           {(value as string).split('/').pop() || value}
                         </span>
                       </div>

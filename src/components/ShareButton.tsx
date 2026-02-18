@@ -45,7 +45,7 @@ export function ShareButton() {
   return (
     <button
       onClick={handleShare}
-      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-muted-foreground bg-background border border-border rounded-md hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus-visible:ring-ring/50 focus:ring-offset-1"
       title="Copy shareable link"
     >
       <svg

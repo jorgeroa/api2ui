@@ -104,7 +104,7 @@ export function DraggableField({ id, children, disabled, fieldPath, isVisible = 
           <button
             {...attributes}
             {...listeners}
-            className="p-0.5 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="p-0.5 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
             aria-label="Drag to reorder"
           >
             <GripIcon />
@@ -114,8 +114,8 @@ export function DraggableField({ id, children, disabled, fieldPath, isVisible = 
         {fieldPath && (
           <button
             onClick={handleToggleVisibility}
-            className={`p-0.5 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              isVisible ? 'text-gray-400 hover:text-blue-600' : 'text-red-400 hover:text-red-600'
+            className={`p-0.5 rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring ${
+              isVisible ? 'text-muted-foreground hover:text-primary' : 'text-red-400 hover:text-red-600'
             }`}
             aria-label={isVisible ? 'Hide field' : 'Show field'}
             title={isVisible ? 'Hide field' : 'Show field'}
@@ -135,7 +135,7 @@ export function DraggableField({ id, children, disabled, fieldPath, isVisible = 
 /** Presentational component for drag overlay - no hooks, just visual */
 export function FieldPreview({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-white border-2 border-blue-500 rounded shadow-lg opacity-90">
+    <div className="bg-background border-2 border-primary rounded shadow-lg opacity-90">
       {children}
     </div>
   )

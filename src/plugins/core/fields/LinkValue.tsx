@@ -8,7 +8,7 @@ export function LinkValue({ value }: FieldRenderProps) {
       href={str}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-blue-600 hover:text-blue-800 underline"
+      className="text-primary hover:text-primary/80 underline"
       onClick={(e) => e.stopPropagation()}
     >
       {str}

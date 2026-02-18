@@ -27,7 +27,7 @@ export function HorizontalCardScroller({ items, schema, path: _path, depth: _dep
 
   return (
     <div className="space-y-2">
-      <div className="text-sm text-gray-500 mb-2">
+      <div className="text-sm text-muted-foreground mb-2">
         {label} ({items.length})
       </div>
       <div className="relative">
@@ -55,7 +55,7 @@ export function HorizontalCardScroller({ items, schema, path: _path, depth: _dep
                   style={{ scrollSnapAlign: 'start' }}
                 >
                   {heroImage && (
-                    <div className="w-full h-36 bg-gray-100">
+                    <div className="w-full h-36 bg-muted">
                       <img
                         src={heroImage.url}
                         alt={label}
@@ -76,7 +76,7 @@ export function HorizontalCardScroller({ items, schema, path: _path, depth: _dep
                       const value = obj[fieldName]
                       if (value === null || value === undefined) return null
                       return (
-                        <div key={fieldName} className="text-xs text-gray-600 truncate">
+                        <div key={fieldName} className="text-xs text-muted-foreground truncate">
                           <span className="font-medium">{formatLabel(fieldName)}:</span> {String(value)}
                         </div>
                       )

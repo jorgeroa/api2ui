@@ -67,7 +67,7 @@ export function ListRenderer({ data, schema, path, depth }: RendererProps) {
 
   // Handle empty arrays
   if (data.length === 0) {
-    return <div className="text-gray-500 italic p-4">No data</div>
+    return <div className="text-muted-foreground italic p-4">No data</div>
   }
 
   // Extract fields from the item schema (must be object)
@@ -98,7 +98,7 @@ export function ListRenderer({ data, schema, path, depth }: RendererProps) {
             <div
               key={index}
               onClick={() => handleItemClick(item, index, title)}
-              className="border-b border-border last:border-b-0 px-4 py-3 hover:bg-blue-50 cursor-pointer transition-colors"
+              className="border-b border-border last:border-b-0 px-4 py-3 hover:bg-muted cursor-pointer transition-colors"
             >
               <div className="flex items-center gap-4">
                 <span className="font-medium text-text">{title}</span>
@@ -109,7 +109,7 @@ export function ListRenderer({ data, schema, path, depth }: RendererProps) {
                   return (
                     <span
                       key={fieldName}
-                      className="text-sm text-gray-600"
+                      className="text-sm text-muted-foreground"
                       onContextMenu={(e) => handleFieldContextMenu(e, `${path}[].${fieldName}`, fieldName, value)}
                       onTouchStart={(e) => {
                         const touch = e.touches[0]
@@ -138,7 +138,7 @@ export function ListRenderer({ data, schema, path, depth }: RendererProps) {
                           depth={depth + 1}
                         />
                       ) : (
-                        <span className="text-gray-500 text-xs">
+                        <span className="text-muted-foreground text-xs">
                           {Array.isArray(value)
                             ? `[${value.length} items]`
                             : typeof value === 'object'

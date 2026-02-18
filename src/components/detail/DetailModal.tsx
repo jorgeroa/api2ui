@@ -56,17 +56,17 @@ export function DetailModal({ item, schema, itemPath, onClose }: DetailModalProp
               <nav className="flex items-center gap-1 text-sm min-w-0 overflow-hidden">
                 <button
                   onClick={() => goTo(0)}
-                  className="text-blue-600 hover:text-blue-800 truncate shrink-0"
+                  className="text-primary hover:text-primary/80 truncate shrink-0"
                 >
                   {rootLabel}
                 </button>
                 {stack.map((entry, i) => (
                   <span key={i} className="flex items-center gap-1 min-w-0">
-                    <span className="text-gray-400 shrink-0">&rsaquo;</span>
+                    <span className="text-muted-foreground shrink-0">&rsaquo;</span>
                     {i < stack.length - 1 ? (
                       <button
                         onClick={() => goTo(i + 1)}
-                        className="text-blue-600 hover:text-blue-800 truncate"
+                        className="text-primary hover:text-primary/80 truncate"
                       >
                         {entry.label}
                       </button>
@@ -82,7 +82,7 @@ export function DetailModal({ item, schema, itemPath, onClose }: DetailModalProp
 
             <button
               onClick={handleClose}
-              className="text-gray-400 hover:text-gray-600 shrink-0 ml-2"
+              className="text-muted-foreground hover:text-foreground shrink-0 ml-2"
               aria-label="Close dialog"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

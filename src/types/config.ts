@@ -8,8 +8,10 @@ export interface FieldConfig {
 export const ThemePreset = {
   Light: 'light',
   Dark: 'dark',
-  Compact: 'compact',
-  Spacious: 'spacious',
+  Midnight: 'midnight',
+  Forest: 'forest',
+  Sand: 'sand',
+  Ocean: 'ocean',
 } as const
 export type ThemePreset = typeof ThemePreset[keyof typeof ThemePreset]
 

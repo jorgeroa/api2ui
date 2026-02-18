@@ -22,7 +22,7 @@ export function ConfigToggle() {
       {isConfigureMode && (
         <button
           onClick={togglePanel}
-          className="px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-lg"
+          className="px-3 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-lg"
           aria-label="Open settings panel"
         >
           Settings
@@ -32,17 +32,13 @@ export function ConfigToggle() {
       {/* Main toggle button */}
       <button
         onClick={handleToggle}
-        className={`relative w-14 h-14 rounded-full shadow-lg transition-all ${
-          isConfigureMode
-            ? 'bg-blue-600 hover:bg-blue-700 text-white'
-            : 'bg-gray-700 hover:bg-gray-800 text-white'
-        }`}
+        className="group relative w-14 h-14 rounded-full shadow-lg transition-all bg-primary hover:bg-primary/90 text-primary-foreground"
         aria-label={isConfigureMode ? 'Exit configure mode' : 'Configure view'}
         title={isConfigureMode ? 'Exit configure mode' : 'Configure view'}
       >
         {/* Gear icon SVG */}
         <svg
-          className="w-7 h-7 mx-auto"
+          className="w-7 h-7 mx-auto group-hover:rotate-45 transition-transform duration-300"
           fill="none"
           stroke="currentColor"
           strokeWidth={2}

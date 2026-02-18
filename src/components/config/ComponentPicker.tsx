@@ -86,12 +86,12 @@ export function ComponentPicker({
 
       {/* Container to center the panel */}
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="max-w-4xl w-full bg-white rounded-xl shadow-lg p-6 max-h-[90vh] overflow-y-auto">
+        <DialogPanel className="max-w-4xl w-full bg-background rounded-xl shadow-lg p-6 max-h-[90vh] overflow-y-auto">
           <DialogTitle className="text-xl font-semibold mb-4">
             Choose Component Type
           </DialogTitle>
 
-          <div className="text-sm text-gray-600 mb-4">
+          <div className="text-sm text-muted-foreground mb-4">
             Field: <span className="font-mono text-xs">{fieldPath}</span>
           </div>
 
@@ -104,12 +104,12 @@ export function ComponentPicker({
                 <button
                   key={type}
                   onClick={() => onSelect(type)}
-                  className={`border-2 rounded-lg p-4 hover:border-blue-400 transition-colors text-left ${
-                    isSelected ? 'ring-2 ring-blue-500 border-blue-500' : 'border-gray-300'
+                  className={`border-2 rounded-lg p-4 hover:border-foreground/20 transition-colors text-left ${
+                    isSelected ? 'ring-2 ring-ring border-primary' : 'border-border'
                   }`}
                 >
                   {/* Type label */}
-                  <div className="font-semibold text-gray-800 mb-2 capitalize">
+                  <div className="font-semibold text-foreground mb-2 capitalize">
                     {type.includes('/') ? (registry.get(type)?.name ?? type.split('/').pop()) : type}
                   </div>
 
@@ -135,7 +135,7 @@ export function ComponentPicker({
                       fieldName={fieldName}
                     />
                   ) : (
-                    <div className="text-xs text-gray-500 italic">
+                    <div className="text-xs text-muted-foreground italic">
                       Preview not available
                     </div>
                   )}
@@ -147,7 +147,7 @@ export function ComponentPicker({
           {/* Close button */}
           <button
             onClick={onClose}
-            className="mt-6 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+            className="mt-6 px-4 py-2 bg-muted rounded hover:bg-muted/80"
           >
             Cancel
           </button>
@@ -197,11 +197,11 @@ function ArrayComponentPreview({
   }
 
   if (!Component) {
-    return <div className="text-xs text-gray-500 italic">Preview not available</div>
+    return <div className="text-xs text-muted-foreground italic">Preview not available</div>
   }
 
   return (
-    <div className="overflow-hidden h-[120px] border border-gray-200 rounded">
+    <div className="overflow-hidden h-[120px] border border-border rounded">
       <div
         className="transform origin-top-left pointer-events-none"
         style={{ transform: 'scale(0.25)', width: '400%' }}
@@ -230,7 +230,7 @@ function ObjectComponentPreview({ type }: { type: string }) {
   return (
     <div className="flex items-center gap-3 h-12">
       <span className="text-2xl" aria-hidden>{info.icon}</span>
-      <span className="text-xs text-gray-600">{info.desc}</span>
+      <span className="text-xs text-muted-foreground">{info.desc}</span>
     </div>
   )
 }
@@ -258,11 +258,11 @@ function ArrayPrimitivePreview({
 
   const Component = componentMap[type]
   if (!Component) {
-    return <div className="text-xs text-gray-500 italic">Preview not available</div>
+    return <div className="text-xs text-muted-foreground italic">Preview not available</div>
   }
 
   return (
-    <div className="overflow-hidden h-20 border border-gray-200 rounded">
+    <div className="overflow-hidden h-20 border border-border rounded">
       <div
         className="transform origin-top-left pointer-events-none p-2"
         style={{ transform: 'scale(0.5)', width: '200%' }}
@@ -335,9 +335,9 @@ function PrimitiveRenderModePreview({
   switch (type) {
     case 'absolute':
       try {
-        return <div className="text-sm text-gray-600">{new Date(stringValue).toLocaleString()}</div>
+        return <div className="text-sm text-muted-foreground">{new Date(stringValue).toLocaleString()}</div>
       } catch {
-        return <div className="text-sm text-gray-600">{stringValue}</div>
+        return <div className="text-sm text-muted-foreground">{stringValue}</div>
       }
 
     case 'relative':
@@ -345,15 +345,15 @@ function PrimitiveRenderModePreview({
         const date = new Date(stringValue)
         const hours = Math.floor(Math.abs(Date.now() - date.getTime()) / 3600000)
         return (
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-muted-foreground">
             {hours < 24 ? `${hours} hours ago` : `${Math.floor(hours / 24)} days ago`}
           </div>
         )
       } catch {
-        return <div className="text-sm text-gray-600">2 hours ago</div>
+        return <div className="text-sm text-muted-foreground">2 hours ago</div>
       }
 
     default:
-      return <div className="text-xs text-gray-500 italic">Preview not available</div>
+      return <div className="text-xs text-muted-foreground italic">Preview not available</div>
   }
 }

@@ -175,7 +175,7 @@ export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
   const [imageError, setImageError] = useState(false)
 
   if (schema.kind !== 'primitive') {
-    return <span className="text-gray-500 italic">Invalid primitive type</span>
+    return <span className="text-muted-foreground italic">Invalid primitive type</span>
   }
 
   const type: FieldType = schema.type
@@ -219,7 +219,7 @@ export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
 
   // --- Handle null ---
   if (data === null || data === undefined) {
-    return <span className="text-gray-400 italic">null</span>
+    return <span className="text-muted-foreground italic">null</span>
   }
 
   // --- User override (highest precedence) ---
@@ -258,7 +258,7 @@ export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
     }
     return renderViaPlugin('core/boolean-badge', props) ?? (
       <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-        data ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+        data ? 'bg-green-100 text-green-800' : 'bg-muted text-muted-foreground'
       }`}>{String(data)}</span>
     )
   }
@@ -314,7 +314,7 @@ export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
       const shouldAutoImage = isImageUrl(data) && overrideMode !== 'text'
       if (shouldAutoImage) {
         if (imageError) {
-          return <span className="text-gray-500" title={data}>{data}</span>
+          return <span className="text-muted-foreground" title={data}>{data}</span>
         }
         return (
           <img
@@ -375,20 +375,20 @@ export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
     const effectiveMode = detectPrimitiveMode(data, fieldName)
     if (effectiveMode === 'email' || isEmail(data)) {
       return renderViaPlugin('core/email-link', props) ?? (
-        <a href={`mailto:${data}`} className="text-blue-600 hover:text-blue-800 underline" onClick={(e) => e.stopPropagation()}>{data}</a>
+        <a href={`mailto:${data}`} className="text-primary hover:text-primary/80 underline" onClick={(e) => e.stopPropagation()}>{data}</a>
       )
     }
     if (effectiveMode === 'color') {
       return renderViaPlugin('core/color-swatch', props) ?? (
         <span className="inline-flex items-center gap-2">
-          <span className="w-5 h-5 rounded border border-gray-300 inline-block shrink-0" style={{ backgroundColor: data }} />
-          <code className="text-xs font-mono text-gray-700">{data}</code>
+          <span className="w-5 h-5 rounded border border-border inline-block shrink-0" style={{ backgroundColor: data }} />
+          <code className="text-xs font-mono text-foreground">{data}</code>
         </span>
       )
     }
     if (effectiveMode === 'code') {
       return renderViaPlugin('core/code-block', props) ?? (
-        <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-xs font-mono">{data}</code>
+        <code className="bg-muted text-foreground px-1.5 py-0.5 rounded text-xs font-mono">{data}</code>
       )
     }
 
@@ -399,5 +399,5 @@ export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
   }
 
   // Fallback
-  return <span className="text-gray-500">{JSON.stringify(data)}</span>
+  return <span className="text-muted-foreground">{JSON.stringify(data)}</span>
 }

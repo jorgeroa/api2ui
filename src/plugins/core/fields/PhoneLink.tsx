@@ -9,7 +9,7 @@ export function PhoneLink({ value }: FieldRenderProps) {
   return (
     <a
       href={`tel:${telHref}`}
-      className="text-blue-600 hover:text-blue-800 underline"
+      className="text-primary hover:text-primary/80 underline"
       onClick={(e) => e.stopPropagation()}
     >
       {str}

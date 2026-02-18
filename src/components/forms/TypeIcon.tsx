@@ -202,15 +202,15 @@ export function TypeIcon({ type, onTypeChange, disabled = false }: TypeIconProps
   return (
     <Menu as="div" className="relative inline-block">
       <MenuButton
-        className="p-1 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="p-1 rounded hover:bg-muted focus:outline-none focus:ring-2 focus-visible:ring-ring/50 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed"
         disabled={disabled}
         title={`Type: ${getTypeLabel(type)}. Click to change.`}
       >
-        <IconComponent className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+        <IconComponent className="w-4 h-4 text-muted-foreground hover:text-foreground" />
       </MenuButton>
 
       <MenuItems
-        className="absolute right-0 z-10 mt-1 w-40 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+        className="absolute right-0 z-10 mt-1 w-40 origin-top-right rounded-md bg-popover shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
         anchor="bottom end"
       >
         <div className="py-1">
@@ -226,17 +226,17 @@ export function TypeIcon({ type, onTypeChange, disabled = false }: TypeIconProps
                     onClick={() => onTypeChange(optionType)}
                     className={`
                       w-full flex items-center gap-2 px-3 py-2 text-sm text-left
-                      ${focus ? 'bg-gray-50' : ''}
-                      ${isSelected ? 'text-blue-600 font-medium' : 'text-gray-700'}
+                      ${focus ? 'bg-muted' : ''}
+                      ${isSelected ? 'text-primary font-medium' : 'text-foreground'}
                     `}
                   >
                     <OptionIcon
-                      className={`w-4 h-4 ${isSelected ? 'text-blue-600' : 'text-gray-400'}`}
+                      className={`w-4 h-4 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}
                     />
                     {label}
                     {isSelected && (
                       <svg
-                        className="w-4 h-4 ml-auto text-blue-600"
+                        className="w-4 h-4 ml-auto text-primary"
                         viewBox="0 0 20 20"
                         fill="currentColor"
                       >

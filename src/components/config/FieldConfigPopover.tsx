@@ -121,7 +121,7 @@ export function FieldConfigPopover({
       {/* Popover panel */}
       <div
         ref={panelRef}
-        className="fixed bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 w-64"
+        className="fixed bg-background rounded-lg shadow-xl border border-border p-4 z-50 w-64"
         style={{ left: adjustedPosition.x, top: adjustedPosition.y }}
         onContextMenu={(e) => {
           e.preventDefault()
@@ -130,8 +130,8 @@ export function FieldConfigPopover({
       >
         {/* Header */}
         <div className="mb-3">
-          <div className="text-sm font-semibold text-gray-700">Configure Field</div>
-          <div className="text-xs font-mono text-gray-500 mt-0.5 truncate" title={fieldName}>
+          <div className="text-sm font-semibold text-muted-foreground">Configure Field</div>
+          <div className="text-xs font-mono text-muted-foreground mt-0.5 truncate" title={fieldName}>
             {fieldName}
           </div>
         </div>
@@ -142,22 +142,22 @@ export function FieldConfigPopover({
             type="checkbox"
             checked={stagedVisible}
             onChange={(e) => setStagedVisible(e.target.checked)}
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="rounded border-border text-primary focus-visible:ring-ring/50"
           />
-          <span className="text-sm text-gray-700">Visible</span>
+          <span className="text-sm text-foreground">Visible</span>
         </label>
 
         {/* Custom label input */}
         <div className="mb-3">
-          <label className="block text-xs font-medium text-gray-600 mb-1">Custom Label</label>
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Custom Label</label>
           <input
             type="text"
             value={stagedLabel}
             onChange={(e) => setStagedLabel(e.target.value)}
             placeholder="Custom label..."
-            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus-visible:ring-ring/50 focus:border-border"
           />
-          <div className="text-xs text-gray-400 mt-0.5">
+          <div className="text-xs text-muted-foreground mt-0.5">
             Default: {displayFieldName}
           </div>
         </div>
@@ -165,11 +165,11 @@ export function FieldConfigPopover({
         {/* Component type selector */}
         {showComponentType && (
           <div className="mb-3">
-            <label className="block text-xs font-medium text-gray-600 mb-1">Display As</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Display As</label>
             <select
               value={stagedComponentType}
               onChange={(e) => setStagedComponentType(e.target.value)}
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+              className="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus-visible:ring-ring/50 focus:border-border bg-background"
             >
               <option value="">Auto-detect</option>
               {availableTypes.map((type) => (
@@ -187,19 +187,19 @@ export function FieldConfigPopover({
         )}
 
         {/* Divider */}
-        <div className="border-t border-gray-200 my-3" />
+        <div className="border-t border-border my-3" />
 
         {/* Footer buttons */}
         <div className="flex items-center justify-end gap-2">
           <button
             onClick={onClose}
-            className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+            className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleApply}
-            className="px-3 py-1.5 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+            className="px-3 py-1.5 text-sm text-primary-foreground bg-primary hover:bg-primary/90 rounded transition-colors"
           >
             Apply
           </button>
@@ -213,7 +213,7 @@ export function FieldConfigPopover({
               new CustomEvent('api2ui:open-config-panel', { detail: { fieldPath } })
             )
           }}
-          className="mt-2 text-xs text-blue-600 hover:text-blue-800 hover:underline w-full text-left"
+          className="mt-2 text-xs text-primary hover:text-primary/80 hover:underline w-full text-left"
         >
           More settings...
         </button>

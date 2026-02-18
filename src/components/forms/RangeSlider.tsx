@@ -21,8 +21,8 @@ export function RangeSlider({
     <div className="space-y-3">
       {/* Label and current value */}
       <div className="flex justify-between items-center">
-        <label className="text-sm font-medium text-gray-700">{label}</label>
-        <span className="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+        <label className="text-sm font-medium text-foreground">{label}</label>
+        <span className="text-sm font-medium text-primary bg-muted px-2 py-0.5 rounded">
           {value}
         </span>
       </div>
@@ -42,7 +42,7 @@ export function RangeSlider({
       />
 
       {/* Min/max labels */}
-      <div className="flex justify-between text-xs text-gray-500">
+      <div className="flex justify-between text-xs text-muted-foreground">
         <span>{min}</span>
         <span>{max}</span>
       </div>

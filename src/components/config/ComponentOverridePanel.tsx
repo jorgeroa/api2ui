@@ -17,7 +17,7 @@ export function ComponentOverridePanel() {
 
   if (overrides.length === 0) {
     return (
-      <div className="text-sm text-gray-500 italic">
+      <div className="text-sm text-muted-foreground italic">
         No component overrides. Enter Configure mode to change component types.
       </div>
     )
@@ -28,13 +28,13 @@ export function ComponentOverridePanel() {
       {overrides.map(({ path, componentType }) => (
         <div
           key={path}
-          className="border border-gray-200 rounded-lg p-3 flex items-center justify-between"
+          className="border border-border rounded-lg p-3 flex items-center justify-between"
         >
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-gray-800 truncate" title={path}>
+            <div className="text-sm font-medium text-foreground truncate" title={path}>
               {path}
             </div>
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-muted-foreground">
               Override: <span className="font-mono">{componentType}</span>
             </div>
           </div>
@@ -44,7 +44,7 @@ export function ComponentOverridePanel() {
               onClick={() => {
                 document.dispatchEvent(new CustomEvent('api2ui:open-picker', { detail: { fieldPath: path } }))
               }}
-              className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+              className="px-2 py-1 text-xs bg-muted text-muted-foreground rounded hover:bg-muted/80 transition-colors"
             >
               Change
             </button>

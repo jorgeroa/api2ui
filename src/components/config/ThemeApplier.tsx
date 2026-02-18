@@ -1,30 +1,21 @@
 import { useEffect } from 'react'
+import { useTheme } from 'next-themes'
 import { useConfigStore } from '../../store/configStore'
 import { useAppStore } from '../../store/appStore'
 
 /**
  * Invisible component that syncs configuration store state to DOM.
- * Applies theme class and CSS custom properties to document.documentElement.
+ * Uses next-themes for theme class management and applies CSS custom properties.
  */
 export function ThemeApplier() {
   const { globalTheme, styleOverrides, endpointOverrides } = useConfigStore()
   const { parsedSpec, selectedOperationIndex } = useAppStore()
+  const { setTheme } = useTheme()
 
-  // Apply theme class to document element
+  // Sync config store theme to next-themes
   useEffect(() => {
-    const root = document.documentElement
-
-    // Remove all theme classes
-    root.classList.remove('theme-light', 'theme-dark', 'theme-compact', 'theme-spacious')
-
-    // Add current theme class
-    root.classList.add(`theme-${globalTheme}`)
-
-    return () => {
-      // Cleanup on unmount
-      root.classList.remove(`theme-${globalTheme}`)
-    }
-  }, [globalTheme])
+    setTheme(globalTheme)
+  }, [globalTheme, setTheme])
 
   // Apply style overrides (global + endpoint-specific merged)
   useEffect(() => {
@@ -34,7 +25,6 @@ export function ThemeApplier() {
     let endpointKey: string | null = null
     if (parsedSpec && parsedSpec.operations[selectedOperationIndex]) {
       const operation = parsedSpec.operations[selectedOperationIndex]
-      // Use operationId if available, otherwise use method-path
       endpointKey = operation.operationId || `${operation.method}-${operation.path}`
     }
 

@@ -52,7 +52,7 @@ export function DrawerLayout({
 
       {/* Drawer panel */}
       <div
-        className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-xl shadow-lg transition-transform duration-200 ease-out max-h-[60vh] flex flex-col ${
+        className={`fixed bottom-0 left-0 right-0 bg-background rounded-t-xl shadow-lg transition-transform duration-200 ease-out max-h-[60vh] flex flex-col ${
           isOpen ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
@@ -62,7 +62,7 @@ export function DrawerLayout({
           className="w-full flex justify-center py-3 cursor-pointer"
           aria-label={isOpen ? 'Close drawer' : 'Open drawer'}
         >
-          <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+          <div className="w-12 h-1.5 bg-muted rounded-full" />
         </button>
 
         {/* Content area */}

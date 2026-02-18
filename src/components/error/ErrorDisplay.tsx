@@ -104,14 +104,14 @@ export function ErrorDisplay({ error, onRetry }: ErrorDisplayProps) {
         {onRetry && (
           <button
             onClick={onRetry}
-            className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 font-medium text-sm"
+            className="px-4 py-2 bg-background border border-border rounded-md hover:bg-muted font-medium text-sm"
           >
             Try Again
           </button>
         )}
         <button
           onClick={() => setShowDetails(!showDetails)}
-          className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 font-medium text-sm"
+          className="px-4 py-2 bg-background border border-border rounded-md hover:bg-muted font-medium text-sm"
         >
           {showDetails ? 'Hide' : 'Show'} Technical Details
         </button>
@@ -119,19 +119,19 @@ export function ErrorDisplay({ error, onRetry }: ErrorDisplayProps) {
 
       {/* Technical details (collapsible) */}
       {showDetails && (
-        <div className="mt-4 ml-16 bg-white rounded border border-gray-300 p-4">
-          <p className="text-xs font-mono text-gray-700 mb-2">
+        <div className="mt-4 ml-16 bg-background rounded border border-border p-4">
+          <p className="text-xs font-mono text-foreground mb-2">
             <span className="font-semibold">Error Type:</span> {error.name}
           </p>
           {appError && 'kind' in appError && (
-            <p className="text-xs font-mono text-gray-700 mb-2">
+            <p className="text-xs font-mono text-foreground mb-2">
               <span className="font-semibold">Kind:</span> {appError.kind}
             </p>
           )}
           {error.stack && (
             <div className="mt-2">
-              <p className="text-xs font-semibold text-gray-700 mb-1">Stack Trace:</p>
-              <pre className="text-xs font-mono text-gray-600 overflow-x-auto whitespace-pre-wrap">
+              <p className="text-xs font-semibold text-foreground mb-1">Stack Trace:</p>
+              <pre className="text-xs font-mono text-muted-foreground overflow-x-auto whitespace-pre-wrap">
                 {error.stack}
               </pre>
             </div>

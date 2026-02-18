@@ -140,7 +140,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
   const allFields = Array.from(schema.fields.entries())
 
   if (allFields.length === 0) {
-    return <div className="text-gray-500 italic">Empty object</div>
+    return <div className="text-muted-foreground italic">Empty object</div>
   }
 
   // Apply field ordering: sort by order if set, maintain original order otherwise
@@ -186,7 +186,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
   }).length
 
   if (visibleFields.length === 0 && !isConfigureMode) {
-    return <div className="text-gray-500 italic">All fields hidden</div>
+    return <div className="text-muted-foreground italic">All fields hidden</div>
   }
 
   // Detect hero image for view mode
@@ -307,14 +307,14 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
           if (timer) clearTimeout(Number(timer))
         }}
       >
-        <div className="text-sm font-medium text-gray-600">
+        <div className="text-sm font-medium text-muted-foreground">
           {displayLabel}
         </div>
         <img
           src={value as string}
           alt={displayLabel}
           loading="lazy"
-          className="max-w-full max-h-64 object-contain rounded-lg border border-gray-200 bg-gray-50"
+          className="max-w-full max-h-64 object-contain rounded-lg border border-border bg-muted"
           onError={(e) => { e.currentTarget.style.display = 'none' }}
         />
       </div>
@@ -340,7 +340,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
     ) {
       return (
         <div key={fieldName}>
-          <div className="text-sm text-gray-500 mb-2">
+          <div className="text-sm text-muted-foreground mb-2">
             {displayLabel} ({value.length})
           </div>
           <DynamicRenderer
@@ -367,14 +367,14 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
         .filter(([, fd]) => fd.type.kind === 'primitive')
 
       return (
-        <div key={fieldName} className="border-t border-gray-200 pt-4 mt-2">
-          <h3 className="text-sm font-semibold text-gray-500 mb-3">{displayLabel}</h3>
+        <div key={fieldName} className="border-t border-border pt-4 mt-2">
+          <h3 className="text-sm font-semibold text-muted-foreground mb-3">{displayLabel}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
             {nestedEntries.map(([name, fd]) => {
               const nestedPath = `${fieldPath}.${name}`
               return (
                 <div key={name} className="grid grid-cols-[auto_1fr] gap-x-3 items-baseline min-w-0">
-                  <div className="text-sm font-medium text-gray-600 py-0.5 whitespace-nowrap">{formatLabel(name)}:</div>
+                  <div className="text-sm font-medium text-muted-foreground py-0.5 whitespace-nowrap">{formatLabel(name)}:</div>
                   <div className="py-0.5 min-w-0">
                     <PrimitiveRenderer data={nestedObj[name]} schema={fd.type} path={nestedPath} depth={depth + 2} />
                   </div>
@@ -391,7 +391,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
       return (
         <div key={fieldName}>
           <Disclosure defaultOpen={false}>
-            <DisclosureButton className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
+            <DisclosureButton className="flex items-center gap-2 text-primary hover:text-primary/80 text-sm font-medium">
               <ChevronIcon />
               {displayLabel} {getFieldSummary(fieldDef, value)}
             </DisclosureButton>
@@ -410,8 +410,8 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
 
     // Medium/Large: divider + heading + DynamicRenderer (no wrapper border)
     return (
-      <div key={fieldName} className="border-t border-gray-200 pt-4 mt-2">
-        <h3 className="text-sm font-semibold text-gray-500 mb-3">{displayLabel}</h3>
+      <div key={fieldName} className="border-t border-border pt-4 mt-2">
+        <h3 className="text-sm font-semibold text-muted-foreground mb-3">{displayLabel}</h3>
         <DynamicRenderer
           data={value}
           schema={fieldDef.type}
@@ -464,14 +464,14 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
                 if (timer) clearTimeout(Number(timer))
               }}
             >
-              <div className="text-sm font-medium text-gray-600">
+              <div className="text-sm font-medium text-muted-foreground">
                 {displayLabel}
               </div>
               <img
                 src={value as string}
                 alt={displayLabel}
                 loading="lazy"
-                className="max-w-full max-h-64 object-contain rounded-lg border border-gray-200 bg-gray-50"
+                className="max-w-full max-h-64 object-contain rounded-lg border border-border bg-muted"
                 onError={(e) => { e.currentTarget.style.display = 'none' }}
               />
             </div>
@@ -516,13 +516,13 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
         const fieldContent = (
           <div className="grid grid-cols-[auto_1fr] gap-x-3 items-baseline min-w-0" {...contextMenuHandlers}>
             <div className={primary
-              ? "text-base font-semibold text-gray-700 py-1 whitespace-nowrap"
-              : "text-sm font-medium text-gray-600 py-1 whitespace-nowrap"
+              ? "text-base font-semibold text-foreground py-1 whitespace-nowrap"
+              : "text-sm font-medium text-muted-foreground py-1 whitespace-nowrap"
             }>
               {displayLabel}:
             </div>
             <div className={primary
-              ? "py-1 text-lg font-semibold text-gray-900 min-w-0"
+              ? "py-1 text-lg font-semibold text-foreground min-w-0"
               : "py-1 min-w-0"
             }>
               <PrimitiveRenderer
@@ -552,7 +552,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
       if (isConfigureMode) {
         const nestedContent = (
           <Disclosure defaultOpen={depth === 0}>
-            <DisclosureButton className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
+            <DisclosureButton className="flex items-center gap-2 text-primary hover:text-primary/80 text-sm font-medium">
               <ChevronIcon />
               {displayLabel} {getFieldSummary(fieldDef, value)}
             </DisclosureButton>
@@ -588,14 +588,14 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
           .filter(([, fd]) => fd.type.kind === 'primitive')
 
         return (
-          <div key={fieldName} className="border-t border-gray-200 pt-4 mt-2">
-            <h3 className="text-sm font-semibold text-gray-500 mb-3">{displayLabel}</h3>
+          <div key={fieldName} className="border-t border-border pt-4 mt-2">
+            <h3 className="text-sm font-semibold text-muted-foreground mb-3">{displayLabel}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
               {nestedEntries.map(([name, fd]) => {
                 const nestedPath = `${fieldPath}.${name}`
                 return (
                   <div key={name} className="grid grid-cols-[auto_1fr] gap-x-3 items-baseline min-w-0">
-                    <div className="text-sm font-medium text-gray-600 py-0.5 whitespace-nowrap">{formatLabel(name)}:</div>
+                    <div className="text-sm font-medium text-muted-foreground py-0.5 whitespace-nowrap">{formatLabel(name)}:</div>
                     <div className="py-0.5 min-w-0">
                       <PrimitiveRenderer data={nestedObj[name]} schema={fd.type} path={nestedPath} depth={depth + 2} />
                     </div>
@@ -612,7 +612,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
         return (
           <div key={fieldName}>
             <Disclosure defaultOpen={false}>
-              <DisclosureButton className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
+              <DisclosureButton className="flex items-center gap-2 text-primary hover:text-primary/80 text-sm font-medium">
                 <ChevronIcon />
                 {displayLabel} {getFieldSummary(fieldDef, value)}
               </DisclosureButton>
@@ -631,8 +631,8 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
 
       // Medium/Large: divider + heading + DynamicRenderer (no wrapper border)
       return (
-        <div key={fieldName} className="border-t border-gray-200 pt-4 mt-2">
-          <h3 className="text-sm font-semibold text-gray-500 mb-3">{displayLabel}</h3>
+        <div key={fieldName} className="border-t border-border pt-4 mt-2">
+          <h3 className="text-sm font-semibold text-muted-foreground mb-3">{displayLabel}</h3>
           <DynamicRenderer
             data={value}
             schema={fieldDef.type}
@@ -704,7 +704,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
           {nullFieldCount > 0 && (
           <button
             onClick={() => setShowNullFields(prev => !prev)}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
             title={showNullFields ? "Hide empty fields" : `Show ${nullFieldCount} empty field${nullFieldCount === 1 ? '' : 's'}`}
           >
             {showNullFields ? (
@@ -724,7 +724,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
           {grouping && grouping.groups.length > 0 && !showGrouped && visibleFields.length > 8 && (
             <button
               onClick={() => setShowGrouped(true)}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
               title="Switch to grouped view"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -740,7 +740,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
             src={heroImage.url}
             alt="Detail hero"
             loading="lazy"
-            className="max-w-full max-h-64 object-contain rounded-lg border border-gray-200"
+            className="max-w-full max-h-64 object-contain rounded-lg border border-border"
             onError={(e) => { e.currentTarget.style.display = 'none' }}
           />
         </div>
@@ -750,7 +750,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
           renderPrimitiveField(fieldName, fieldDef, obj[fieldName])
         )}
         {primaryFields.length > 0 && (
-          <div className="md:col-span-2 border-b border-gray-200" />
+          <div className="md:col-span-2 border-b border-border" />
         )}
         {regularFields.map(([fieldName, fieldDef]) =>
           renderPrimitiveField(fieldName, fieldDef, obj[fieldName])
@@ -766,8 +766,8 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
           </div>
         ))}
         {metaFields.length > 0 && (
-          <div className="md:col-span-2 border-t border-gray-200 pt-4">
-            <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-3">Metadata</h3>
+          <div className="md:col-span-2 border-t border-border pt-4">
+            <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">Metadata</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
               {metaFields.map(([fieldName, fieldDef]) =>
                 renderPrimitiveField(fieldName, fieldDef, obj[fieldName])

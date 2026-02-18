@@ -35,7 +35,7 @@ export function MapLink({ value }: FieldRenderProps) {
           href={mapsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 text-sm"
+          className="inline-flex items-center gap-1.5 text-primary hover:text-primary/80 text-sm"
           onClick={(e) => e.stopPropagation()}
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -46,7 +46,7 @@ export function MapLink({ value }: FieldRenderProps) {
         </a>
       )
     }
-    return <span className="text-gray-500 text-sm">{JSON.stringify(value)}</span>
+    return <span className="text-muted-foreground text-sm">{JSON.stringify(value)}</span>
   }
 
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`
@@ -56,7 +56,7 @@ export function MapLink({ value }: FieldRenderProps) {
       href={mapsUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 text-sm"
+      className="inline-flex items-center gap-1.5 text-primary hover:text-primary/80 text-sm"
       onClick={(e) => e.stopPropagation()}
     >
       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

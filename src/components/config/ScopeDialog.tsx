@@ -28,7 +28,7 @@ export function ScopeDialog({
 
       {/* Container to center the panel */}
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="max-w-md w-full bg-white rounded-xl shadow-lg p-6">
+        <DialogPanel className="max-w-md w-full bg-background rounded-xl shadow-lg p-6">
           <DialogTitle className="text-xl font-semibold mb-4">
             Apply {componentType} to:
           </DialogTitle>
@@ -37,22 +37,22 @@ export function ScopeDialog({
             {/* Apply to just this field */}
             <button
               onClick={onApplyOne}
-              className="w-full px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-left"
+              className="w-full px-4 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors text-left"
             >
               <div className="font-semibold">Just this field</div>
-              <div className="text-sm text-blue-100">{fieldPath}</div>
+              <div className="text-sm text-primary-foreground/70">{fieldPath}</div>
             </button>
 
             {/* Apply to all similar fields */}
             {similarFields.length > 0 && (
               <button
                 onClick={onApplyAll}
-                className="w-full px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-left"
+                className="w-full px-4 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors text-left"
               >
                 <div className="font-semibold">
                   All similar fields ({similarFields.length + 1} fields)
                 </div>
-                <div className="text-sm text-blue-100 mt-1 max-h-24 overflow-y-auto">
+                <div className="text-sm text-primary-foreground/70 mt-1 max-h-24 overflow-y-auto">
                   {fieldPath}
                   {similarFields.map((field) => (
                     <div key={field.path}>{field.path}</div>
@@ -65,7 +65,7 @@ export function ScopeDialog({
           {/* Cancel */}
           <button
             onClick={onCancel}
-            className="w-full mt-4 px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+            className="w-full mt-4 px-4 py-2 bg-muted rounded-lg hover:bg-muted/80 transition-colors"
           >
             Cancel
           </button>

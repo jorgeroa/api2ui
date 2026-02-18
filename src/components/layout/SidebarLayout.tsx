@@ -18,7 +18,7 @@ export function SidebarLayout({ parameters, results, className = '' }: SidebarLa
   return (
     <div className={`flex flex-row min-h-0 ${className}`}>
       {/* Parameters Panel - Left Side */}
-      <div className="w-64 shrink-0 border-r border-gray-200 overflow-y-auto p-4">
+      <div className="w-64 shrink-0 border-r border-border overflow-y-auto p-4">
         {parameters}
       </div>
 

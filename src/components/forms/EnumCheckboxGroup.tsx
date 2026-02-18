@@ -23,7 +23,7 @@ export function EnumCheckboxGroup({
 
   return (
     <fieldset className="space-y-2">
-      <legend className="text-sm font-medium text-gray-700">{label}</legend>
+      <legend className="text-sm font-medium text-foreground">{label}</legend>
       <div className="space-y-2">
         {options.map((option) => (
           <label
@@ -34,9 +34,9 @@ export function EnumCheckboxGroup({
               type="checkbox"
               checked={value.includes(option)}
               onChange={() => handleToggle(option)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-4 w-4 text-primary focus-visible:ring-ring/50 border-input rounded"
             />
-            <span className="text-sm text-gray-700 group-hover:text-gray-900">
+            <span className="text-sm text-foreground group-hover:text-foreground">
               {option}
             </span>
           </label>
@@ -44,7 +44,7 @@ export function EnumCheckboxGroup({
       </div>
       {/* Selection count */}
       {value.length > 0 && (
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted-foreground">
           {value.length} of {options.length} selected
         </p>
       )}

@@ -14,11 +14,11 @@ export function URLPreview({ url }: URLPreviewProps) {
   const truncatedUrl = url.length > 80 ? url.slice(0, 77) + '...' : url
 
   return (
-    <div className="border-t border-gray-200 pt-3 mt-4">
+    <div className="border-t border-border pt-3 mt-4">
       <button
         type="button"
         onClick={() => setShowPreview(!showPreview)}
-        className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+        className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
       >
         <svg
           className={`h-4 w-4 transition-transform ${showPreview ? 'rotate-90' : ''}`}
@@ -37,8 +37,8 @@ export function URLPreview({ url }: URLPreviewProps) {
       </button>
 
       {showPreview && (
-        <div className="mt-2 p-3 bg-gray-50 rounded-md flex items-center gap-2">
-          <code className="text-xs flex-1 overflow-hidden text-gray-700 font-mono">
+        <div className="mt-2 p-3 bg-muted rounded-md flex items-center gap-2">
+          <code className="text-xs flex-1 overflow-hidden text-foreground font-mono">
             {truncatedUrl}
           </code>
           <Button

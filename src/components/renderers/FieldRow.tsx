@@ -50,20 +50,20 @@ export function getFieldStyles(tier: ImportanceTier): TierStyles {
     case 'primary':
       return {
         row: 'py-2',
-        label: 'text-base font-semibold text-gray-700',
-        value: 'text-lg font-semibold text-gray-900',
+        label: 'text-base font-semibold text-foreground',
+        value: 'text-lg font-semibold text-foreground',
       }
     case 'secondary':
       return {
         row: 'py-1',
-        label: 'text-sm font-medium text-gray-500',
-        value: 'text-sm text-gray-900',
+        label: 'text-sm font-medium text-muted-foreground',
+        value: 'text-sm text-foreground',
       }
     case 'tertiary':
       return {
         row: 'py-0.5 opacity-80',
-        label: 'text-xs font-medium text-gray-500',
-        value: 'text-sm text-gray-600',
+        label: 'text-xs font-medium text-muted-foreground',
+        value: 'text-sm text-muted-foreground',
       }
   }
 }

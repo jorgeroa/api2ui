@@ -14,8 +14,8 @@ export function OperationItem({ operation, index, isSelected, onSelect }: Operat
       className={`
         w-full text-left px-3 py-2 transition-colors
         ${isSelected
-          ? 'bg-blue-50 border-l-2 border-blue-600 text-blue-700'
-          : 'hover:bg-gray-50 border-l-2 border-transparent'
+          ? 'bg-muted border-l-2 border-foreground text-foreground'
+          : 'hover:bg-muted border-l-2 border-transparent'
         }
       `}
     >
@@ -26,7 +26,7 @@ export function OperationItem({ operation, index, isSelected, onSelect }: Operat
         <code className="text-xs font-mono text-text">{operation.path}</code>
       </div>
       {operation.summary && (
-        <p className="text-xs text-gray-500 truncate">
+        <p className="text-xs text-muted-foreground truncate">
           {operation.summary}
         </p>
       )}

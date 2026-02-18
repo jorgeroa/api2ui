@@ -154,14 +154,14 @@ export function DetailRendererGrouped({
         className="space-y-2"
         onContextMenu={(e) => onContextMenu(e, fieldPath, fieldName, value)}
       >
-        <div className="text-sm font-medium text-gray-600">
+        <div className="text-sm font-medium text-muted-foreground">
           {displayLabel}
         </div>
         <img
           src={value}
           alt={displayLabel}
           loading="lazy"
-          className="max-w-full max-h-64 object-contain rounded-lg border border-gray-200 bg-gray-50"
+          className="max-w-full max-h-64 object-contain rounded-lg border border-border bg-muted"
           onError={(e) => { e.currentTarget.style.display = 'none' }}
         />
       </div>
@@ -179,7 +179,7 @@ export function DetailRendererGrouped({
 
     return (
       <div key={fieldName} className="space-y-2">
-        <div className="text-sm font-semibold text-gray-500">
+        <div className="text-sm font-semibold text-muted-foreground">
           {displayLabel}
         </div>
         <DynamicRenderer
@@ -228,7 +228,7 @@ export function DetailRendererGrouped({
         {nullFieldCount > 0 && (
         <button
           onClick={onToggleNullFields}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
           title={showNullFields ? "Hide empty fields" : `Show ${nullFieldCount} empty field${nullFieldCount === 1 ? '' : 's'}`}
         >
           {showNullFields ? (
@@ -247,7 +247,7 @@ export function DetailRendererGrouped({
         {/* Grouping toggle */}
         <button
           onClick={onToggleGrouping}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
           title="Switch to ungrouped view"
         >
           <ListIcon />
@@ -262,7 +262,7 @@ export function DetailRendererGrouped({
             src={heroImage.url}
             alt="Detail hero"
             loading="lazy"
-            className="max-w-full max-h-64 object-contain rounded-lg border border-gray-200"
+            className="max-w-full max-h-64 object-contain rounded-lg border border-border"
             onError={(e) => { e.currentTarget.style.display = 'none' }}
           />
         </div>
@@ -308,7 +308,7 @@ export function DetailRendererGrouped({
 
       {/* Separator between overview and accordion sections */}
       {ungroupedOverview.length > 0 && groups.length > 0 && (
-        <div className="border-b border-gray-200" />
+        <div className="border-b border-border" />
       )}
 
       {/* Accordion Sections: grouped fields */}
@@ -328,12 +328,12 @@ export function DetailRendererGrouped({
 
             return (
               <Disclosure key={groupIndex} defaultOpen={true}>
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  <DisclosureButton className="w-full px-4 py-3 text-left text-sm font-medium text-gray-900 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors">
+                <div className="border border-border rounded-lg overflow-hidden">
+                  <DisclosureButton className="w-full px-4 py-3 text-left text-sm font-medium text-foreground bg-muted hover:bg-muted flex items-center justify-between transition-colors">
                     <span>{group.label}</span>
                     <ChevronIcon />
                   </DisclosureButton>
-                  <DisclosurePanel className="px-4 py-3 space-y-2 bg-white">
+                  <DisclosurePanel className="px-4 py-3 space-y-2 bg-background">
                     {renderGroupFields(group.fields)}
                   </DisclosurePanel>
                 </div>
@@ -345,8 +345,8 @@ export function DetailRendererGrouped({
 
       {/* Ungrouped tertiary fields (metadata) */}
       {ungroupedTertiary.length > 0 && (
-        <div className="space-y-2 pt-2 border-t border-gray-200">
-          <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+        <div className="space-y-2 pt-2 border-t border-border">
+          <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
             Additional Information
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">

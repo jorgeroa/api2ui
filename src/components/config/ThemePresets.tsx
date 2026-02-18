@@ -1,64 +1,76 @@
 import { useConfigStore } from '../../store/configStore'
 import type { ThemePreset } from '../../types/config'
 
-interface PresetCardProps {
-  preset: ThemePreset
-  selected: boolean
-  onClick: () => void
+interface ThemeConfig {
+  colors: string[]
+  name: string
+  variant: 'Light' | 'Dark'
 }
 
-function PresetCard({ preset, selected, onClick }: PresetCardProps) {
-  const presetConfig: Record<ThemePreset, { colors: string[]; name: string; description: string }> = {
-    light: {
-      colors: ['#3b82f6', '#f3f4f6', '#1f2937'],
-      name: 'Light',
-      description: 'Clean and bright'
-    },
-    dark: {
-      colors: ['#6366f1', '#1f2937', '#f3f4f6'],
-      name: 'Dark',
-      description: 'Easy on the eyes'
-    },
-    compact: {
-      colors: ['#8b5cf6', '#fafafa', '#374151'],
-      name: 'Compact',
-      description: 'Dense information'
-    },
-    spacious: {
-      colors: ['#10b981', '#ffffff', '#111827'],
-      name: 'Spacious',
-      description: 'Plenty of breathing room'
-    }
-  }
+const THEME_CONFIGS: Record<ThemePreset, ThemeConfig> = {
+  light: {
+    colors: ['#fafafa', '#1a1a1a', '#e5e5e5'],
+    name: 'Light',
+    variant: 'Light',
+  },
+  dark: {
+    colors: ['#1a1a1a', '#fafafa', '#333333'],
+    name: 'Dark',
+    variant: 'Dark',
+  },
+  midnight: {
+    colors: ['#1e2340', '#e0e4f0', '#2d3460'],
+    name: 'Midnight',
+    variant: 'Dark',
+  },
+  forest: {
+    colors: ['#1a2e1f', '#dce8df', '#2a4030'],
+    name: 'Forest',
+    variant: 'Dark',
+  },
+  sand: {
+    colors: ['#f5f0e8', '#3d3020', '#e8e0d0'],
+    name: 'Sand',
+    variant: 'Light',
+  },
+  ocean: {
+    colors: ['#eef2f7', '#1e2d40', '#d8e0ec'],
+    name: 'Ocean',
+    variant: 'Light',
+  },
+}
 
-  const config = presetConfig[preset]
+const PRESETS: ThemePreset[] = ['light', 'dark', 'midnight', 'forest', 'sand', 'ocean']
+
+function PresetCard({ preset, selected, onClick }: { preset: ThemePreset; selected: boolean; onClick: () => void }) {
+  const config = THEME_CONFIGS[preset]
 
   return (
     <button
       onClick={onClick}
       className={`relative p-3 rounded-lg border-2 transition-all hover:shadow-md ${
         selected
-          ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
-          : 'border-gray-200 hover:border-gray-300'
+          ? 'border-foreground ring-1 ring-ring'
+          : 'border-border hover:border-foreground/20'
       }`}
-      aria-label={`Select ${config.name} theme preset`}
+      aria-label={`Select ${config.name} theme`}
       aria-pressed={selected}
     >
-      {/* Color preview */}
+      {/* Color preview strip */}
       <div className="flex gap-1 mb-2">
         {config.colors.map((color, i) => (
           <div
             key={i}
-            className="h-6 flex-1 rounded"
+            className="h-5 flex-1 rounded-sm"
             style={{ backgroundColor: color }}
           />
         ))}
       </div>
 
-      {/* Name and description */}
-      <div className="text-left">
-        <div className="text-sm font-semibold text-gray-900">{config.name}</div>
-        <div className="text-xs text-gray-500">{config.description}</div>
+      {/* Name and variant label */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-foreground">{config.name}</span>
+        <span className="text-[10px] text-muted-foreground">{config.variant}</span>
       </div>
     </button>
   )
@@ -67,11 +79,9 @@ function PresetCard({ preset, selected, onClick }: PresetCardProps) {
 export function ThemePresets() {
   const { globalTheme, applyTheme } = useConfigStore()
 
-  const presets: ThemePreset[] = ['light', 'dark', 'compact', 'spacious']
-
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {presets.map((preset) => (
+    <div className="grid grid-cols-3 gap-2">
+      {PRESETS.map((preset) => (
         <PresetCard
           key={preset}
           preset={preset}

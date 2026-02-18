@@ -7,7 +7,7 @@ export function ImageValue({ value, fieldName }: FieldRenderProps) {
   const src = String(value ?? '')
 
   if (error) {
-    return <span className="text-gray-500" title={src}>{src}</span>
+    return <span className="text-muted-foreground" title={src}>{src}</span>
   }
 
   return (
