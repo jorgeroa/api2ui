@@ -235,7 +235,7 @@ function App() {
               </div>
 
               {/* Main Content Area */}
-              <div className="bg-surface rounded-lg shadow-md p-6 max-w-6xl mx-auto">
+              <div className="bg-card rounded-lg shadow-md p-6 max-w-6xl mx-auto">
                 {loading && !parsedSpec && <SkeletonTable />}
 
                 {/* Standalone error (non-spec failures only, skip auth errors — shown in auth panel) */}
@@ -337,7 +337,7 @@ function App() {
             </div>
 
             {/* Main Content Area */}
-            <div className="bg-surface rounded-lg shadow-md p-6">
+            <div className="bg-card rounded-lg shadow-md p-6">
               {loading && !parsedSpec && <SkeletonTable />}
 
               {/* Standalone error (non-spec failures only, skip auth errors — shown in auth panel) */}

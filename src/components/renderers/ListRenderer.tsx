@@ -79,7 +79,7 @@ export function ListRenderer({ data, schema, path, depth }: RendererProps) {
 
   return (
     <div>
-      <div className="border border-border rounded-lg overflow-hidden">
+      <div className="bg-card border border-border rounded-lg overflow-hidden">
         {data.map((item, index) => {
           const obj = item as Record<string, unknown>
           const title = getItemLabel(item)
@@ -101,7 +101,7 @@ export function ListRenderer({ data, schema, path, depth }: RendererProps) {
               className="border-b border-border last:border-b-0 px-4 py-3 hover:bg-muted cursor-pointer transition-colors"
             >
               <div className="flex items-center gap-4">
-                <span className="font-medium text-text">{title}</span>
+                <span className="font-medium text-foreground">{title}</span>
                 {displayFields.map(([fieldName, fieldDef]) => {
                   const value = obj[fieldName]
                   const fieldPath = `${path}[${index}].${fieldName}`

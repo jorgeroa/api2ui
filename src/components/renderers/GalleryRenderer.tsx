@@ -85,8 +85,8 @@ export function GalleryRenderer({ data, schema, path }: RendererProps) {
                   </div>
                 </div>
               ) : (
-                <div className="p-4 bg-muted">
-                  <div className="font-medium text-text">{title}</div>
+                <div className="p-4 bg-card">
+                  <div className="font-medium text-foreground">{title}</div>
                   {fields.slice(0, 2).map(([fieldName]) => {
                     const val = obj[fieldName]
                     if (val === null || val === undefined) return null

@@ -23,7 +23,7 @@ export function OperationItem({ operation, index, isSelected, onSelect }: Operat
         <span className="px-1.5 py-0.5 text-xs font-semibold text-green-700 bg-green-100 rounded uppercase">
           {operation.method}
         </span>
-        <code className="text-xs font-mono text-text">{operation.path}</code>
+        <code className="text-xs font-mono text-foreground">{operation.path}</code>
       </div>
       {operation.summary && (
         <p className="text-xs text-muted-foreground truncate">

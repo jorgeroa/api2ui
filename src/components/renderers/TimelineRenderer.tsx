@@ -124,7 +124,7 @@ export function TimelineRenderer({ data, schema, path, depth }: RendererProps) {
                 {/* Content card */}
                 <div className="ml-4 flex-1 border border-border rounded-lg p-3 group-hover:border-foreground/20 transition-colors">
                   <div className="flex items-center justify-between mb-1">
-                    <div className="font-medium text-text">{title}</div>
+                    <div className="font-medium text-foreground">{title}</div>
                     <div className="text-xs text-muted-foreground shrink-0 ml-2">{dateDisplay}</div>
                   </div>
                   {contentFields.length > 0 && (

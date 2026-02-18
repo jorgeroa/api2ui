@@ -151,7 +151,7 @@ export function HeroRenderer({ data, schema, path, depth }: RendererProps) {
             />
           )}
           <div className="min-w-0">
-            {title && <h2 className="text-2xl font-bold text-text truncate">{title}</h2>}
+            {title && <h2 className="text-2xl font-bold text-foreground truncate">{title}</h2>}
             {subtitle && (
               <p className="text-muted-foreground mt-1 line-clamp-2">{subtitle}</p>
             )}
@@ -190,7 +190,7 @@ export function HeroRenderer({ data, schema, path, depth }: RendererProps) {
         >
           {visibleNumberFields.slice(0, 5).map(([name]) => (
             <div key={name} className="text-center">
-              <div className="text-2xl font-bold text-text">
+              <div className="text-2xl font-bold text-foreground">
                 {typeof obj[name] === 'number' ? (obj[name] as number).toLocaleString() : '--'}
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">{formatLabel(name)}</div>

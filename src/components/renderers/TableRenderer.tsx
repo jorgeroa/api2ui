@@ -239,7 +239,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
   }
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden">
+    <div className="bg-card border border-border rounded-lg overflow-hidden">
       {/* Single scroll container — header and body scroll horizontally together */}
       <div className="overflow-auto" style={{ maxHeight: '600px' }}>
         {renderHeader()}
@@ -254,7 +254,7 @@ export function TableRenderer({ data, schema, path, depth }: RendererProps) {
               key={globalIndex}
               onClick={() => handleItemClick(item, globalIndex)}
               className={`flex border-b border-border cursor-pointer hover:bg-muted ${
-                isEven ? 'bg-surface' : 'bg-background'
+                isEven ? 'bg-muted' : 'bg-background'
               }`}
               style={{ minWidth: totalWidth }}
             >

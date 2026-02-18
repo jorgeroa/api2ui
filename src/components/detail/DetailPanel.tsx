@@ -44,9 +44,9 @@ export function DetailPanel({ item, schema, itemPath, onClose }: DetailPanelProp
 
       {/* Panel container - positioned at right edge */}
       <div className="fixed inset-0 flex justify-end">
-        <DialogPanel className="w-full max-w-2xl bg-surface text-text shadow-xl h-full overflow-y-auto">
+        <DialogPanel className="w-full max-w-2xl bg-popover text-foreground shadow-xl h-full overflow-y-auto">
           {/* Sticky header with breadcrumb and close button */}
-          <div className="sticky top-0 bg-surface border-b border-border px-6 py-3 flex items-center justify-between z-10">
+          <div className="sticky top-0 bg-popover border-b border-border px-6 py-3 flex items-center justify-between z-10">
             <DialogTitle className="sr-only">
               {current?.label ?? rootLabel}
             </DialogTitle>
@@ -70,13 +70,13 @@ export function DetailPanel({ item, schema, itemPath, onClose }: DetailPanelProp
                         {entry.label}
                       </button>
                     ) : (
-                      <span className="text-text font-medium truncate">{entry.label}</span>
+                      <span className="text-foreground font-medium truncate">{entry.label}</span>
                     )}
                   </span>
                 ))}
               </nav>
             ) : (
-              <span className="text-sm text-text font-medium truncate">{rootLabel}</span>
+              <span className="text-sm text-foreground font-medium truncate">{rootLabel}</span>
             )}
 
             <button

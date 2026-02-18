@@ -135,14 +135,14 @@ export function CardListRenderer({ data, schema, path, depth, importance }: Rend
           // Detect hero image from first image-URL field (use all fields for detection)
           const heroImage = getHeroImageField(obj, fields)
 
-          // Show filtered fields (primary + secondary tier only), limited to first 5
-          const displayFields = fieldsToDisplay.slice(0, 5)
+          // Show filtered fields (primary + secondary tier only), limited to first 3
+          const displayFields = fieldsToDisplay.slice(0, 3)
 
           return (
             <div
               key={globalIndex}
               onClick={() => handleItemClick(item, globalIndex, title)}
-              className="border border-border rounded-lg overflow-hidden shadow-sm hover:shadow-md hover:border-foreground/20 hover:-translate-y-0.5 cursor-pointer transition-all duration-150"
+              className="bg-card border border-border rounded-lg overflow-hidden shadow-sm hover:shadow-md hover:border-foreground/20 hover:-translate-y-0.5 cursor-pointer transition-all duration-150"
             >
               {/* Hero image - full width at top of card */}
               {heroImage && (
@@ -160,14 +160,14 @@ export function CardListRenderer({ data, schema, path, depth, importance }: Rend
               )}
 
               {/* Card content wrapper with padding */}
-              <div className="p-4">
+              <div className="p-3">
                 {/* Card header with title */}
-                <div className="font-semibold text-lg mb-3 text-text border-b border-border pb-2">
+                <div className="font-semibold text-lg mb-2 text-foreground">
                   {title}
                 </div>
 
                 {/* Card content: key-value pairs */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {displayFields.map(([fieldName, fieldDef]) => {
                     // Skip hero image field to avoid duplication
                     if (heroImage && fieldName === heroImage.fieldName) return null
@@ -182,7 +182,7 @@ export function CardListRenderer({ data, schema, path, depth, importance }: Rend
                     return (
                       <div
                         key={fieldName}
-                        className="text-sm"
+                        className="text-sm line-clamp-2"
                         onContextMenu={(e) => handleFieldContextMenu(e, `${path}[].${fieldName}`, fieldName, value)}
                         onTouchStart={(e) => {
                           const touch = e.touches[0]
@@ -225,11 +225,6 @@ export function CardListRenderer({ data, schema, path, depth, importance }: Rend
                       </div>
                     )
                   })}
-                  {fieldsToDisplay.length > 5 && (
-                    <div className="text-xs text-muted-foreground italic">
-                      +{fieldsToDisplay.length - 5} more fields
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

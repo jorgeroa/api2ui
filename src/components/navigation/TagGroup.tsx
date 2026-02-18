@@ -26,7 +26,7 @@ export function TagGroup({ tag, operations, operationIndices, selectedIndex, onS
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
-              <span className="font-semibold text-sm text-text">{tag}</span>
+              <span className="font-semibold text-sm text-foreground">{tag}</span>
               <span className="px-1.5 py-0.5 text-xs font-medium text-muted-foreground bg-muted rounded">
                 {operations.length}
               </span>

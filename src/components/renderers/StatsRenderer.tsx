@@ -82,7 +82,7 @@ export function StatsRenderer({ data, schema, path }: RendererProps) {
               onClick={() => handleClick(item, index)}
               className="border border-border rounded-lg p-6 text-center hover:shadow-md hover:border-foreground/20 hover:-translate-y-0.5 cursor-pointer transition-all duration-150"
             >
-              <div className="text-3xl font-bold text-text">
+              <div className="text-3xl font-bold text-foreground">
                 {typeof metricValue === 'number'
                   ? metricValue.toLocaleString()
                   : metricValue != null

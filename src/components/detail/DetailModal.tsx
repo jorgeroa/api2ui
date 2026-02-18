@@ -45,9 +45,9 @@ export function DetailModal({ item, schema, itemPath, onClose }: DetailModalProp
 
       {/* Container to center the panel */}
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="max-w-3xl w-full bg-surface text-text rounded-xl shadow-lg max-h-[80vh] overflow-y-auto">
+        <DialogPanel className="max-w-3xl w-full bg-popover text-foreground rounded-xl shadow-lg max-h-[80vh] overflow-y-auto">
           {/* Sticky header with breadcrumb and close button */}
-          <div className="sticky top-0 bg-surface z-10 flex items-center justify-between px-4 py-2 border-b border-border rounded-t-xl">
+          <div className="sticky top-0 bg-popover z-10 flex items-center justify-between px-4 py-2 border-b border-border rounded-t-xl">
             <DialogTitle className="sr-only">
               {current?.label ?? rootLabel}
             </DialogTitle>
@@ -71,13 +71,13 @@ export function DetailModal({ item, schema, itemPath, onClose }: DetailModalProp
                         {entry.label}
                       </button>
                     ) : (
-                      <span className="text-text font-medium truncate">{entry.label}</span>
+                      <span className="text-foreground font-medium truncate">{entry.label}</span>
                     )}
                   </span>
                 ))}
               </nav>
             ) : (
-              <span className="text-sm text-text font-medium truncate">{rootLabel}</span>
+              <span className="text-sm text-foreground font-medium truncate">{rootLabel}</span>
             )}
 
             <button

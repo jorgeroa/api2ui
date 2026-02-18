@@ -35,7 +35,7 @@ export function PaginationControls({
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
           aria-label="Previous page"
-          className="min-w-[36px] px-2 py-1 text-sm border border-border rounded hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed"
+          className="min-w-[36px] px-2 py-1 text-sm border border-border rounded hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Prev
         </button>
@@ -59,7 +59,7 @@ export function PaginationControls({
               className={`min-w-[36px] px-2 py-1 text-sm rounded ${
                 isActive
                   ? 'bg-primary text-primary-foreground'
-                  : 'border border-border hover:bg-surface'
+                  : 'border border-border hover:bg-muted'
               }`}
             >
               {pageNum}
@@ -71,7 +71,7 @@ export function PaginationControls({
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
           aria-label="Next page"
-          className="min-w-[36px] px-2 py-1 text-sm border border-border rounded hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed"
+          className="min-w-[36px] px-2 py-1 text-sm border border-border rounded hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Next
         </button>
