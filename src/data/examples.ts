@@ -33,7 +33,7 @@ export const EXAMPLES: Example[] = [
   {
     title: 'GitHub Profile',
     description: 'Avatar, URLs, dates, and profile layout',
-    url: 'https://api.github.com/users/octocat',
+    url: 'https://api.github.com/users/steipete',
     type: 'Object',
     features: ['avatar', 'urls', 'dates'],
     category: 'profiles',
