@@ -22,7 +22,7 @@ export function ParameterGroup({ groupName, children, defaultOpen = false }: Par
     <Disclosure defaultOpen={defaultOpen}>
       {({ open }) => (
         <>
-          <DisclosureButton className="flex items-center justify-between w-full px-3 py-2 text-left hover:bg-gray-50 transition-colors rounded-md">
+          <DisclosureButton className="flex items-center justify-between w-full px-3 py-2 text-left hover:bg-muted transition-colors rounded-md">
             <div className="flex items-center gap-2">
               <svg
                 className={`w-4 h-4 transition-transform ${open ? 'rotate-90' : ''}`}
@@ -33,7 +33,7 @@ export function ParameterGroup({ groupName, children, defaultOpen = false }: Par
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
-              <span className="font-semibold text-sm text-gray-700">{displayName}</span>
+              <span className="font-semibold text-sm text-muted-foreground">{displayName}</span>
             </div>
           </DisclosureButton>
           <DisclosurePanel className="space-y-3 pl-4">

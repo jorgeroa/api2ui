@@ -38,7 +38,7 @@ export function FieldListPanel({ fields, onConfigureField }: FieldListPanelProps
   return (
     <div className="space-y-3">
       {/* Count summary */}
-      <div className="text-sm text-gray-600">
+      <div className="text-sm text-muted-foreground">
         {visibleCount} of {fields.length} fields visible
       </div>
 
@@ -54,7 +54,7 @@ export function FieldListPanel({ fields, onConfigureField }: FieldListPanelProps
             <div
               key={field.path}
               data-field-path={field.path}
-              className="flex items-start gap-2 p-2 hover:bg-gray-50 rounded transition-all"
+              className="flex items-start gap-2 p-2 hover:bg-muted rounded transition-all"
               style={{ paddingLeft: `${8 + depth * 16}px` }}
             >
               {/* Checkbox */}
@@ -62,7 +62,7 @@ export function FieldListPanel({ fields, onConfigureField }: FieldListPanelProps
                 type="checkbox"
                 checked={isVisible}
                 onChange={() => toggleFieldVisibility(field.path)}
-                className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="mt-1 h-4 w-4 text-primary border-border rounded focus-visible:ring-ring/50"
                 aria-label={`Toggle visibility for ${field.name}`}
               />
 
@@ -79,7 +79,7 @@ export function FieldListPanel({ fields, onConfigureField }: FieldListPanelProps
 
                 {/* Show path for deeply nested fields */}
                 {depth > 0 && (
-                  <div className="text-xs text-gray-400 mt-0.5 truncate" title={field.path}>
+                  <div className="text-xs text-muted-foreground mt-0.5 truncate" title={field.path}>
                     {field.path}
                   </div>
                 )}
@@ -92,7 +92,7 @@ export function FieldListPanel({ fields, onConfigureField }: FieldListPanelProps
                     e.stopPropagation()
                     onConfigureField(field.path)
                   }}
-                  className="mt-0.5 p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors flex-shrink-0"
+                  className="mt-0.5 p-1 text-muted-foreground hover:text-primary hover:bg-muted rounded transition-colors flex-shrink-0"
                   title="Configure in context"
                   aria-label={`Configure ${field.name} in context`}
                 >
@@ -108,7 +108,7 @@ export function FieldListPanel({ fields, onConfigureField }: FieldListPanelProps
       </div>
 
       {fields.length === 0 && (
-        <div className="text-sm text-gray-500 italic py-4 text-center">
+        <div className="text-sm text-muted-foreground italic py-4 text-center">
           No fields to configure
         </div>
       )}

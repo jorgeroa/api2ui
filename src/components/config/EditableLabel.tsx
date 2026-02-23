@@ -80,14 +80,14 @@ export function EditableLabel({
     return (
       <span className="inline-flex flex-col gap-0.5">
         <span
-          className={`${isConfigureMode ? 'cursor-text hover:text-blue-600 hover:underline hover:decoration-dotted' : ''}`}
+          className={`${isConfigureMode ? 'cursor-text hover:text-primary hover:underline hover:decoration-dotted' : ''}`}
           onClick={handleClick}
           title={isConfigureMode ? 'Click to edit' : undefined}
         >
           {value}
         </span>
         {hasCustomLabel && (
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-muted-foreground">
             (was: {originalName})
           </span>
         )}
@@ -105,7 +105,7 @@ export function EditableLabel({
         role="textbox"
         aria-label={`Edit label for ${fieldPath}`}
         aria-multiline="false"
-        className="inline-block px-2 py-1 border-2 border-blue-500 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 min-w-15"
+        className="inline-block px-2 py-1 border-2 border-primary rounded bg-background focus:outline-none focus:ring-2 focus-visible:ring-ring/50 min-w-15"
         onInput={handleInput}
         onKeyDown={handleKeyDown}
         onBlur={(e) => {

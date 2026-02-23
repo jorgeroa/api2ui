@@ -6,7 +6,7 @@ export function RelativeTime({ value }: FieldRenderProps) {
   const date = new Date(str)
 
   if (isNaN(date.getTime())) {
-    return <span className="text-gray-500">{str}</span>
+    return <span className="text-muted-foreground">{str}</span>
   }
 
   const now = new Date()

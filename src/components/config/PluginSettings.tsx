@@ -76,27 +76,27 @@ export function PluginSettings() {
     <div className="space-y-3">
       {/* Core plugins summary */}
       <div className="flex items-center justify-between text-sm">
-        <span className="text-gray-600">Core plugins</span>
-        <span className="text-gray-900 font-medium">{coreCount} registered</span>
+        <span className="text-muted-foreground">Core plugins</span>
+        <span className="text-foreground font-medium">{coreCount} registered</span>
       </div>
 
       {/* Installed external plugins */}
       {installed.length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">External Plugins</div>
+          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">External Plugins</div>
           {installed.map((manifest) => {
             const error = loadErrors[manifest.id]
             return (
               <div
                 key={manifest.id}
                 className={`flex items-center gap-2 p-2 rounded-lg border ${
-                  error ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-gray-50'
+                  error ? 'border-red-200 bg-red-50' : 'border-border bg-muted'
                 }`}
               >
                 <PackageIcon />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-gray-900 truncate">{manifest.name}</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-sm font-medium text-foreground truncate">{manifest.name}</div>
+                  <div className="text-xs text-muted-foreground">
                     {manifest.source === 'npm' ? manifest.package : manifest.url}
                     {manifest.version !== '0.0.0' && ` v${manifest.version}`}
                   </div>
@@ -108,7 +108,7 @@ export function PluginSettings() {
                 <button
                   onClick={() => togglePlugin(manifest.id)}
                   className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${
-                    manifest.enabled ? 'bg-blue-600' : 'bg-gray-300'
+                    manifest.enabled ? 'bg-primary' : 'bg-muted'
                   }`}
                   title={manifest.enabled ? 'Disable plugin' : 'Enable plugin'}
                 >
@@ -121,7 +121,7 @@ export function PluginSettings() {
                 {/* Remove */}
                 <button
                   onClick={() => removePlugin(manifest.id)}
-                  className="text-gray-400 hover:text-red-600 transition-colors"
+                  className="text-muted-foreground hover:text-red-600 transition-colors"
                   title="Remove plugin"
                 >
                   <TrashIcon />
@@ -134,20 +134,20 @@ export function PluginSettings() {
 
       {/* Install new plugin */}
       {showInstall ? (
-        <div className="border border-gray-200 rounded-lg p-3 space-y-2">
-          <div className="text-xs font-medium text-gray-700">Install Plugin</div>
+        <div className="border border-border rounded-lg p-3 space-y-2">
+          <div className="text-xs font-medium text-muted-foreground">Install Plugin</div>
           <input
             type="text"
             placeholder="Plugin name"
             value={installForm.name}
             onChange={(e) => setInstallForm((f) => ({ ...f, name: e.target.value }))}
-            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus-visible:ring-ring/50"
           />
           <div className="flex gap-2">
             <select
               value={installForm.source}
               onChange={(e) => setInstallForm((f) => ({ ...f, source: e.target.value as 'npm' | 'url' }))}
-              className="px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus-visible:ring-ring/50"
             >
               <option value="npm">npm</option>
               <option value="url">URL</option>
@@ -157,20 +157,20 @@ export function PluginSettings() {
               placeholder={installForm.source === 'npm' ? 'api2ui-plugin-name' : 'https://cdn.example.com/plugin.js'}
               value={installForm.value}
               onChange={(e) => setInstallForm((f) => ({ ...f, value: e.target.value }))}
-              className="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="flex-1 px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus-visible:ring-ring/50"
             />
           </div>
           <div className="flex gap-2 justify-end">
             <button
               onClick={() => setShowInstall(false)}
-              className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+              className="px-3 py-1 text-sm text-muted-foreground hover:text-foreground"
             >
               Cancel
             </button>
             <button
               onClick={handleInstall}
               disabled={!installForm.name.trim() || !installForm.value.trim()}
-              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Install
             </button>
@@ -179,7 +179,7 @@ export function PluginSettings() {
       ) : (
         <button
           onClick={() => setShowInstall(true)}
-          className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800"
+          className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80"
         >
           <PlusIcon />
           Install plugin

@@ -29,11 +29,11 @@ export function StarRating({ value, max = 5 }: StarRatingProps) {
 
       {/* Empty stars */}
       {Array.from({ length: emptyStars }).map((_, i) => (
-        <span key={`empty-${i}`} className="text-gray-300">&#9734;</span>
+        <span key={`empty-${i}`} className="text-muted-foreground">&#9734;</span>
       ))}
 
       {/* Numeric value */}
-      <span className="text-xs text-gray-500 ml-1">({value.toFixed(1)})</span>
+      <span className="text-xs text-muted-foreground ml-1">({value.toFixed(1)})</span>
     </span>
   )
 }

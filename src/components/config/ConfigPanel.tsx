@@ -19,9 +19,9 @@ export function ConfigPanel() {
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' })
         // Add a temporary highlight ring
-        el.classList.add('ring-2', 'ring-blue-500', 'ring-offset-1')
+        el.classList.add('ring-2', 'ring-ring', 'ring-offset-1')
         setTimeout(() => {
-          el.classList.remove('ring-2', 'ring-blue-500', 'ring-offset-1')
+          el.classList.remove('ring-2', 'ring-ring', 'ring-offset-1')
         }, 2000)
       }
     }, 150)
@@ -94,15 +94,15 @@ export function ConfigPanel() {
 
       {/* Container to position panel on right */}
       <div className="fixed inset-0 flex items-stretch justify-end">
-        <DialogPanel className="w-96 bg-white shadow-xl flex flex-col">
+        <DialogPanel className="w-96 bg-background shadow-xl flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-            <DialogTitle className="text-xl font-semibold text-gray-900">
+          <div className="flex items-center justify-between border-b border-border px-6 py-4">
+            <DialogTitle className="text-xl font-semibold text-foreground">
               Configure View
             </DialogTitle>
             <button
               onClick={togglePanel}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-muted-foreground hover:text-foreground"
               aria-label="Close panel"
             >
               {/* X icon SVG */}
@@ -126,13 +126,13 @@ export function ConfigPanel() {
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
             {/* Fields Section */}
             <section>
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
                 Fields
               </h3>
               {fields.length > 0 ? (
                 <FieldListPanel fields={fields} onConfigureField={handleConfigureField} />
               ) : (
-                <p className="text-sm text-gray-500 italic">
+                <p className="text-sm text-muted-foreground italic">
                   No data loaded. Fetch an API to configure fields.
                 </p>
               )}
@@ -140,7 +140,7 @@ export function ConfigPanel() {
 
             {/* Components Section */}
             <section>
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
                 Components
               </h3>
               <ComponentOverridePanel />
@@ -148,7 +148,7 @@ export function ConfigPanel() {
 
             {/* Style Section */}
             <section>
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
                 Style
               </h3>
               <StylePanel />
@@ -156,7 +156,7 @@ export function ConfigPanel() {
 
             {/* Plugins Section */}
             <section>
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
                 Plugins
               </h3>
               <PluginSettings />
@@ -164,7 +164,7 @@ export function ConfigPanel() {
           </div>
 
           {/* Footer */}
-          <div className="border-t border-gray-200 px-6 py-4">
+          <div className="border-t border-border px-6 py-4">
             <button
               onClick={handleReset}
               className="w-full px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors"

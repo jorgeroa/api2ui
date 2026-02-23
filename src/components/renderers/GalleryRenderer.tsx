@@ -46,7 +46,7 @@ export function GalleryRenderer({ data, schema, path }: RendererProps) {
   }
 
   if (!Array.isArray(data) || data.length === 0) {
-    return <div className="text-gray-500 italic p-4">No data</div>
+    return <div className="text-muted-foreground italic p-4">No data</div>
   }
 
   const fields = Array.from(schema.items.fields.entries())
@@ -85,13 +85,13 @@ export function GalleryRenderer({ data, schema, path }: RendererProps) {
                   </div>
                 </div>
               ) : (
-                <div className="p-4 bg-gray-50">
-                  <div className="font-medium text-text">{title}</div>
+                <div className="p-4 bg-card">
+                  <div className="font-medium text-foreground">{title}</div>
                   {fields.slice(0, 2).map(([fieldName]) => {
                     const val = obj[fieldName]
                     if (val === null || val === undefined) return null
                     return (
-                      <div key={fieldName} className="text-xs text-gray-500 mt-1 truncate">
+                      <div key={fieldName} className="text-xs text-muted-foreground mt-1 truncate">
                         {String(val)}
                       </div>
                     )

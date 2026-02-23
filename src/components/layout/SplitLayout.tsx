@@ -20,7 +20,7 @@ export function SplitLayout({
   return (
     <div className={`flex flex-row min-h-0 ${className}`}>
       {/* Parameters panel - 30% */}
-      <div className="w-[30%] shrink-0 border-r border-gray-200 overflow-y-auto p-4">
+      <div className="w-[30%] shrink-0 border-r border-border overflow-y-auto p-4">
         {parameters}
       </div>
 

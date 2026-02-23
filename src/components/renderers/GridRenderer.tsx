@@ -4,15 +4,15 @@ import { PrimitiveRenderer } from './PrimitiveRenderer'
 /** Renders an array of primitives in a responsive CSS grid */
 export function GridRenderer({ data, schema, path, depth }: RendererProps) {
   if (schema.kind !== 'array') {
-    return <span className="text-gray-500 italic">Expected array</span>
+    return <span className="text-muted-foreground italic">Expected array</span>
   }
 
   if (!Array.isArray(data)) {
-    return <span className="text-gray-500 italic">No data</span>
+    return <span className="text-muted-foreground italic">No data</span>
   }
 
   if (data.length === 0) {
-    return <span className="text-gray-500 text-xs">[0 items]</span>
+    return <span className="text-muted-foreground text-xs">[0 items]</span>
   }
 
   return (

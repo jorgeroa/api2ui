@@ -2,7 +2,7 @@ import Skeleton from 'react-loading-skeleton'
 
 export function SkeletonTable() {
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden p-4">
+    <div className="border border-border rounded-lg overflow-hidden p-4">
       {/* Header skeleton */}
       <div className="flex gap-4 mb-4">
         <Skeleton width={150} height={24} />

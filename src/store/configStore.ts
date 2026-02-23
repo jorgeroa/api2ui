@@ -261,8 +261,19 @@ export const useConfigStore = create<ConfigStore>()(
     }),
     {
       name: 'api2ui-config',
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => localStorage),
+      migrate: (persistedState: unknown, version: number) => {
+        const state = persistedState as Record<string, unknown>
+        if (version < 3) {
+          // v2→v3: compact/spacious presets removed, map to light
+          const theme = state.globalTheme as string
+          if (theme === 'compact' || theme === 'spacious') {
+            state.globalTheme = 'light'
+          }
+        }
+        return state as ConfigStore
+      },
       partialize: (state) => ({
         fieldConfigs: state.fieldConfigs,
         drilldownMode: state.drilldownMode,

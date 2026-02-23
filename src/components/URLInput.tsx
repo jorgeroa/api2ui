@@ -4,59 +4,9 @@ import { useAPIFetch } from '../hooks/useAPIFetch'
 import { useAuthStore } from '../store/authStore'
 import { LockIcon } from './auth/LockIcon'
 import { AuthPanel } from './auth/AuthPanel'
+import { ExamplesCarousel } from './ExamplesCarousel'
 import type { AuthStatus } from '../types/auth'
 import type { ParsedSecurityScheme } from '../services/openapi/types'
-
-const EXAMPLES = [
-  {
-    title: 'User Directory',
-    description: 'Array of user objects with nested address and company data',
-    url: 'https://jsonplaceholder.typicode.com/users',
-    type: 'Array' as const,
-  },
-  {
-    title: 'Single User',
-    description: 'Detailed object view with nested fields',
-    url: 'https://jsonplaceholder.typicode.com/users/1',
-    type: 'Object' as const,
-  },
-  {
-    title: 'Product Catalog',
-    description: 'Paginated product list with images and ratings',
-    url: 'https://dummyjson.com/products',
-    type: 'Array' as const,
-  },
-  {
-    title: 'Pet Store API',
-    description: 'OpenAPI spec with multiple endpoints and tag-based navigation',
-    url: 'https://petstore.swagger.io/v2/swagger.json',
-    type: 'OpenAPI' as const,
-  },
-  {
-    title: 'GitHub Profile',
-    description: 'Single object with avatar, URLs, dates, and name detection',
-    url: 'https://api.github.com/users/octocat',
-    type: 'Object' as const,
-  },
-  {
-    title: 'User Profiles',
-    description: 'Phone numbers, birth dates, emails, and physical stats',
-    url: 'https://dummyjson.com/users',
-    type: 'Array' as const,
-  },
-  {
-    title: 'Todo List',
-    description: 'Boolean checkboxes, status indicators, and user references',
-    url: 'https://dummyjson.com/todos',
-    type: 'Array' as const,
-  },
-  {
-    title: 'Quotes',
-    description: 'Long text content suitable for markdown rendering',
-    url: 'https://dummyjson.com/quotes',
-    type: 'Array' as const,
-  },
-]
 
 interface URLInputProps {
   authError?: { status: 401 | 403; message: string } | null
@@ -64,10 +14,10 @@ interface URLInputProps {
 }
 
 export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
-  const { url, setUrl, loading } = useAppStore()
+  const { url, setUrl, loading, schema, parsedSpec, error } = useAppStore()
   const { fetchAndInfer } = useAPIFetch()
   const [validationError, setValidationError] = useState<string | null>(null)
-  const [lastClickedExample, setLastClickedExample] = useState<string | null>(null)
+  const [loadingExampleUrl, setLoadingExampleUrl] = useState<string | null>(null)
   const [authPanelOpen, setAuthPanelOpen] = useState(false)
 
   // Auth state
@@ -79,12 +29,6 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
   const apiCreds = getCredentials(url)
   const hasActiveCredential = apiCreds?.activeType !== null && apiCreds?.activeType !== undefined
 
-  // Lock status mapping:
-  // - authError present -> 'failed' (red)
-  // - 'untested' with active credential -> 'active' (green)
-  // - 'success' -> 'active' (green)
-  // - 'failed' -> 'failed' (red)
-  // - no credentials -> 'untested' (gray)
   const lockStatus: AuthStatus =
     authError
       ? 'failed'
@@ -111,7 +55,6 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Client-side validation
     if (!url.trim()) {
       setValidationError('Please enter a URL')
       return
@@ -122,10 +65,8 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
       return
     }
 
-    // Clear validation error and fetch
     setValidationError(null)
 
-    // Update browser URL with api param for shareable links
     const newUrl = new URL(window.location.href)
     newUrl.searchParams.set('api', url)
     window.history.pushState({}, '', newUrl.toString())
@@ -136,16 +77,18 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
   const handleExampleClick = async (exampleUrl: string) => {
     setUrl(exampleUrl)
     setValidationError(null)
-    setLastClickedExample(exampleUrl)
+    setLoadingExampleUrl(exampleUrl)
 
-    // Update browser URL with api param for shareable links
     const newUrl = new URL(window.location.href)
     newUrl.searchParams.set('api', exampleUrl)
     window.history.pushState({}, '', newUrl.toString())
 
     await fetchAndInfer(exampleUrl)
-    setLastClickedExample(null)
+    setLoadingExampleUrl(null)
   }
+
+  const hasData = schema || parsedSpec
+  const showCarousel = !loading && !schema && !parsedSpec && !error
 
   return (
     <div className="w-full max-w-4xl">
@@ -159,7 +102,7 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
               setValidationError(null)
             }}
             placeholder="https://jsonplaceholder.typicode.com/users"
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 px-4 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus-visible:ring-ring/50 focus:border-transparent"
             disabled={loading}
           />
           <LockIcon
@@ -170,7 +113,7 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-2 bg-primary text-primary-foreground font-medium rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? 'Fetching...' : 'Fetch'}
           </button>
@@ -191,47 +134,31 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
         )}
       </form>
 
-      {/* Example API cards */}
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {EXAMPLES.map((example) => {
-          const isLoading = lastClickedExample === example.url && loading
-          return (
-            <button
-              key={example.url}
-              onClick={() => handleExampleClick(example.url)}
-              disabled={loading}
-              className="group relative p-4 border border-border rounded-lg text-left transition-all hover:border-blue-400 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed bg-surface"
-            >
-              {/* Type badge */}
-              <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded mb-2 ${
-                example.type === 'OpenAPI'
-                  ? 'bg-purple-100 text-purple-700'
-                  : example.type === 'Array'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-blue-100 text-blue-700'
-              }`}>
-                {example.type}
-              </span>
+      {/* Compact examples carousel (only when no data loaded) */}
+      {showCarousel && (
+        <div className="mt-4">
+          <ExamplesCarousel
+            onExampleClick={handleExampleClick}
+            loading={loading}
+            loadingUrl={loadingExampleUrl}
+          />
+        </div>
+      )}
 
-              {/* Title */}
-              <h3 className="font-semibold text-text text-sm mb-1">{example.title}</h3>
-
-              {/* Description */}
-              <p className="text-xs text-gray-500 leading-relaxed">{example.description}</p>
-
-              {/* Loading overlay */}
-              {isLoading && (
-                <div className="absolute inset-0 bg-white/70 rounded-lg flex items-center justify-center">
-                  <svg className="animate-spin h-5 w-5 text-blue-600" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                </div>
-              )}
-            </button>
-          )
-        })}
-      </div>
+      {/* "Try an example" link when data is loaded */}
+      {hasData && !loading && (
+        <div className="mt-2 text-center">
+          <button
+            onClick={() => {
+              window.location.hash = '#/examples'
+              window.dispatchEvent(new HashChangeEvent('hashchange'))
+            }}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Try another example &rarr;
+          </button>
+        </div>
+      )}
     </div>
   )
 }

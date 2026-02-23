@@ -63,7 +63,7 @@ export function HeroRenderer({ data, schema, path, depth }: RendererProps) {
   const allFields = Array.from(schema.fields.entries())
 
   if (allFields.length === 0) {
-    return <div className="text-gray-500 italic">Empty object</div>
+    return <div className="text-muted-foreground italic">Empty object</div>
   }
 
   // Categorize fields
@@ -140,7 +140,7 @@ export function HeroRenderer({ data, schema, path, depth }: RendererProps) {
     <div className="border border-border rounded-lg overflow-hidden">
       {/* Hero header */}
       {hasHeader && (
-        <div className="flex items-center gap-6 p-6 bg-gray-50">
+        <div className="flex items-center gap-6 p-6 bg-muted">
           {imageField && (
             <img
               src={obj[imageField[0]] as string}
@@ -151,9 +151,9 @@ export function HeroRenderer({ data, schema, path, depth }: RendererProps) {
             />
           )}
           <div className="min-w-0">
-            {title && <h2 className="text-2xl font-bold text-text truncate">{title}</h2>}
+            {title && <h2 className="text-2xl font-bold text-foreground truncate">{title}</h2>}
             {subtitle && (
-              <p className="text-gray-600 mt-1 line-clamp-2">{subtitle}</p>
+              <p className="text-muted-foreground mt-1 line-clamp-2">{subtitle}</p>
             )}
           </div>
         </div>
@@ -164,7 +164,7 @@ export function HeroRenderer({ data, schema, path, depth }: RendererProps) {
       <div className="flex justify-end px-4 pt-2 border-t border-border">
         <button
           onClick={() => setShowNullFields(prev => !prev)}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
           title={showNullFields ? "Hide empty fields" : `Show ${nullFieldCount} empty field${nullFieldCount === 1 ? '' : 's'}`}
         >
           {showNullFields ? (
@@ -185,15 +185,15 @@ export function HeroRenderer({ data, schema, path, depth }: RendererProps) {
       {/* Stats row */}
       {visibleNumberFields.length > 0 && (
         <div
-          className="grid gap-4 p-4 border-t border-border bg-white"
+          className="grid gap-4 p-4 border-t border-border bg-background"
           style={{ gridTemplateColumns: `repeat(${Math.min(visibleNumberFields.length, 5)}, 1fr)` }}
         >
           {visibleNumberFields.slice(0, 5).map(([name]) => (
             <div key={name} className="text-center">
-              <div className="text-2xl font-bold text-text">
+              <div className="text-2xl font-bold text-foreground">
                 {typeof obj[name] === 'number' ? (obj[name] as number).toLocaleString() : '--'}
               </div>
-              <div className="text-xs text-gray-500 mt-0.5">{formatLabel(name)}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">{formatLabel(name)}</div>
             </div>
           ))}
         </div>
@@ -204,7 +204,7 @@ export function HeroRenderer({ data, schema, path, depth }: RendererProps) {
         <div className="p-4 border-t border-border space-y-2">
           {visiblePrimitives.map(([name, def]) => (
             <div key={name} className="grid grid-cols-[8rem_1fr] gap-x-4 text-sm">
-              <span className="font-medium text-gray-600">{formatLabel(name)}:</span>
+              <span className="font-medium text-muted-foreground">{formatLabel(name)}:</span>
               <PrimitiveRenderer
                 data={obj[name]}
                 schema={def.type}
@@ -232,12 +232,12 @@ export function HeroRenderer({ data, schema, path, depth }: RendererProps) {
             .filter(([, fd]) => fd.type.kind === 'primitive')
 
           return (
-            <div key={name} className="border-t border-gray-200 px-4 py-3">
-              <h3 className="text-sm font-semibold text-gray-500 mb-3">{formatLabel(name)}</h3>
+            <div key={name} className="border-t border-border px-4 py-3">
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{formatLabel(name)}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
                 {nestedEntries.map(([fieldName, fd]) => (
                   <div key={fieldName} className="grid grid-cols-[auto_1fr] gap-x-3 items-baseline min-w-0">
-                    <div className="text-sm font-medium text-gray-600 py-0.5 whitespace-nowrap">{formatLabel(fieldName)}:</div>
+                    <div className="text-sm font-medium text-muted-foreground py-0.5 whitespace-nowrap">{formatLabel(fieldName)}:</div>
                     <div className="py-0.5 min-w-0">
                       <PrimitiveRenderer data={nestedObj[fieldName]} schema={fd.type} path={`${path}.${name}.${fieldName}`} depth={depth + 2} />
                     </div>
@@ -250,8 +250,8 @@ export function HeroRenderer({ data, schema, path, depth }: RendererProps) {
 
         // Medium/Large: heading + DynamicRenderer
         return (
-          <div key={name} className="border-t border-gray-200 px-4 py-3">
-            <h3 className="text-sm font-semibold text-gray-500 mb-3">{formatLabel(name)}</h3>
+          <div key={name} className="border-t border-border px-4 py-3">
+            <h3 className="text-sm font-semibold text-muted-foreground mb-3">{formatLabel(name)}</h3>
             <DynamicRenderer
               data={nestedValue}
               schema={def.type}

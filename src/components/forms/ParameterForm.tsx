@@ -225,7 +225,7 @@ export function ParameterForm({
         <button
           type="submit"
           disabled={loading}
-          className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
         >
           {loading && (
             <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -245,7 +245,7 @@ export function ParameterForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-3">
       {/* Parse warnings (if any) */}
       {warnings.length > 0 && (
         <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
@@ -265,7 +265,7 @@ export function ParameterForm({
       {/* Ungrouped Required Parameters */}
       {ungroupedRequired.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Required Parameters</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Required Parameters</h3>
           <div className="space-y-3">
             {ungroupedRequired.map((param) => (
               <ParameterInput
@@ -295,7 +295,7 @@ export function ParameterForm({
         <Disclosure>
           {({ open }) => (
             <>
-              <DisclosureButton className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900">
+              <DisclosureButton className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground">
                 <svg
                   className={`h-5 w-5 transition-transform ${open ? 'rotate-90' : ''}`}
                   fill="currentColor"
@@ -339,8 +339,8 @@ export function ParameterForm({
 
       {/* Grouped Parameters in Accordions */}
       {grouped.size > 0 && (
-        <div className="space-y-2 border-t border-gray-200 pt-4">
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">Parameter Groups</h3>
+        <div className="space-y-2 border-t border-border pt-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Parameter Groups</h3>
           {Array.from(grouped.entries()).map(([groupName, groupParams]) => (
             <ParameterGroup key={groupName} groupName={groupName}>
               {groupParams.map((param) => (
@@ -374,7 +374,7 @@ export function ParameterForm({
           <button
             type="button"
             onClick={handleResetAll}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 border border-border text-muted-foreground rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus-visible:ring-ring/50"
           >
             Reset All
           </button>
@@ -384,7 +384,7 @@ export function ParameterForm({
         <button
           type="submit"
           disabled={loading}
-          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
         >
           {loading && (
             <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

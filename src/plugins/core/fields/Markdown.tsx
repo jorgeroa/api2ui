@@ -6,7 +6,7 @@ export function Markdown({ value }: FieldRenderProps) {
   const str = String(value ?? '')
 
   return (
-    <div className="prose prose-sm max-w-none text-gray-800">
+    <div className="prose prose-sm max-w-none text-foreground">
       <ReactMarkdown>{str}</ReactMarkdown>
     </div>
   )

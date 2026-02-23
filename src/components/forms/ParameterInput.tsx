@@ -63,7 +63,7 @@ export function ParameterInput({
   // Determine input type based on effective type or parameter schema
   const renderInput = () => {
     const baseClasses =
-      'w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+      'w-full px-2.5 py-1.5 border border-input rounded-md focus:ring-2 focus-visible:ring-ring/50 focus:border-transparent'
     const errorClasses = error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''
     // Build placeholder: prefer example, then default
     const exampleHint = schema.example !== undefined ? `e.g. ${schema.example}` : undefined
@@ -164,7 +164,7 @@ export function ParameterInput({
               type="checkbox"
               checked={value === 'true'}
               onChange={(e) => onChange(e.target.checked ? 'true' : 'false')}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-4 w-4 text-primary focus-visible:ring-ring/50 border-input rounded"
             />
           )
 
@@ -262,7 +262,7 @@ export function ParameterInput({
           type="checkbox"
           checked={value === 'true'}
           onChange={(e) => onChange(e.target.checked ? 'true' : 'false')}
-          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          className="h-4 w-4 text-primary focus-visible:ring-ring/50 border-input rounded"
         />
       )
     }
@@ -344,13 +344,13 @@ export function ParameterInput({
   const showClearButton = Boolean(onClear && value)
 
   return (
-    <div className="mb-4">
+    <div className="mb-2">
       <div className="flex items-center gap-2 mb-1">
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-muted-foreground">
           {name}
           {required && <span className="text-red-500 ml-1">*</span>}
           {parameter.in === 'path' && (
-            <span className="text-gray-400 ml-1 font-normal text-xs">(path)</span>
+            <span className="text-muted-foreground ml-1 font-normal text-xs">(path)</span>
           )}
         </label>
         {showTypeIcon && (
@@ -367,7 +367,7 @@ export function ParameterInput({
           <button
             type="button"
             onClick={onClear}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground focus:outline-none"
             title="Clear value"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -379,7 +379,7 @@ export function ParameterInput({
       {error && touched && (
         <p className="text-sm text-red-500 mt-1">{error}</p>
       )}
-      {hint && <p className="mt-1 text-xs text-gray-500">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </div>
   )
 }

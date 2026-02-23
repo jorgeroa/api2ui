@@ -82,7 +82,7 @@ export function TagInput({
               <button
                 type="button"
                 onClick={() => removeTag(index)}
-                className="ml-0.5 rounded-full hover:bg-gray-300 p-0.5"
+                className="ml-0.5 rounded-full hover:bg-muted p-0.5"
                 aria-label={`Remove ${tag}`}
               >
                 <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -109,7 +109,7 @@ export function TagInput({
       )}
 
       {/* Hint */}
-      <p className="text-xs text-gray-500 mt-1">
+      <p className="text-xs text-muted-foreground mt-1">
         Press Enter or comma to add
         {maxItems && ` (max ${maxItems})`}
       </p>

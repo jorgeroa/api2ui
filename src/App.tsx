@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppStore } from './store/appStore'
 import { useConfigStore } from './store/configStore'
 import { useParameterStore } from './store/parameterStore'
@@ -22,6 +22,7 @@ import { LayoutContainer } from './components/layout/LayoutContainer'
 import { parseUrlParameters, reconstructQueryString } from './services/urlParser/parser'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
+import { ExamplesPage } from './pages/ExamplesPage'
 import { AuthError } from './services/api/errors'
 import 'react-loading-skeleton/dist/skeleton.css'
 
@@ -40,6 +41,19 @@ function App() {
   const { mode, setMode, clearFieldConfigs } = useConfigStore()
   const { getValues, clearValue, clearEndpoint } = useParameterStore()
   const { fetchAndInfer, fetchOperation } = useAPIFetch()
+
+  // Hash-based routing for /examples page
+  const [page, setPage] = useState<'main' | 'examples'>(
+    window.location.hash === '#/examples' ? 'examples' : 'main'
+  )
+
+  useEffect(() => {
+    const onHashChange = () => {
+      setPage(window.location.hash === '#/examples' ? 'examples' : 'main')
+    }
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
 
   // Run semantic analysis pipeline when schema/data changes
   useSchemaAnalysis(schema, data)
@@ -167,12 +181,36 @@ function App() {
   // Determine if we should show the sidebar
   const showSidebar = parsedSpec !== null && parsedSpec.operations.length >= 2
 
+  // Examples page route
+  if (page === 'examples') {
+    return (
+      <>
+        <ThemeApplier />
+        <ExamplesPage
+          onExampleClick={(exampleUrl) => {
+            setUrl(exampleUrl)
+            window.location.hash = ''
+            const newBrowserUrl = new URL(window.location.href)
+            newBrowserUrl.searchParams.set('api', exampleUrl)
+            newBrowserUrl.hash = ''
+            window.history.pushState({}, '', newBrowserUrl.toString())
+            fetchAndInfer(exampleUrl)
+          }}
+          onBack={() => {
+            window.location.hash = ''
+          }}
+        />
+        <Toaster position="bottom-right" />
+      </>
+    )
+  }
+
   return (
     <>
       {/* Skip to main content link */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded"
       >
         Skip to main content
       </a>
@@ -182,7 +220,7 @@ function App() {
 
       {/* Configure mode indicator bar */}
       {isConfigureMode && (
-        <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white px-4 py-2 flex items-center justify-between z-30 shadow-md">
+        <div className="fixed top-0 left-0 right-0 bg-primary text-primary-foreground px-4 py-2 flex items-center justify-between z-30 shadow-md">
           <div className="flex items-center gap-2">
             <svg
               className="w-5 h-5"
@@ -201,7 +239,7 @@ function App() {
           </div>
           <button
             onClick={() => setMode('view')}
-            className="px-3 py-1 bg-white text-blue-600 font-medium rounded hover:bg-blue-50 transition-colors"
+            className="px-3 py-1 bg-background text-foreground font-medium rounded hover:bg-muted transition-colors"
           >
             Done
           </button>
@@ -210,7 +248,7 @@ function App() {
 
       {showSidebar ? (
         // Sidebar layout for multi-endpoint specs
-        <div className="flex min-h-screen bg-background text-text">
+        <div className="flex min-h-screen bg-background text-foreground">
           <Sidebar
             parsedSpec={parsedSpec}
             selectedIndex={selectedOperationIndex}
@@ -220,11 +258,11 @@ function App() {
             id="main-content"
             className={`flex-1 overflow-y-auto py-8 px-6 ${isConfigureMode ? 'pt-20' : ''}`}
           >
-            <div className={isConfigureMode ? 'ring-2 ring-blue-500 ring-offset-4' : ''}>
+            <div className={isConfigureMode ? 'ring-2 ring-ring ring-offset-4' : ''}>
               {/* Header */}
               <div className="text-center mb-8">
-                <h1 className="text-4xl font-bold text-text mb-2">api2ui</h1>
-                <p className="text-lg text-gray-600">
+                <h1 className="text-2xl font-semibold text-foreground mb-2">api2ui</h1>
+                <p className="text-sm text-muted-foreground">
                   Paste an API URL, see it rendered
                 </p>
               </div>
@@ -235,7 +273,7 @@ function App() {
               </div>
 
               {/* Main Content Area */}
-              <div className="bg-surface rounded-lg shadow-md p-6 max-w-6xl mx-auto">
+              <div className="bg-card rounded-lg shadow-md p-6 max-w-6xl mx-auto">
                 {loading && !parsedSpec && <SkeletonTable />}
 
                 {/* Standalone error (non-spec failures only, skip auth errors — shown in auth panel) */}
@@ -249,22 +287,22 @@ function App() {
                     {/* Spec Info Header */}
                     <div className="border-b border-border pb-4">
                       <div className="flex items-center gap-2">
-                        <h2 className="text-xl font-semibold text-text">
+                        <h2 className="text-xl font-semibold text-foreground">
                           {parsedSpec.title}
                         </h2>
-                        <span className="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded">
+                        <span className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted rounded">
                           v{parsedSpec.version}
                         </span>
-                        <span className="px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded">
+                        <span className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted rounded">
                           OpenAPI {parsedSpec.specVersion}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-500 mt-1">{parsedSpec.baseUrl}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{parsedSpec.baseUrl}</p>
                     </div>
 
                     {/* No GET operations message */}
                     {parsedSpec.operations.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
+                      <div className="text-center py-8 text-muted-foreground">
                         <p className="text-lg">This API spec has no GET endpoints to display.</p>
                       </div>
                     )}
@@ -300,7 +338,7 @@ function App() {
                             {/* Data Rendering (after fetching operation) */}
                             {schema && data !== null && (
                               <div className="border-t border-border pt-6">
-                                <h3 className="text-lg font-semibold text-text mb-4">Response Data</h3>
+                                <h3 className="text-lg font-semibold text-foreground mb-4">Response Data</h3>
                                 <DynamicRenderer
                                   data={data}
                                   schema={schema.rootType}
@@ -321,12 +359,12 @@ function App() {
         </div>
       ) : (
         // Centered layout for single-endpoint and direct URLs
-        <div className={`min-h-screen bg-background text-text py-8 px-4 ${isConfigureMode ? 'pt-20' : ''}`}>
-          <div className={`max-w-6xl mx-auto ${isConfigureMode ? 'ring-2 ring-blue-500 ring-offset-4' : ''}`}>
+        <div className={`min-h-screen bg-background text-foreground py-8 px-4 ${isConfigureMode ? 'pt-20' : ''}`}>
+          <div className={`max-w-6xl mx-auto ${isConfigureMode ? 'ring-2 ring-ring ring-offset-4' : ''}`}>
             {/* Header */}
             <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold text-text mb-2">api2ui</h1>
-              <p className="text-lg text-gray-600">
+              <h1 className="text-2xl font-semibold text-foreground mb-2">api2ui</h1>
+              <p className="text-sm text-muted-foreground">
                 Paste an API URL, see it rendered
               </p>
             </div>
@@ -337,7 +375,7 @@ function App() {
             </div>
 
             {/* Main Content Area */}
-            <div className="bg-surface rounded-lg shadow-md p-6">
+            <div className="bg-card rounded-lg shadow-md p-6">
               {loading && !parsedSpec && <SkeletonTable />}
 
               {/* Standalone error (non-spec failures only, skip auth errors — shown in auth panel) */}
@@ -351,22 +389,22 @@ function App() {
                   {/* Spec Info Header */}
                   <div className="border-b border-border pb-4">
                     <div className="flex items-center gap-2">
-                      <h2 className="text-xl font-semibold text-text">
+                      <h2 className="text-xl font-semibold text-foreground">
                         {parsedSpec.title}
                       </h2>
-                      <span className="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded">
+                      <span className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted rounded">
                         v{parsedSpec.version}
                       </span>
-                      <span className="px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded">
+                      <span className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted rounded">
                         OpenAPI {parsedSpec.specVersion}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">{parsedSpec.baseUrl}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{parsedSpec.baseUrl}</p>
                   </div>
 
                   {/* No GET operations message */}
                   {parsedSpec.operations.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-muted-foreground">
                       <p className="text-lg">This API spec has no GET endpoints to display.</p>
                     </div>
                   )}
@@ -411,7 +449,7 @@ function App() {
                           {/* Data Rendering (after fetching operation) */}
                           {schema && data !== null && (
                             <div className="border-t border-border pt-6">
-                              <h3 className="text-lg font-semibold text-text mb-4">Response Data</h3>
+                              <h3 className="text-lg font-semibold text-foreground mb-4">Response Data</h3>
                               <DynamicRenderer
                                 data={data}
                                 schema={schema.rootType}
@@ -488,36 +526,36 @@ function App() {
               {/* Welcome Message with Feature Highlights */}
               {!loading && !error && !schema && !parsedSpec && (
                 <div className="py-10">
-                  <p className="text-center text-xl text-gray-600 mb-8">
+                  <p className="text-center text-xl text-muted-foreground mb-8">
                     Paste any JSON API URL and see it rendered instantly.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
                     <div className="flex gap-3 p-3 rounded-lg">
                       <span className="text-2xl flex-shrink-0" aria-hidden="true">~</span>
                       <div>
-                        <p className="font-medium text-text text-sm">Semantic Detection</p>
-                        <p className="text-xs text-gray-500">Prices, emails, dates, ratings, and images auto-formatted across 5 languages</p>
+                        <p className="font-medium text-foreground text-sm">Semantic Detection</p>
+                        <p className="text-xs text-muted-foreground">Prices, emails, dates, ratings, and images auto-formatted across 5 languages</p>
                       </div>
                     </div>
                     <div className="flex gap-3 p-3 rounded-lg">
                       <span className="text-2xl flex-shrink-0" aria-hidden="true">{'{}'}</span>
                       <div>
-                        <p className="font-medium text-text text-sm">OpenAPI Support</p>
-                        <p className="text-xs text-gray-500">Auto-discovers endpoints, generates parameter forms, executes operations</p>
+                        <p className="font-medium text-foreground text-sm">OpenAPI Support</p>
+                        <p className="text-xs text-muted-foreground">Auto-discovers endpoints, generates parameter forms, executes operations</p>
                       </div>
                     </div>
                     <div className="flex gap-3 p-3 rounded-lg">
                       <span className="text-2xl flex-shrink-0" aria-hidden="true">#</span>
                       <div>
-                        <p className="font-medium text-text text-sm">Shareable Links</p>
-                        <p className="text-xs text-gray-500">Share your API view with a single URL &mdash; no setup needed for recipients</p>
+                        <p className="font-medium text-foreground text-sm">Shareable Links</p>
+                        <p className="text-xs text-muted-foreground">Share your API view with a single URL &mdash; no setup needed for recipients</p>
                       </div>
                     </div>
                     <div className="flex gap-3 p-3 rounded-lg">
                       <span className="text-2xl flex-shrink-0" aria-hidden="true">*</span>
                       <div>
-                        <p className="font-medium text-text text-sm">Authentication</p>
-                        <p className="text-xs text-gray-500">Bearer token, Basic Auth, API Key, and query parameter auth built-in</p>
+                        <p className="font-medium text-foreground text-sm">Authentication</p>
+                        <p className="text-xs text-muted-foreground">Bearer token, Basic Auth, API Key, and query parameter auth built-in</p>
                       </div>
                     </div>
                   </div>

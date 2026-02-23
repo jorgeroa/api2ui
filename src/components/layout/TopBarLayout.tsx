@@ -19,7 +19,7 @@ export function TopBarLayout({ parameters, results, className = '' }: TopBarLayo
   return (
     <div className={`flex flex-col min-h-0 ${className}`}>
       {/* Parameters Panel - Top Section */}
-      <div className="border-b border-gray-200 p-4">
+      <div className="border-b border-border p-4">
         <div
           className="grid gap-4"
           style={{

@@ -30,14 +30,14 @@ export function LayoutSwitcher({ value, onChange, className = '' }: LayoutSwitch
         }
       }}
       aria-label="Layout mode"
-      className={`inline-flex border border-gray-200 rounded-lg ${className}`}
+      className={`inline-flex border border-border rounded-lg ${className}`}
     >
       {/* Sidebar layout */}
       <ToggleGroup.Item
         value="sidebar"
         aria-label="Sidebar layout"
         title="Sidebar layout"
-        className="p-2 hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 data-[state=on]:bg-blue-100 data-[state=on]:text-blue-700 rounded-l-lg"
+        className="p-2 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm rounded-l-lg"
       >
         <svg
           width="20"
@@ -58,7 +58,7 @@ export function LayoutSwitcher({ value, onChange, className = '' }: LayoutSwitch
         value="topbar"
         aria-label="Top bar layout"
         title="Top bar layout"
-        className="p-2 hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 data-[state=on]:bg-blue-100 data-[state=on]:text-blue-700 border-l border-gray-200"
+        className="p-2 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm border-l border-border"
       >
         <svg
           width="20"
@@ -79,7 +79,7 @@ export function LayoutSwitcher({ value, onChange, className = '' }: LayoutSwitch
         value="split"
         aria-label="Split view layout"
         title="Split view layout"
-        className="p-2 hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 data-[state=on]:bg-blue-100 data-[state=on]:text-blue-700 border-l border-gray-200 rounded-r-lg"
+        className="p-2 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm border-l border-border rounded-r-lg"
       >
         <svg
           width="20"

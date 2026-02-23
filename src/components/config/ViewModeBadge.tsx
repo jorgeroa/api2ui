@@ -70,9 +70,9 @@ export function ViewModeBadge({
           e.stopPropagation()
           if (hasAlternatives) setOpen(!open)
         }}
-        className={`inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded-full font-medium transition-all select-none ${
+        className={`inline-flex items-center gap-1 bg-muted text-muted-foreground text-xs px-2.5 py-1 rounded-full font-medium transition-all select-none ${
           hasAlternatives
-            ? 'hover:bg-blue-200 cursor-pointer'
+            ? 'hover:bg-muted/80 cursor-pointer'
             : 'opacity-50 cursor-not-allowed'
         }`}
       >
@@ -85,7 +85,7 @@ export function ViewModeBadge({
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-35">
+        <div className="absolute right-0 mt-1 bg-popover rounded-lg shadow-lg border border-border py-1 z-50 min-w-35">
           {availableTypes.map((type) => {
             const label = displayNames[type] || type.charAt(0).toUpperCase() + type.slice(1)
             const isActive = type === currentType
@@ -99,8 +99,8 @@ export function ViewModeBadge({
                 }}
                 className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${
                   isActive
-                    ? 'bg-blue-50 text-blue-800 font-semibold'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-muted text-foreground font-semibold'
+                    : 'text-foreground hover:bg-muted'
                 }`}
               >
                 {label}

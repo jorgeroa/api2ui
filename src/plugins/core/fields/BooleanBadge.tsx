@@ -6,7 +6,7 @@ export function BooleanBadge({ value }: FieldRenderProps) {
   return (
     <span
       className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-        bool ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+        bool ? 'bg-green-100 text-green-800' : 'bg-muted text-muted-foreground'
       }`}
     >
       {String(bool)}

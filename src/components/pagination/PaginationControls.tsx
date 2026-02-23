@@ -25,7 +25,7 @@ export function PaginationControls({
   return (
     <nav aria-label="Pagination Navigation" className="flex items-center justify-between px-4 py-3 bg-background border-t border-border">
       {/* Left — Status */}
-      <div className="hidden sm:block text-sm text-gray-600">
+      <div className="hidden sm:block text-sm text-muted-foreground">
         Showing {firstItem}-{lastItem} of {totalItems}
       </div>
 
@@ -35,7 +35,7 @@ export function PaginationControls({
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
           aria-label="Previous page"
-          className="min-w-[36px] px-2 py-1 text-sm border border-border rounded hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed"
+          className="min-w-[36px] px-2 py-1 text-sm border border-border rounded hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Prev
         </button>
@@ -43,7 +43,7 @@ export function PaginationControls({
         {pageNumbers.map((pageNum, idx) => {
           if (pageNum === '...') {
             return (
-              <span key={`ellipsis-${idx}`} aria-hidden="true" className="px-2 text-gray-400">
+              <span key={`ellipsis-${idx}`} aria-hidden="true" className="px-2 text-muted-foreground">
                 ...
               </span>
             )
@@ -58,8 +58,8 @@ export function PaginationControls({
               aria-current={isActive ? 'page' : undefined}
               className={`min-w-[36px] px-2 py-1 text-sm rounded ${
                 isActive
-                  ? 'bg-blue-600 text-white'
-                  : 'border border-border hover:bg-surface'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'border border-border hover:bg-muted'
               }`}
             >
               {pageNum}
@@ -71,7 +71,7 @@ export function PaginationControls({
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
           aria-label="Next page"
-          className="min-w-[36px] px-2 py-1 text-sm border border-border rounded hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed"
+          className="min-w-[36px] px-2 py-1 text-sm border border-border rounded hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Next
         </button>
@@ -79,7 +79,7 @@ export function PaginationControls({
 
       {/* Right — Items per page */}
       <div className="flex items-center gap-2 text-sm">
-        <label htmlFor="items-per-page" className="text-gray-600">
+        <label htmlFor="items-per-page" className="text-muted-foreground">
           Per page:
         </label>
         <select

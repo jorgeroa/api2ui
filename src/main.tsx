@@ -6,6 +6,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { ThemeProvider } from './providers/ThemeProvider'
 import { registerCorePlugins } from './plugins/core'
 
 // Expose React on window so dynamically imported plugins (loaded via import map)
@@ -17,6 +18,8 @@ registerCorePlugins()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ThemeProvider>
+      <App />
+    </ThemeProvider>
   </StrictMode>,
 )

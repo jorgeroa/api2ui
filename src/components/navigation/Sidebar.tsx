@@ -34,12 +34,12 @@ export function Sidebar({ parsedSpec, selectedIndex, onSelect }: SidebarProps) {
   return (
     <nav
       aria-label="API endpoints"
-      className="w-64 border-r border-border bg-surface overflow-y-auto shrink-0 h-screen"
+      className="w-64 border-r border-border bg-card overflow-y-auto shrink-0 h-screen"
     >
       {/* Sidebar header */}
       <div className="p-4 border-b border-border">
-        <h2 className="font-semibold text-sm text-text mb-1">{parsedSpec.title}</h2>
-        <p className="text-xs text-gray-500">
+        <h2 className="font-semibold text-sm text-foreground mb-1">{parsedSpec.title}</h2>
+        <p className="text-xs text-muted-foreground">
           {parsedSpec.operations.length} endpoint{parsedSpec.operations.length !== 1 ? 's' : ''}
         </p>
       </div>

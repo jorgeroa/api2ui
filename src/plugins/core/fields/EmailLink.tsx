@@ -6,7 +6,7 @@ export function EmailLink({ value }: FieldRenderProps) {
   return (
     <a
       href={`mailto:${str}`}
-      className="text-blue-600 hover:text-blue-800 underline"
+      className="text-primary hover:text-primary/80 underline"
       onClick={(e) => e.stopPropagation()}
     >
       {str}

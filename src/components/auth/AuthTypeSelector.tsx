@@ -15,7 +15,7 @@ export function AuthTypeSelector({ value, onChange, detectedType }: AuthTypeSele
     <div className="space-y-1.5">
       <label
         htmlFor="auth-type"
-        className="block text-sm font-medium text-gray-700"
+        className="block text-sm font-medium text-foreground"
       >
         Auth Type
       </label>
@@ -24,7 +24,7 @@ export function AuthTypeSelector({ value, onChange, detectedType }: AuthTypeSele
           id="auth-type"
           value={value}
           onChange={(e) => onChange(e.target.value as AuthType | 'none')}
-          className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus-visible:ring-ring/50"
         >
           <option value="none">None</option>
           <option value="bearer">Bearer Token</option>
@@ -33,7 +33,7 @@ export function AuthTypeSelector({ value, onChange, detectedType }: AuthTypeSele
           <option value="queryParam">Query Parameter</option>
         </select>
         {detectedType && value === detectedType && (
-          <span className="text-xs text-blue-600 font-medium whitespace-nowrap">
+          <span className="text-xs text-primary font-medium whitespace-nowrap">
             Detected from spec
           </span>
         )}

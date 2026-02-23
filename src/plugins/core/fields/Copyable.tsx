@@ -16,12 +16,12 @@ export function Copyable({ value }: FieldRenderProps) {
 
   return (
     <span className="inline-flex items-center gap-1.5 group">
-      <code className="text-xs font-mono text-gray-700 bg-gray-50 px-1.5 py-0.5 rounded">
+      <code className="text-xs font-mono text-foreground bg-muted px-1.5 py-0.5 rounded">
         {str.length > 36 ? `${str.slice(0, 36)}...` : str}
       </code>
       <button
         onClick={handleCopy}
-        className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-600 p-0.5"
+        className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground p-0.5"
         title="Copy to clipboard"
       >
         {copied ? (

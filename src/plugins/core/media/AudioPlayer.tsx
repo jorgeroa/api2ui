@@ -3,7 +3,7 @@ import type { FieldRenderProps } from '../../../types/plugins'
 /** Audio player — compact inline player for audio URLs */
 export function AudioPlayer({ value }: FieldRenderProps) {
   if (typeof value !== 'string') {
-    return <span className="text-gray-500 text-sm">{JSON.stringify(value)}</span>
+    return <span className="text-muted-foreground text-sm">{JSON.stringify(value)}</span>
   }
 
   return (

@@ -15,7 +15,7 @@ export function TagGroup({ tag, operations, operationIndices, selectedIndex, onS
     <Disclosure defaultOpen>
       {({ open }) => (
         <>
-          <DisclosureButton className="flex items-center justify-between w-full px-3 py-2 text-left hover:bg-gray-50 transition-colors">
+          <DisclosureButton className="flex items-center justify-between w-full px-3 py-2 text-left hover:bg-muted transition-colors">
             <div className="flex items-center gap-2">
               <svg
                 className={`w-4 h-4 transition-transform ${open ? 'rotate-90' : ''}`}
@@ -26,8 +26,8 @@ export function TagGroup({ tag, operations, operationIndices, selectedIndex, onS
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
-              <span className="font-semibold text-sm text-text">{tag}</span>
-              <span className="px-1.5 py-0.5 text-xs font-medium text-gray-600 bg-gray-200 rounded">
+              <span className="font-semibold text-sm text-foreground">{tag}</span>
+              <span className="px-1.5 py-0.5 text-xs font-medium text-muted-foreground bg-muted rounded">
                 {operations.length}
               </span>
             </div>

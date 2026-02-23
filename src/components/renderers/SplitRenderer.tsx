@@ -27,7 +27,7 @@ export function SplitRenderer({ data, schema, path, depth }: RendererProps) {
   const allFields = Array.from(schema.fields.entries())
 
   if (allFields.length === 0) {
-    return <div className="text-gray-500 italic">Empty object</div>
+    return <div className="text-muted-foreground italic">Empty object</div>
   }
 
   const allPrimitiveFields = allFields.filter(([, def]) => def.type.kind === 'primitive')
@@ -55,7 +55,7 @@ export function SplitRenderer({ data, schema, path, depth }: RendererProps) {
         <div className="flex justify-end px-4 pt-2">
           <button
             onClick={() => setShowNullFields(prev => !prev)}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
             title={showNullFields ? "Hide empty fields" : `Show ${nullFieldCount} empty field${nullFieldCount === 1 ? '' : 's'}`}
           >
             {showNullFields ? (
@@ -78,7 +78,7 @@ export function SplitRenderer({ data, schema, path, depth }: RendererProps) {
         <div className="p-4 space-y-3">
           {leftFields.map(([name, def]) => (
             <div key={name}>
-              <div className="text-xs text-gray-500 font-medium mb-1">{formatLabel(name)}</div>
+              <div className="text-xs text-muted-foreground font-medium mb-1">{formatLabel(name)}</div>
               <div className="text-sm">
                 <PrimitiveRenderer
                   data={obj[name]}
@@ -90,16 +90,16 @@ export function SplitRenderer({ data, schema, path, depth }: RendererProps) {
             </div>
           ))}
           {leftFields.length === 0 && (
-            <div className="text-gray-500 italic text-sm">No primary fields</div>
+            <div className="text-muted-foreground italic text-sm">No primary fields</div>
           )}
         </div>
 
         {/* Right: Metadata fields */}
         {rightFields.length > 0 && (
-          <div className="p-4 bg-gray-50 border-l border-border space-y-3">
+          <div className="p-4 bg-muted border-l border-border space-y-3">
             {rightFields.map(([name, def]) => (
               <div key={name} className="text-sm">
-                <span className="text-gray-500 font-medium">{formatLabel(name)}: </span>
+                <span className="text-muted-foreground font-medium">{formatLabel(name)}: </span>
                 <PrimitiveRenderer
                   data={obj[name]}
                   schema={def.type}
@@ -115,7 +115,7 @@ export function SplitRenderer({ data, schema, path, depth }: RendererProps) {
       {/* Full-width nested sections */}
       {nestedFields.map(([name, def]) => (
         <div key={name} className="border-t border-border p-4">
-          <h3 className="text-sm font-medium text-gray-600 mb-2">{formatLabel(name)}</h3>
+          <h3 className="text-sm font-medium text-muted-foreground mb-2">{formatLabel(name)}</h3>
           <DynamicRenderer
             data={obj[name]}
             schema={def.type}
