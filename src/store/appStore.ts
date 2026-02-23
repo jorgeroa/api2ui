@@ -27,6 +27,12 @@ interface AppState {
   selectedOperationIndex: number
   parameterValues: Record<string, string>
 
+  // Direct URL method + body (for non-OpenAPI requests)
+  httpMethod: string
+  requestBody: string
+  setHttpMethod: (method: string) => void
+  setRequestBody: (body: string) => void
+
   // Analysis cache (run once per API response)
   analysisCache: Map<string, AnalysisCacheEntry>
   setAnalysisCache: (path: string, data: AnalysisCacheEntry) => void
@@ -61,10 +67,14 @@ export const useAppStore = create<AppState>()((set, get) => ({
   parsedSpec: null,
   selectedOperationIndex: 0,
   parameterValues: {},
+  httpMethod: 'GET',
+  requestBody: '',
   analysisCache: new Map(),
   tabSelections: new Map(),
 
   setUrl: (url) => set({ url }),
+  setHttpMethod: (method) => set({ httpMethod: method }),
+  setRequestBody: (body) => set({ requestBody: body }),
   startFetch: () => set({ loading: true, error: null, data: null, schema: null }),
   fetchSuccess: (data, schema) => set({ loading: false, data, schema, error: null }),
   fetchError: (error) => set({ loading: false, error, data: null, schema: null }),
@@ -77,6 +87,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
     parsedSpec: null,
     selectedOperationIndex: 0,
     parameterValues: {},
+    httpMethod: 'GET',
+    requestBody: '',
     analysisCache: new Map()
   }),
 

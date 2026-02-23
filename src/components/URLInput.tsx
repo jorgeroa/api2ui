@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/authStore'
 import { LockIcon } from './auth/LockIcon'
 import { AuthPanel } from './auth/AuthPanel'
 import { ExamplesCarousel } from './ExamplesCarousel'
+import { RequestBodyEditor } from './forms/RequestBodyEditor'
 import type { AuthStatus } from '../types/auth'
 import type { ParsedSecurityScheme } from '../services/openapi/types'
 
@@ -14,7 +15,7 @@ interface URLInputProps {
 }
 
 export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
-  const { url, setUrl, loading, schema, parsedSpec, error } = useAppStore()
+  const { url, setUrl, loading, schema, parsedSpec, error, httpMethod, setHttpMethod, requestBody, setRequestBody } = useAppStore()
   const { fetchAndInfer } = useAPIFetch()
   const [validationError, setValidationError] = useState<string | null>(null)
   const [loadingExampleUrl, setLoadingExampleUrl] = useState<string | null>(null)
@@ -71,7 +72,7 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
     newUrl.searchParams.set('api', url)
     window.history.pushState({}, '', newUrl.toString())
 
-    fetchAndInfer(url)
+    fetchAndInfer(url, httpMethod !== 'GET' ? { method: httpMethod, body: requestBody || undefined } : undefined)
   }
 
   const handleExampleClick = async (exampleUrl: string) => {
@@ -94,6 +95,17 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
     <div className="w-full max-w-4xl">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex gap-2">
+          <select
+            value={httpMethod}
+            onChange={(e) => setHttpMethod(e.target.value)}
+            className="px-2 py-2 border border-input rounded-md bg-background text-sm font-mono focus:outline-none focus:ring-2 focus-visible:ring-ring/50"
+            disabled={loading}
+          >
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="PATCH">PATCH</option>
+          </select>
           <input
             type="text"
             value={url}
@@ -128,6 +140,20 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
           detectedAuth={detectedAuth}
           onConfigureClick={() => setAuthPanelOpen(true)}
         />
+
+        {/* Request Body (for non-GET methods) */}
+        {httpMethod !== 'GET' && (
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">
+              Request Body (JSON)
+            </label>
+            <RequestBodyEditor
+              value={requestBody}
+              onChange={setRequestBody}
+              rows={4}
+            />
+          </div>
+        )}
 
         {validationError && (
           <div className="text-red-600 text-sm">{validationError}</div>

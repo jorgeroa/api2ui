@@ -1,10 +1,10 @@
 import SwaggerParser from '@apidevtools/swagger-parser'
 import type { OpenAPIV3, OpenAPIV2 } from 'openapi-types'
-import type { ParsedSpec, ParsedOperation, ParsedParameter } from './types'
+import type { ParsedSpec, ParsedOperation, ParsedParameter, ParsedRequestBody, RequestBodySchema } from './types'
 import { mapSecuritySchemes } from './security-mapper'
 
 /**
- * Parse an OpenAPI/Swagger spec URL or object and extract GET operations.
+ * Parse an OpenAPI/Swagger spec URL or object and extract operations.
  *
  * @param specUrlOrObject - URL string or spec object
  * @returns Parsed spec with operations, parameters, and metadata
@@ -70,8 +70,10 @@ function extractSwagger2BaseUrl(api: OpenAPIV2.Document): string {
   return `${scheme}://${host}${basePath}`
 }
 
+const SUPPORTED_METHODS = ['get', 'post', 'put', 'patch'] as const
+
 /**
- * Extract all GET operations from the spec
+ * Extract operations from the spec (GET, POST, PUT, PATCH)
  */
 function extractOperations(
   api: OpenAPIV3.Document | OpenAPIV2.Document,
@@ -89,28 +91,36 @@ function extractOperations(
     // Extract path-level parameters (these apply to all operations on this path)
     const pathLevelParams = 'parameters' in pathItem ? pathItem.parameters ?? [] : []
 
-    // Only extract GET operations
-    if ('get' in pathItem && pathItem.get) {
-      const operation = pathItem.get as OpenAPIV3.OperationObject | OpenAPIV2.OperationObject
+    for (const method of SUPPORTED_METHODS) {
+      if (!(method in pathItem) || !(pathItem as Record<string, unknown>)[method]) continue
+
+      const operation = (pathItem as Record<string, unknown>)[method] as OpenAPIV3.OperationObject | OpenAPIV2.OperationObject
 
       // Merge path-level and operation-level parameters
+      // Filter out Swagger 2.0 body params (handled separately via extractRequestBody)
       const operationParams = operation.parameters ?? []
-      const allParams = [...pathLevelParams, ...operationParams]
+      const allParams = [...pathLevelParams, ...operationParams].filter(
+        (p) => (p as { in: string }).in !== 'body'
+      )
 
       const parsedParams = allParams.map(param =>
         parseParameter(param as OpenAPIV3.ParameterObject | OpenAPIV2.Parameter, isOpenAPI3)
       )
+
+      // Extract request body (POST/PUT/PATCH)
+      const requestBody = extractRequestBody(operation, isOpenAPI3)
 
       // Extract response schema
       const responseSchema = extractResponseSchema(operation, isOpenAPI3)
 
       operations.push({
         path,
-        method: 'GET',
+        method: method.toUpperCase(),
         operationId: operation.operationId,
         summary: operation.summary,
         description: operation.description,
         parameters: parsedParams,
+        requestBody,
         responseSchema,
         tags: operation.tags ?? [],
       })
@@ -183,6 +193,76 @@ function parseParameter(
       maxLength,
     },
   }
+}
+
+/**
+ * Extract request body schema from an operation
+ */
+function extractRequestBody(
+  operation: OpenAPIV3.OperationObject | OpenAPIV2.OperationObject,
+  isOpenAPI3: boolean
+): ParsedRequestBody | undefined {
+  if (isOpenAPI3) {
+    const op = operation as OpenAPIV3.OperationObject
+    if (!op.requestBody) return undefined
+
+    const body = op.requestBody as OpenAPIV3.RequestBodyObject
+    const jsonContent = body.content?.['application/json']
+    if (!jsonContent?.schema) return undefined
+
+    return {
+      required: body.required ?? false,
+      description: body.description,
+      schema: flattenSchema(jsonContent.schema as OpenAPIV3.SchemaObject),
+    }
+  } else {
+    // Swagger 2.0: body params have `in: 'body'`
+    const op = operation as OpenAPIV2.OperationObject
+    const bodyParam = op.parameters?.find(
+      (p: unknown) => (p as { in: string }).in === 'body'
+    ) as OpenAPIV2.InBodyParameterObject | undefined
+
+    if (!bodyParam?.schema) return undefined
+
+    return {
+      required: bodyParam.required ?? false,
+      description: bodyParam.description,
+      schema: flattenSchema(bodyParam.schema as unknown as OpenAPIV3.SchemaObject),
+    }
+  }
+}
+
+/**
+ * Flatten a JSON Schema into a RequestBodySchema for form rendering.
+ * Marks nested objects/arrays so the UI can fall back to raw JSON mode.
+ */
+function flattenSchema(schema: OpenAPIV3.SchemaObject): RequestBodySchema {
+  const result: RequestBodySchema = {
+    type: (schema.type as string) ?? 'object',
+    raw: schema,
+  }
+
+  if (schema.type === 'object' && schema.properties) {
+    result.properties = {}
+    result.required = schema.required
+
+    for (const [name, propSchema] of Object.entries(schema.properties)) {
+      const prop = propSchema as OpenAPIV3.SchemaObject
+      const isNested = prop.type === 'object' || prop.type === 'array'
+
+      result.properties[name] = {
+        type: (prop.type as string) ?? 'string',
+        format: prop.format,
+        description: prop.description,
+        enum: prop.enum,
+        default: prop.default,
+        example: prop.example,
+        nested: isNested || undefined,
+      }
+    }
+  }
+
+  return result
 }
 
 /**

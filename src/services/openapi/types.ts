@@ -28,13 +28,37 @@ export interface ParsedParameter {
   isArray?: boolean
 }
 
+export interface RequestBodyProperty {
+  type: string
+  format?: string
+  description?: string
+  enum?: unknown[]
+  default?: unknown
+  example?: unknown
+  nested?: boolean        // true for objects/arrays — render in raw JSON mode
+}
+
+export interface RequestBodySchema {
+  type: string            // 'object', 'string', etc.
+  properties?: Record<string, RequestBodyProperty>
+  required?: string[]
+  raw: unknown            // Original JSON Schema for raw-JSON fallback
+}
+
+export interface ParsedRequestBody {
+  required: boolean
+  description?: string
+  schema: RequestBodySchema
+}
+
 export interface ParsedOperation {
   path: string            // e.g., '/users', '/users/{userId}'
-  method: string          // 'GET' (v1 only extracts GET)
+  method: string          // 'GET' | 'POST' | 'PUT' | 'PATCH'
   operationId?: string
   summary?: string
   description?: string
   parameters: ParsedParameter[]
+  requestBody?: ParsedRequestBody
   responseSchema: unknown // The dereferenced response schema (JSON Schema)
   tags: string[]
 }

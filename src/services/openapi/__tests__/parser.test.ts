@@ -94,6 +94,23 @@ const openapi3Fixture = {
         operationId: 'createPet',
         summary: 'Create a pet',
         tags: ['pets'],
+        requestBody: {
+          required: true,
+          description: 'Pet to create',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['name'],
+                properties: {
+                  name: { type: 'string', example: 'Fido' },
+                  age: { type: 'integer' },
+                  status: { type: 'string', enum: ['available', 'pending', 'sold'] },
+                },
+              },
+            },
+          },
+        },
         responses: {
           '201': {
             description: 'Created',
@@ -260,7 +277,7 @@ describe('parseOpenAPISpec', () => {
     expect(result.version).toBe('1.0.0')
     expect(result.specVersion).toBe('3.0.3')
     expect(result.baseUrl).toBe('https://api.example.com/v1')
-    expect(result.operations).toHaveLength(3) // 3 GET operations
+    expect(result.operations).toHaveLength(4) // 3 GET + 1 POST
   })
 
   it('parses Swagger 2.0 spec correctly', async () => {
@@ -275,22 +292,46 @@ describe('parseOpenAPISpec', () => {
     expect(result.operations).toHaveLength(1)
   })
 
-  it('extracts only GET operations', async () => {
+  it('extracts GET, POST, PUT, PATCH operations (not DELETE)', async () => {
     vi.mocked(SwaggerParser.dereference).mockResolvedValue(openapi3Fixture as never)
 
     const result = await parseOpenAPISpec(openapi3Fixture)
 
-    // Should have 3 GET operations (listPets, getPetById, listUsers)
-    // Should NOT include POST (createPet) or DELETE (deletePet)
-    expect(result.operations).toHaveLength(3)
-    expect(result.operations.every(op => op.method === 'GET')).toBe(true)
+    // Should have 3 GET + 1 POST = 4 operations
+    // Should NOT include DELETE (deletePet)
+    expect(result.operations).toHaveLength(4)
 
     const operationIds = result.operations.map(op => op.operationId)
     expect(operationIds).toContain('listPets')
     expect(operationIds).toContain('getPetById')
     expect(operationIds).toContain('listUsers')
-    expect(operationIds).not.toContain('createPet')
+    expect(operationIds).toContain('createPet')
     expect(operationIds).not.toContain('deletePet')
+
+    const createPet = result.operations.find(op => op.operationId === 'createPet')
+    expect(createPet!.method).toBe('POST')
+  })
+
+  it('extracts requestBody schema from POST operations', async () => {
+    vi.mocked(SwaggerParser.dereference).mockResolvedValue(openapi3Fixture as never)
+
+    const result = await parseOpenAPISpec(openapi3Fixture)
+
+    const createPet = result.operations.find(op => op.operationId === 'createPet')
+    expect(createPet).toBeDefined()
+    expect(createPet!.requestBody).toBeDefined()
+    expect(createPet!.requestBody!.required).toBe(true)
+    expect(createPet!.requestBody!.description).toBe('Pet to create')
+    expect(createPet!.requestBody!.schema.type).toBe('object')
+    expect(createPet!.requestBody!.schema.properties).toBeDefined()
+    expect(createPet!.requestBody!.schema.properties!.name.type).toBe('string')
+    expect(createPet!.requestBody!.schema.properties!.age.type).toBe('integer')
+    expect(createPet!.requestBody!.schema.properties!.status.enum).toEqual(['available', 'pending', 'sold'])
+    expect(createPet!.requestBody!.schema.required).toEqual(['name'])
+
+    // GET operations should not have requestBody
+    const listPets = result.operations.find(op => op.operationId === 'listPets')
+    expect(listPets!.requestBody).toBeUndefined()
   })
 
   it('extracts parameters with correct required flags', async () => {

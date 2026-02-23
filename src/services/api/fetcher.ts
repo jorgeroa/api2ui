@@ -191,25 +191,39 @@ async function executeFetch(url: string, init: RequestInit, credential: Credenti
   }
 }
 
+export interface FetchOptions {
+  method?: string   // defaults to 'GET'
+  body?: string     // JSON string for request body
+}
+
 /**
  * Fetch JSON data from an API URL with authentication support.
  * Automatically injects credentials from auth store if configured.
  * Detects 401/403 as AuthError, CORS, network, HTTP, and parse errors.
  */
-export async function fetchWithAuth(url: string): Promise<unknown> {
+export async function fetchWithAuth(url: string, options?: FetchOptions): Promise<unknown> {
   const credential = useAuthStore.getState().getActiveCredential(url)
+  const method = options?.method ?? 'GET'
+  const body = options?.body
 
   if (credential) {
     const { url: modifiedUrl, init } = buildAuthenticatedRequest(url, credential)
+    init.method = method
+    if (body) {
+      init.body = body
+      init.headers = { ...init.headers as Record<string, string>, 'Content-Type': 'application/json' }
+    }
     return executeFetch(modifiedUrl, init, credential)
   } else {
-    // Passthrough: no credentials configured
     const init: RequestInit = {
+      method,
       mode: 'cors',
       credentials: 'omit',
       headers: {
         'Accept': 'application/json',
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
       },
+      ...(body ? { body } : {}),
     }
     return executeFetch(url, init, null)
   }

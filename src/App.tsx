@@ -126,9 +126,9 @@ function App() {
   }
 
   // Handle parameter form submission
-  const handleParameterSubmit = (values: Record<string, string>) => {
+  const handleParameterSubmit = (values: Record<string, string>, bodyJson?: string) => {
     if (parsedSpec && selectedOperation) {
-      fetchOperation(parsedSpec.baseUrl, selectedOperation, values)
+      fetchOperation(parsedSpec.baseUrl, selectedOperation, values, bodyJson)
     }
   }
 
@@ -303,7 +303,7 @@ function App() {
                     {/* No GET operations message */}
                     {parsedSpec.operations.length === 0 && (
                       <div className="text-center py-8 text-muted-foreground">
-                        <p className="text-lg">This API spec has no GET endpoints to display.</p>
+                        <p className="text-lg">This API spec has no supported endpoints to display.</p>
                       </div>
                     )}
 
@@ -314,6 +314,7 @@ function App() {
                         parameters={
                           <ParameterForm
                             parameters={selectedOperation.parameters}
+                            requestBody={selectedOperation.requestBody}
                             onSubmit={handleParameterSubmit}
                             loading={loading}
                             endpoint={`${parsedSpec.baseUrl}${selectedOperation.path}`}
@@ -405,7 +406,7 @@ function App() {
                   {/* No GET operations message */}
                   {parsedSpec.operations.length === 0 && (
                     <div className="text-center py-8 text-muted-foreground">
-                      <p className="text-lg">This API spec has no GET endpoints to display.</p>
+                      <p className="text-lg">This API spec has no supported endpoints to display.</p>
                     </div>
                   )}
 

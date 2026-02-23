@@ -9,6 +9,18 @@ function corsProxyPlugin(): Plugin {
     name: 'cors-proxy',
     configureServer(server) {
       server.middlewares.use('/api-proxy', async (req, res) => {
+        // Handle CORS preflight
+        if (req.method === 'OPTIONS') {
+          res.writeHead(204, {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
+            'Access-Control-Max-Age': '86400',
+          })
+          res.end()
+          return
+        }
+
         const targetUrl = decodeURIComponent((req.url || '').replace(/^\//, ''))
         if (!targetUrl.startsWith('http')) {
           res.writeHead(400, { 'Content-Type': 'text/plain' })
@@ -26,7 +38,22 @@ function corsProxyPlugin(): Plugin {
             }
             if (typeof value === 'string') headers[key] = value
           }
-          const resp = await fetch(targetUrl, { method: req.method, headers })
+
+          // Read request body for non-GET/HEAD methods
+          let body: Buffer | undefined
+          if (req.method !== 'GET' && req.method !== 'HEAD') {
+            const chunks: Buffer[] = []
+            for await (const chunk of req) {
+              chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string))
+            }
+            if (chunks.length > 0) body = Buffer.concat(chunks)
+          }
+
+          const resp = await fetch(targetUrl, {
+            method: req.method,
+            headers,
+            ...(body && body.length > 0 ? { body } : {}),
+          })
           res.writeHead(resp.status, {
             'Content-Type': resp.headers.get('content-type') || 'application/json',
             'Access-Control-Allow-Origin': '*',

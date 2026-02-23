@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react'
-import type { ParsedParameter } from '../../services/openapi/types'
+import type { ParsedParameter, ParsedRequestBody } from '../../services/openapi/types'
 import { ParameterInput } from './ParameterInput'
 import { ParameterGroup } from './ParameterGroup'
 import { URLPreview } from './URLPreview'
+import { RequestBodyEditor } from './RequestBodyEditor'
 import { parseUrlParameters } from '../../services/urlParser/parser'
 import { inferParameterType } from '../../services/urlParser/typeInferrer'
 import { extractGroupPrefix } from '../../services/urlParser/groupUtils'
@@ -12,7 +13,8 @@ import { useDebouncedPersist } from '../../hooks/useDebouncedPersist'
 
 interface ParameterFormProps {
   parameters: ParsedParameter[]
-  onSubmit: (values: Record<string, string>) => void
+  requestBody?: ParsedRequestBody
+  onSubmit: (values: Record<string, string>, bodyJson?: string) => void
   loading?: boolean
   endpoint?: string           // For persistence key
   rawUrl?: string             // Raw URL to parse (alternative to parameters)
@@ -38,6 +40,7 @@ function getDefaultValues(params: ParsedParameter[]): Record<string, string> {
 
 export function ParameterForm({
   parameters,
+  requestBody,
   onSubmit,
   loading = false,
   endpoint,
@@ -110,6 +113,64 @@ export function ParameterForm({
 
   // Track version of quick values for debounce trigger
   const [quickValuesVersion, setQuickValuesVersion] = useState(0)
+
+  // Request body state
+  const [bodyRawJson, setBodyRawJson] = useState('')
+  const [bodyFormValues, setBodyFormValues] = useState<Record<string, string>>(() => {
+    if (!requestBody?.schema.properties) return {}
+    const initial: Record<string, string> = {}
+    for (const [name, prop] of Object.entries(requestBody.schema.properties)) {
+      if (prop.default !== undefined) initial[name] = String(prop.default)
+      else if (prop.example !== undefined) initial[name] = String(prop.example)
+      else initial[name] = ''
+    }
+    return initial
+  })
+  const [useRawBody, setUseRawBody] = useState(() => {
+    // Default to raw mode for non-object schemas or schemas with nested properties
+    if (!requestBody) return false
+    if (requestBody.schema.type !== 'object' || !requestBody.schema.properties) return true
+    return Object.values(requestBody.schema.properties).some(p => p.nested)
+  })
+
+  // Build body JSON string from current mode
+  const getBodyJson = (): string | undefined => {
+    if (!requestBody) return undefined
+    if (useRawBody) return bodyRawJson || undefined
+    // Serialize form values to JSON
+    const obj: Record<string, unknown> = {}
+    for (const [key, val] of Object.entries(bodyFormValues)) {
+      if (!val && !requestBody.schema.required?.includes(key)) continue
+      const prop = requestBody.schema.properties?.[key]
+      if (prop?.type === 'integer' || prop?.type === 'number') {
+        const num = Number(val)
+        if (!isNaN(num)) { obj[key] = num; continue }
+      }
+      if (prop?.type === 'boolean') { obj[key] = val === 'true'; continue }
+      obj[key] = val
+    }
+    return Object.keys(obj).length > 0 ? JSON.stringify(obj) : undefined
+  }
+
+  // Convert request body properties to ParsedParameter for reuse with ParameterInput
+  const bodyParams: ParsedParameter[] = useMemo(() => {
+    if (!requestBody?.schema.properties || useRawBody) return []
+    return Object.entries(requestBody.schema.properties)
+      .filter(([, prop]) => !prop.nested)
+      .map(([name, prop]) => ({
+        name,
+        in: 'query' as const,
+        required: requestBody.schema.required?.includes(name) ?? false,
+        description: prop.description ?? '',
+        schema: {
+          type: prop.type,
+          format: prop.format,
+          enum: prop.enum,
+          default: prop.default,
+          example: prop.example,
+        },
+      }))
+  }, [requestBody, useRawBody])
 
   // Apply type inference to all params
   const paramsWithTypes = useMemo(() => {
@@ -185,7 +246,7 @@ export function ParameterForm({
     if (quickValuesVersion === 0) return  // Skip initial render
 
     const timer = setTimeout(() => {
-      onSubmit(values)
+      onSubmit(values, getBodyJson())
     }, 300)
 
     return () => clearTimeout(timer)
@@ -193,7 +254,7 @@ export function ParameterForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(values)
+    onSubmit(values, getBodyJson())
   }
 
   // Check if there are any values to reset
@@ -218,8 +279,8 @@ export function ParameterForm({
 
   const previewUrl = constructPreviewUrl()
 
-  // If no visible parameters and no groups, just show submit button
-  if (visibleUngrouped.length === 0 && grouped.size === 0) {
+  // If no visible parameters, no groups, and no request body, just show submit button
+  if (visibleUngrouped.length === 0 && grouped.size === 0 && !requestBody) {
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
         <button
@@ -364,6 +425,48 @@ export function ParameterForm({
               ))}
             </ParameterGroup>
           ))}
+        </div>
+      )}
+
+      {/* Request Body Section */}
+      {requestBody && (
+        <div className="border-t border-border pt-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Request Body
+              {requestBody.required && <span className="text-red-500 ml-1">*</span>}
+            </h3>
+            {requestBody.schema.type === 'object' && requestBody.schema.properties && (
+              <button
+                type="button"
+                onClick={() => setUseRawBody(!useRawBody)}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {useRawBody ? 'Form mode' : 'Raw JSON'}
+              </button>
+            )}
+          </div>
+          {requestBody.description && (
+            <p className="text-xs text-muted-foreground mb-3">{requestBody.description}</p>
+          )}
+          {useRawBody ? (
+            <RequestBodyEditor
+              value={bodyRawJson}
+              onChange={setBodyRawJson}
+            />
+          ) : (
+            <div className="space-y-3">
+              {bodyParams.map((param) => (
+                <ParameterInput
+                  key={param.name}
+                  parameter={param}
+                  value={bodyFormValues[param.name] ?? ''}
+                  onChange={(value) => setBodyFormValues(prev => ({ ...prev, [param.name]: value }))}
+                  onClear={() => setBodyFormValues(prev => ({ ...prev, [param.name]: '' }))}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 

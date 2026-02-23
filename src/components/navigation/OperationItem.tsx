@@ -1,5 +1,13 @@
 import type { ParsedOperation } from '../../services/openapi/types'
 
+const METHOD_BADGE: Record<string, string> = {
+  GET: 'text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-950',
+  POST: 'text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-950',
+  PUT: 'text-orange-700 bg-orange-100 dark:text-orange-400 dark:bg-orange-950',
+  PATCH: 'text-yellow-700 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-950',
+}
+const methodBadgeClass = (method: string) => METHOD_BADGE[method] ?? METHOD_BADGE.GET
+
 interface OperationItemProps {
   operation: ParsedOperation
   index: number
@@ -20,7 +28,7 @@ export function OperationItem({ operation, index, isSelected, onSelect }: Operat
       `}
     >
       <div className="flex items-center gap-2 mb-1">
-        <span className="px-1.5 py-0.5 text-xs font-semibold text-green-700 bg-green-100 rounded uppercase">
+        <span className={`px-1.5 py-0.5 text-xs font-semibold rounded uppercase ${methodBadgeClass(operation.method)}`}>
           {operation.method}
         </span>
         <code className="text-xs font-mono text-foreground">{operation.path}</code>

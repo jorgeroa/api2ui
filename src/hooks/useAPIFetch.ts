@@ -1,6 +1,6 @@
 import { useAppStore } from '../store/appStore'
 import { useConfigStore } from '../store/configStore'
-import { fetchWithAuth } from '../services/api/fetcher'
+import { fetchWithAuth, type FetchOptions } from '../services/api/fetcher'
 import { inferSchema } from '../services/schema/inferrer'
 import { parseOpenAPISpec } from '../services/openapi/parser'
 import type { ParsedOperation } from '../services/openapi/types'
@@ -61,7 +61,8 @@ export function useAPIFetch() {
   const fetchOperation = async (
     baseUrl: string,
     operation: ParsedOperation,
-    params: Record<string, string>
+    params: Record<string, string>,
+    bodyJson?: string
   ) => {
     try {
       startFetch()
@@ -91,7 +92,10 @@ export function useAPIFetch() {
       }
 
       // Fetch data from the built URL
-      const data = await fetchWithAuth(fullUrl)
+      const data = await fetchWithAuth(fullUrl, {
+        method: operation.method,
+        body: bodyJson,
+      })
 
       // Infer schema from response
       const schema = inferSchema(data, fullUrl)
@@ -107,7 +111,7 @@ export function useAPIFetch() {
     }
   }
 
-  const fetchAndInfer = async (url: string) => {
+  const fetchAndInfer = async (url: string, options?: FetchOptions) => {
     try {
       // Clear stale field configs from previous schema
       clearFieldConfigs()
@@ -125,7 +129,7 @@ export function useAPIFetch() {
       startFetch()
 
       // Fetch raw data from API
-      const data = await fetchWithAuth(url)
+      const data = await fetchWithAuth(url, options)
 
       // Infer schema from data
       const schema = inferSchema(data, url)
