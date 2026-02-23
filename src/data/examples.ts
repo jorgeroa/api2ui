@@ -15,7 +15,10 @@ export interface Example {
     | 'food-drink'
     | 'geography'
     | 'music-media'
+    | 'graphql'
   featured: boolean
+  method?: string  // defaults to 'GET' when absent
+  body?: string    // JSON request body for POST examples
 }
 
 export const EXAMPLES: Example[] = [
@@ -74,6 +77,22 @@ export const EXAMPLES: Example[] = [
     features: ['endpoints', 'parameters'],
     category: 'api-specs',
     featured: true,
+  },
+
+  // ── Featured POST/GraphQL examples ────────────────────────────────
+
+  {
+    title: 'Countries (GraphQL)',
+    description: 'Country data via GraphQL — names, capitals, currencies, and emoji flags',
+    url: 'https://countries.trevorblades.com/graphql',
+    type: 'Object',
+    features: ['GraphQL', 'POST', 'flags'],
+    category: 'graphql',
+    featured: true,
+    method: 'POST',
+    body: JSON.stringify({
+      query: '{ countries { name capital emoji currency languages { name } } }',
+    }),
   },
 
   // ── Rich Content ───────────────────────────────────────────────────
@@ -340,6 +359,22 @@ export const EXAMPLES: Example[] = [
     featured: false,
   },
 
+  // ── GraphQL / POST APIs ───────────────────────────────────────────
+
+  {
+    title: 'Rick & Morty (GraphQL)',
+    description: 'Character profiles with images and species via GraphQL',
+    url: 'https://rickandmortyapi.graphcdn.app/',
+    type: 'Object',
+    features: ['GraphQL', 'POST', 'images'],
+    category: 'graphql',
+    featured: false,
+    method: 'POST',
+    body: JSON.stringify({
+      query: '{ characters(page: 1) { results { name status species image } } }',
+    }),
+  },
+
   // ── Text & Simple ──────────────────────────────────────────────────
 
   {
@@ -393,4 +428,5 @@ export const CATEGORIES: { key: Example['category']; label: string }[] = [
   { key: 'data-tables', label: 'Data Tables' },
   { key: 'text', label: 'Text & Reference' },
   { key: 'api-specs', label: 'API Specs' },
+  { key: 'graphql', label: 'GraphQL / POST' },
 ]

@@ -1,7 +1,7 @@
 import { FEATURED_EXAMPLES, type Example } from '../data/examples'
 
 interface ExamplesCarouselProps {
-  onExampleClick: (url: string) => Promise<void>
+  onExampleClick: (url: string, method?: string, body?: string) => Promise<void>
   loading: boolean
   loadingUrl?: string | null
 }
@@ -33,7 +33,12 @@ function FeatureCard({
       style={{ scrollSnapAlign: 'start' }}
     >
       <div className="text-[13px] font-medium text-foreground leading-tight mb-0.5">{example.title}</div>
-      <div className={`text-[10px] font-medium ${type.className}`}>{type.text}</div>
+      <div className="flex items-center gap-1.5">
+        <span className={`text-[10px] font-medium ${type.className}`}>{type.text}</span>
+        {example.method && example.method !== 'GET' && (
+          <span className="text-[10px] font-medium text-blue-600 dark:text-blue-400">{example.method}</span>
+        )}
+      </div>
 
       {isLoading && (
         <div className="absolute inset-0 bg-background/70 rounded-xl flex items-center justify-center">
@@ -79,7 +84,7 @@ export function ExamplesCarousel({ onExampleClick, loading, loadingUrl }: Exampl
               <FeatureCard
                 key={example.url}
                 example={example}
-                onClick={() => onExampleClick(example.url)}
+                onClick={() => onExampleClick(example.url, example.method, example.body)}
                 disabled={loading}
                 isLoading={loadingUrl === example.url && loading}
               />

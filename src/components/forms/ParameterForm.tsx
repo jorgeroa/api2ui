@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react'
 import type { ParsedParameter, ParsedRequestBody } from '../../services/openapi/types'
 import { ParameterInput } from './ParameterInput'
@@ -49,6 +49,12 @@ export function ParameterForm({
 }: ParameterFormProps) {
   // Store operations
   const { getValues, clearValue, clearEndpoint, getTypeOverride, setTypeOverride } = useParameterStore()
+
+  // Reactively subscribe to store values for this endpoint (detects external removals)
+  const storeEndpointValues = useParameterStore(
+    (state) => state.values[endpoint ?? '']
+  )
+  const prevStoreValuesRef = useRef<Record<string, string> | undefined>(storeEndpointValues)
 
   // Parse URL if provided, otherwise use parameters prop
   const { effectiveParams, warnings } = useMemo(() => {
@@ -107,6 +113,28 @@ export function ParameterForm({
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveParams])
+
+  // Sync local state when values are externally removed from the store
+  // (e.g., when AppliedFilters chip X button triggers clearValue in App.tsx)
+  useEffect(() => {
+    if (!endpoint) return
+    const prevStore = prevStoreValuesRef.current ?? {}
+    const currentStore = storeEndpointValues ?? {}
+
+    const removedKeys = Object.keys(prevStore).filter(key => !(key in currentStore))
+
+    if (removedKeys.length > 0) {
+      setValues(prev => {
+        const next = { ...prev }
+        for (const key of removedKeys) {
+          delete next[key]
+        }
+        return next
+      })
+    }
+
+    prevStoreValuesRef.current = currentStore
+  }, [storeEndpointValues, endpoint])
 
   // Auto-save with debounce when endpoint is provided
   useDebouncedPersist(endpoint ?? '', values)

@@ -36,7 +36,8 @@ function App() {
     schema,
     parsedSpec,
     selectedOperationIndex,
-    setSelectedOperation
+    setSelectedOperation,
+    reset
   } = useAppStore()
   const { mode, setMode, clearFieldConfigs } = useConfigStore()
   const { getValues, clearValue, clearEndpoint } = useParameterStore()
@@ -101,6 +102,14 @@ function App() {
     }
   }
 
+  const handleGoHome = () => {
+    reset()
+    const cleanUrl = new URL(window.location.href)
+    cleanUrl.searchParams.delete('api')
+    cleanUrl.hash = ''
+    window.history.pushState({}, '', cleanUrl.toString())
+  }
+
   // Show toast notification on error (skip auth errors — shown in auth panel)
   useEffect(() => {
     if (error && !(error instanceof AuthError)) {
@@ -151,6 +160,7 @@ function App() {
       const { parameters: originalParams } = parseUrlParameters(url)
       const queryString = reconstructQueryString(updatedValues, originalParams)
       const newUrl = queryString ? `${endpoint}?${queryString}` : endpoint
+      setUrl(newUrl)
       fetchAndInfer(newUrl)
     }
   }
@@ -167,6 +177,7 @@ function App() {
       fetchOperation(parsedSpec.baseUrl, selectedOperation, {})
     } else if (url) {
       // Direct API URL flow - fetch base URL with no params
+      setUrl(endpoint)
       fetchAndInfer(endpoint)
     }
   }
@@ -187,14 +198,17 @@ function App() {
       <>
         <ThemeApplier />
         <ExamplesPage
-          onExampleClick={(exampleUrl) => {
+          onExampleClick={(exampleUrl, method, body) => {
             setUrl(exampleUrl)
+            useAppStore.getState().setHttpMethod(method ?? 'GET')
+            useAppStore.getState().setRequestBody(body ?? '')
             window.location.hash = ''
             const newBrowserUrl = new URL(window.location.href)
             newBrowserUrl.searchParams.set('api', exampleUrl)
             newBrowserUrl.hash = ''
             window.history.pushState({}, '', newBrowserUrl.toString())
-            fetchAndInfer(exampleUrl)
+            const fetchOptions = method && method !== 'GET' ? { method, body: body || undefined } : undefined
+            fetchAndInfer(exampleUrl, fetchOptions)
           }}
           onBack={() => {
             window.location.hash = ''
@@ -261,7 +275,9 @@ function App() {
             <div className={isConfigureMode ? 'ring-2 ring-ring ring-offset-4' : ''}>
               {/* Header */}
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-semibold text-foreground mb-2">api2ui</h1>
+                <h1 className="text-2xl font-semibold text-foreground mb-2">
+                  <button onClick={handleGoHome} className="hover:opacity-70 transition-opacity">api2ui</button>
+                </h1>
                 <p className="text-sm text-muted-foreground">
                   Paste an API URL, see it rendered
                 </p>
@@ -274,7 +290,7 @@ function App() {
 
               {/* Main Content Area */}
               <div className="bg-card rounded-lg shadow-md p-6 max-w-6xl mx-auto">
-                {loading && !parsedSpec && <SkeletonTable />}
+                {loading && !parsedSpec && !(url && url.includes('?')) && <SkeletonTable />}
 
                 {/* Standalone error (non-spec failures only, skip auth errors — shown in auth panel) */}
                 {error && !loading && !parsedSpec && !authError && (
@@ -364,7 +380,9 @@ function App() {
           <div className={`max-w-6xl mx-auto ${isConfigureMode ? 'ring-2 ring-ring ring-offset-4' : ''}`}>
             {/* Header */}
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-semibold text-foreground mb-2">api2ui</h1>
+              <h1 className="text-2xl font-semibold text-foreground mb-2">
+                <button onClick={handleGoHome} className="hover:opacity-70 transition-opacity">api2ui</button>
+              </h1>
               <p className="text-sm text-muted-foreground">
                 Paste an API URL, see it rendered
               </p>
@@ -377,7 +395,7 @@ function App() {
 
             {/* Main Content Area */}
             <div className="bg-card rounded-lg shadow-md p-6">
-              {loading && !parsedSpec && <SkeletonTable />}
+              {loading && !parsedSpec && !(url && url.includes('?')) && <SkeletonTable />}
 
               {/* Standalone error (non-spec failures only, skip auth errors — shown in auth panel) */}
               {error && !loading && !parsedSpec && !authError && (
@@ -477,7 +495,7 @@ function App() {
               )}
 
               {/* Direct API URL flow (URLs with query params) */}
-              {!parsedSpec && !loading && !error && url && url.includes('?') && (() => {
+              {!parsedSpec && !error && url && url.includes('?') && (() => {
                 const currentUrl = url
                 const baseUrl = currentUrl.split('?')[0]!
                 return (
@@ -508,6 +526,9 @@ function App() {
                           onRemove={handleFilterRemove}
                           onClearAll={handleFilterClearAll}
                         />
+
+                        {/* Loading indicator */}
+                        {loading && <SkeletonTable />}
 
                         {/* Data rendering - show when data is present */}
                         {schema && data !== null && (

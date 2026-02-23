@@ -268,6 +268,12 @@
   }
 }
 
+/* Theme-aware skeleton loading colors (must be unlayered to override library defaults) */
+.react-loading-skeleton {
+  --base-color: var(--muted) !important;
+  --highlight-color: var(--border) !important;
+}
+
 /* Smooth theme transitions for key surfaces */
 .bg-background,
 .bg-card,

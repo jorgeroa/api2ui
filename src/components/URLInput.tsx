@@ -75,8 +75,10 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
     fetchAndInfer(url, httpMethod !== 'GET' ? { method: httpMethod, body: requestBody || undefined } : undefined)
   }
 
-  const handleExampleClick = async (exampleUrl: string) => {
+  const handleExampleClick = async (exampleUrl: string, method?: string, body?: string) => {
     setUrl(exampleUrl)
+    setHttpMethod(method ?? 'GET')
+    setRequestBody(body ?? '')
     setValidationError(null)
     setLoadingExampleUrl(exampleUrl)
 
@@ -84,7 +86,8 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
     newUrl.searchParams.set('api', exampleUrl)
     window.history.pushState({}, '', newUrl.toString())
 
-    await fetchAndInfer(exampleUrl)
+    const fetchOptions = method && method !== 'GET' ? { method, body: body || undefined } : undefined
+    await fetchAndInfer(exampleUrl, fetchOptions)
     setLoadingExampleUrl(null)
   }
 

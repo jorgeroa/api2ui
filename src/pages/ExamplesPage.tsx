@@ -2,7 +2,7 @@ import { EXAMPLES, CATEGORIES } from '../data/examples'
 import type { Example } from '../data/examples'
 
 interface ExamplesPageProps {
-  onExampleClick: (url: string) => void
+  onExampleClick: (url: string, method?: string, body?: string) => void
   onBack: () => void
 }
 
@@ -22,6 +22,11 @@ function ExampleCard({ example, onClick }: { example: Example; onClick: () => vo
         <span className={`inline-block px-1.5 py-0.5 text-[10px] font-medium rounded border ${typeBadgeClass[example.type] ?? ''}`}>
           {example.type}
         </span>
+        {example.method && example.method !== 'GET' && (
+          <span className="inline-block px-1.5 py-0.5 text-[10px] font-medium rounded border border-blue-300 text-blue-700 dark:text-blue-400 dark:border-blue-700">
+            {example.method}
+          </span>
+        )}
         <span className="text-sm font-medium text-foreground truncate">{example.title}</span>
       </div>
       <p className="text-xs text-muted-foreground mb-2">{example.description}</p>
@@ -72,7 +77,7 @@ export function ExamplesPage({ onExampleClick, onBack }: ExamplesPageProps) {
                     <ExampleCard
                       key={example.url}
                       example={example}
-                      onClick={() => onExampleClick(example.url)}
+                      onClick={() => onExampleClick(example.url, example.method, example.body)}
                     />
                   ))}
                 </div>
