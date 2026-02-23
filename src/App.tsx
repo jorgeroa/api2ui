@@ -292,8 +292,8 @@ function App() {
               <div className="bg-card rounded-lg shadow-md p-6 max-w-6xl mx-auto">
                 {loading && !parsedSpec && !(url && url.includes('?')) && <SkeletonTable />}
 
-                {/* Standalone error (non-spec failures only, skip auth errors — shown in auth panel) */}
-                {error && !loading && !parsedSpec && !authError && (
+                {/* Standalone error (non-spec, non-parameterized URL failures; skip auth errors — shown in auth panel) */}
+                {error && !loading && !parsedSpec && !authError && !(url && url.includes('?')) && (
                   <ErrorDisplay error={error} onRetry={handleRetry} />
                 )}
 
@@ -397,8 +397,8 @@ function App() {
             <div className="bg-card rounded-lg shadow-md p-6">
               {loading && !parsedSpec && !(url && url.includes('?')) && <SkeletonTable />}
 
-              {/* Standalone error (non-spec failures only, skip auth errors — shown in auth panel) */}
-              {error && !loading && !parsedSpec && !authError && (
+              {/* Standalone error (non-spec, non-parameterized URL failures; skip auth errors — shown in auth panel) */}
+              {error && !loading && !parsedSpec && !authError && !(url && url.includes('?')) && (
                 <ErrorDisplay error={error} onRetry={handleRetry} />
               )}
 
@@ -495,7 +495,7 @@ function App() {
               )}
 
               {/* Direct API URL flow (URLs with query params) */}
-              {!parsedSpec && !error && url && url.includes('?') && (() => {
+              {!parsedSpec && url && url.includes('?') && (() => {
                 const currentUrl = url
                 const baseUrl = currentUrl.split('?')[0]!
                 return (
@@ -526,6 +526,9 @@ function App() {
                           onRemove={handleFilterRemove}
                           onClearAll={handleFilterClearAll}
                         />
+
+                        {/* Inline error — form stays usable above */}
+                        {error && <ErrorDisplay error={error} onRetry={handleRetry} />}
 
                         {/* Loading indicator */}
                         {loading && <SkeletonTable />}
