@@ -23,7 +23,7 @@ function FeatureCard({
   disabled: boolean
   isLoading: boolean
 }) {
-  const type = typeLabel[example.type] ?? typeLabel.Object
+  const type = typeLabel[example.type] ?? typeLabel['Object']!
 
   return (
     <button

@@ -272,7 +272,7 @@ export const useConfigStore = create<ConfigStore>()(
             state.globalTheme = 'light'
           }
         }
-        return state as ConfigStore
+        return state as unknown as ConfigStore
       },
       partialize: (state) => ({
         fieldConfigs: state.fieldConfigs,

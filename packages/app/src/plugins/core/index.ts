@@ -6,7 +6,6 @@
 
 import type { FieldPlugin } from '../../types/plugins'
 import { DataType, PluginSource } from '../../types/plugins'
-import { SemanticCategory } from '../../services/semantic/types'
 import { registry } from '../../components/registry/pluginRegistry'
 
 // Core field components
