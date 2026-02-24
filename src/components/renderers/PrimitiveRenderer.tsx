@@ -15,6 +15,29 @@ import { StarRating } from './semantic/StarRating'
 import { CurrencyValue, detectCurrencyFromSiblings } from './semantic/CurrencyValue'
 import { FormattedDate } from './semantic/FormattedDate'
 
+const TEXT_TRUNCATE_LIMIT = 100
+const TEXT_TRUNCATE_MAX = 500
+
+/** Expandable text for long values — shows truncated text with "more"/"less" toggle */
+function ExpandableText({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false)
+  if (text.length <= TEXT_TRUNCATE_LIMIT) return <span>{text}</span>
+  const display = expanded ? text.slice(0, TEXT_TRUNCATE_MAX) : text.slice(0, TEXT_TRUNCATE_LIMIT)
+  return (
+    <span>
+      {display}{!expanded && '... '}
+      {expanded && text.length > TEXT_TRUNCATE_MAX && '... '}
+      {expanded && text.length <= TEXT_TRUNCATE_MAX && ' '}
+      <button
+        onClick={(e) => { e.stopPropagation(); setExpanded(!expanded) }}
+        className="text-primary hover:text-primary/80 text-xs ml-1 cursor-pointer"
+      >
+        {expanded ? 'less' : 'more'}
+      </button>
+    </span>
+  )
+}
+
 /** Time ago helper for relative date rendering */
 function timeAgo(date: Date): string {
   const now = new Date()
@@ -395,7 +418,7 @@ export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
 
     // Default text
     return renderViaPlugin('core/text', props) ?? (
-      <span title={data.length > 100 ? data : undefined}>{data.length > 100 ? `${data.slice(0, 100)}...` : data}</span>
+      <ExpandableText text={data} />
     )
   }
 

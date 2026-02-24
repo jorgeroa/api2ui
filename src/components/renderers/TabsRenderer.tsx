@@ -73,7 +73,7 @@ export function TabsRenderer({ data, schema, path, depth }: RendererProps) {
             {primitiveFields.map(([name, def]) => (
               <div key={name} className="min-w-0">
                 <div className="text-xs text-muted-foreground font-medium truncate">{formatLabel(name)}</div>
-                <div className="mt-0.5 min-w-0 truncate">
+                <div className="mt-0.5 min-w-0">
                   <PrimitiveRenderer
                     data={obj[name]}
                     schema={def.type}
