@@ -15,7 +15,7 @@ interface URLInputProps {
 }
 
 export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
-  const { url, setUrl, loading, schema, parsedSpec, error, httpMethod, setHttpMethod, requestBody, setRequestBody } = useAppStore()
+  const { url, setUrl, loading, schema, parsedSpec, error, httpMethod, setHttpMethod, requestBody, setRequestBody, reset } = useAppStore()
   const { fetchAndInfer } = useAPIFetch()
   const [validationError, setValidationError] = useState<string | null>(null)
   const [loadingExampleUrl, setLoadingExampleUrl] = useState<string | null>(null)
@@ -91,8 +91,27 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
     setLoadingExampleUrl(null)
   }
 
+  const handleClear = () => {
+    reset()
+    setValidationError(null)
+    setAuthPanelOpen(false)
+    const cleanUrl = new URL(window.location.href)
+    cleanUrl.searchParams.delete('api')
+    cleanUrl.hash = ''
+    window.history.pushState({}, '', cleanUrl.toString())
+  }
+
+  // Auto-clear stale data when user empties the URL input
+  useEffect(() => {
+    if (!url.trim() && (schema || parsedSpec)) {
+      handleClear()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url])
+
   const hasData = schema || parsedSpec
-  const showCarousel = !loading && !schema && !parsedSpec && !error
+  const urlEmpty = !url.trim()
+  const showCarousel = !loading && (urlEmpty || (!schema && !parsedSpec && !error))
 
   return (
     <div className="w-full max-w-4xl">
@@ -120,6 +139,18 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
             className="flex-1 px-4 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus-visible:ring-ring/50 focus:border-transparent"
             disabled={loading}
           />
+          {(url || hasData) && !loading && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="px-2 py-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              title="Clear and start over"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
           <LockIcon
             status={lockStatus}
             activeType={apiCreds?.activeType}
@@ -175,7 +206,7 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
       )}
 
       {/* "Try an example" link when data is loaded */}
-      {hasData && !loading && (
+      {hasData && !loading && !urlEmpty && (
         <div className="mt-2 text-center">
           <button
             onClick={() => {

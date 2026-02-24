@@ -276,7 +276,7 @@ function App() {
               {/* Header */}
               <div className="text-center mb-8">
                 <h1 className="text-2xl font-semibold text-foreground mb-2">
-                  <button onClick={handleGoHome} className="hover:opacity-70 transition-opacity">api2ui</button>
+                  <button onClick={handleGoHome} className="cursor-pointer hover:opacity-70 transition-opacity">api2ui</button>
                 </h1>
                 <p className="text-sm text-muted-foreground">
                   Paste an API URL, see it rendered
@@ -381,7 +381,7 @@ function App() {
             {/* Header */}
             <div className="text-center mb-8">
               <h1 className="text-2xl font-semibold text-foreground mb-2">
-                <button onClick={handleGoHome} className="hover:opacity-70 transition-opacity">api2ui</button>
+                <button onClick={handleGoHome} className="cursor-pointer hover:opacity-70 transition-opacity">api2ui</button>
               </h1>
               <p className="text-sm text-muted-foreground">
                 Paste an API URL, see it rendered
