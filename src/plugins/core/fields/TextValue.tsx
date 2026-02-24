@@ -11,18 +11,24 @@ export function TextValue({ value }: FieldRenderProps) {
 
   if (str.length <= TRUNCATE_LIMIT) return <span>{str}</span>
 
-  const display = expanded ? str.slice(0, TRUNCATE_MAX) : str.slice(0, TRUNCATE_LIMIT)
+  const full = expanded ? str.slice(0, TRUNCATE_MAX) : str.slice(0, TRUNCATE_LIMIT)
+  const suffix = !expanded ? '...' : str.length > TRUNCATE_MAX ? '...' : ''
+  // Split at last space so the toggle stays with the final word
+  const lastSpace = full.lastIndexOf(' ')
+  const before = lastSpace > 0 ? full.slice(0, lastSpace + 1) : ''
+  const lastWord = lastSpace > 0 ? full.slice(lastSpace + 1) : full
   return (
     <span>
-      {display}{!expanded && '... '}
-      {expanded && str.length > TRUNCATE_MAX && '... '}
-      {expanded && str.length <= TRUNCATE_MAX && ' '}
-      <button
-        onClick={(e) => { e.stopPropagation(); setExpanded(!expanded) }}
-        className="text-primary hover:text-primary/80 text-xs ml-1 cursor-pointer"
-      >
-        {expanded ? 'less' : 'more'}
-      </button>
+      {before}
+      <span className="inline whitespace-nowrap">
+        {lastWord}{suffix}{' '}
+        <button
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded) }}
+          className="text-primary hover:text-primary/80 text-xs cursor-pointer"
+        >
+          {expanded ? 'less' : 'more'}
+        </button>
+      </span>
     </span>
   )
 }

@@ -22,18 +22,23 @@ const TEXT_TRUNCATE_MAX = 500
 function ExpandableText({ text }: { text: string }) {
   const [expanded, setExpanded] = useState(false)
   if (text.length <= TEXT_TRUNCATE_LIMIT) return <span>{text}</span>
-  const display = expanded ? text.slice(0, TEXT_TRUNCATE_MAX) : text.slice(0, TEXT_TRUNCATE_LIMIT)
+  const full = expanded ? text.slice(0, TEXT_TRUNCATE_MAX) : text.slice(0, TEXT_TRUNCATE_LIMIT)
+  const suffix = !expanded ? '...' : text.length > TEXT_TRUNCATE_MAX ? '...' : ''
+  const lastSpace = full.lastIndexOf(' ')
+  const before = lastSpace > 0 ? full.slice(0, lastSpace + 1) : ''
+  const lastWord = lastSpace > 0 ? full.slice(lastSpace + 1) : full
   return (
     <span>
-      {display}{!expanded && '... '}
-      {expanded && text.length > TEXT_TRUNCATE_MAX && '... '}
-      {expanded && text.length <= TEXT_TRUNCATE_MAX && ' '}
-      <button
-        onClick={(e) => { e.stopPropagation(); setExpanded(!expanded) }}
-        className="text-primary hover:text-primary/80 text-xs ml-1 cursor-pointer"
-      >
-        {expanded ? 'less' : 'more'}
-      </button>
+      {before}
+      <span className="inline whitespace-nowrap">
+        {lastWord}{suffix}{' '}
+        <button
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded) }}
+          className="text-primary hover:text-primary/80 text-xs cursor-pointer"
+        >
+          {expanded ? 'less' : 'more'}
+        </button>
+      </span>
     </span>
   )
 }
