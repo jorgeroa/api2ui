@@ -7,6 +7,7 @@ import { TopBarLayout } from './TopBarLayout'
 import { SplitLayout } from './SplitLayout'
 import { DrawerLayout } from './DrawerLayout'
 import { ShareButton } from '../ShareButton'
+import { MCPButton } from '../MCPExportDialog'
 import { DrilldownModeToggle } from '../navigation/DrilldownModeToggle'
 
 interface LayoutContainerProps {
@@ -58,7 +59,10 @@ export function LayoutContainer({
             <span className="text-border select-none">·</span>
             <DrilldownModeToggle />
           </div>
-          <ShareButton />
+          <div className="flex items-center gap-2">
+            <MCPButton />
+            <ShareButton />
+          </div>
         </div>
       )}
 

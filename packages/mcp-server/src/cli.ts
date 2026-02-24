@@ -7,16 +7,28 @@
  *   api2ui-mcp --openapi https://petstore.swagger.io/v2/swagger.json
  *   api2ui-mcp --api https://jsonplaceholder.typicode.com
  *   api2ui-mcp --openapi URL --token YOUR_TOKEN
- *   api2ui-mcp --openapi URL --header "X-API-Key: secret"
+ *   api2ui-mcp export --api URL --name my-api
  */
 
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { createServer } from './server'
+import { generateClaudeDesktopConfig, generateClaudeCodeConfig } from './config-generator'
 import type { ServerConfig } from './types'
 
-function parseArgs(argv: string[]): ServerConfig {
-  const config: ServerConfig = {}
+interface CliOptions extends ServerConfig {
+  command?: 'serve' | 'export'
+  exportFormat?: 'claude-desktop' | 'claude-code'
+}
+
+function parseArgs(argv: string[]): CliOptions {
+  const config: CliOptions = {}
   let i = 2 // Skip node and script path
+
+  // Check for subcommand
+  if (argv[2] === 'export') {
+    config.command = 'export'
+    i = 3
+  }
 
   while (i < argv.length) {
     const arg = argv[i]
@@ -47,6 +59,10 @@ function parseArgs(argv: string[]): ServerConfig {
         config.apiKey = next
         i += 2
         break
+      case '--format':
+        config.exportFormat = next as CliOptions['exportFormat']
+        i += 2
+        break
       case '--help':
       case '-h':
         printHelp()
@@ -70,8 +86,9 @@ function printHelp(): void {
 api2ui-mcp — Turn any API into MCP tools
 
 Usage:
-  api2ui-mcp --openapi <url>    Parse OpenAPI spec and register all operations as tools
-  api2ui-mcp --api <url>        Register a single fetch tool for a raw API URL
+  api2ui-mcp --openapi <url>             Start MCP server from OpenAPI spec
+  api2ui-mcp --api <url>                 Start MCP server for raw API URL
+  api2ui-mcp export --openapi <url>      Generate client config snippet
 
 Options:
   --openapi <url>     OpenAPI/Swagger spec URL
@@ -80,18 +97,33 @@ Options:
   --token <token>     Bearer token for API authentication
   --header <h:v>      Custom header (e.g., "X-API-Key: secret")
   --api-key <k=v>     API key as query param (e.g., "apiKey=secret")
+  --format <fmt>      Export format: claude-desktop (default), claude-code
   -h, --help          Show this help
 
 Examples:
   api2ui-mcp --openapi https://petstore.swagger.io/v2/swagger.json
   api2ui-mcp --api https://jsonplaceholder.typicode.com --name jsonplaceholder
-  api2ui-mcp --openapi https://api.example.com/openapi.json --token sk-xxx
+  api2ui-mcp export --openapi https://api.example.com/openapi.json --name my-api
+  api2ui-mcp export --api https://example.com/api --format claude-code
 `)
 }
 
-async function main(): Promise<void> {
-  const config = parseArgs(process.argv)
+function handleExport(config: CliOptions): void {
+  if (!config.openapiUrl && !config.apiUrl) {
+    console.error('Error: Either --openapi or --api must be specified\n')
+    process.exit(1)
+  }
 
+  const format = config.exportFormat || 'claude-desktop'
+
+  const result = format === 'claude-code'
+    ? generateClaudeCodeConfig(config)
+    : generateClaudeDesktopConfig(config)
+
+  console.log(result.instructions)
+}
+
+async function handleServe(config: CliOptions): Promise<void> {
   if (!config.openapiUrl && !config.apiUrl) {
     console.error('Error: Either --openapi or --api must be specified\n')
     printHelp()
@@ -106,6 +138,16 @@ async function main(): Promise<void> {
   } catch (err) {
     console.error(`[api2ui-mcp] Fatal: ${err instanceof Error ? err.message : String(err)}`)
     process.exit(1)
+  }
+}
+
+async function main(): Promise<void> {
+  const config = parseArgs(process.argv)
+
+  if (config.command === 'export') {
+    handleExport(config)
+  } else {
+    await handleServe(config)
   }
 }
 
