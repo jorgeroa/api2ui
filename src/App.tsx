@@ -31,13 +31,19 @@ import 'react-loading-skeleton/dist/skeleton.css'
 /** Toolbar row shown during loading so the UI doesn't shift when data arrives */
 function ResultsToolbar() {
   return (
-    <div className="flex items-center justify-between mb-2">
-      <div />
-      <div className="flex items-center gap-2">
-        <ShareButton />
-        <DrilldownModeToggle />
+    <>
+      <div className="flex items-center justify-between mb-2">
+        <div />
+        <div className="flex items-center gap-2">
+          <ShareButton />
+          <DrilldownModeToggle />
+        </div>
       </div>
-    </div>
+      {/* Skeleton placeholder matching ViewModeBadge pill size */}
+      <div className="flex justify-end mb-1">
+        <span className="inline-block bg-muted text-xs px-2.5 py-1 rounded-full animate-pulse w-16">&nbsp;</span>
+      </div>
+    </>
   )
 }
 
