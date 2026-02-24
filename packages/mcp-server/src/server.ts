@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { parseOpenAPISpec } from '@api2ui/semantic-analysis'
 import type { ParsedSpec } from '@api2ui/semantic-analysis'
 import { generateTools } from './tool-generator'
+import { enrichTools } from './semantic-enrichment'
 import { executeTool } from './tool-executor'
 import type { ServerConfig, AuthConfig } from './types'
 
@@ -84,12 +85,16 @@ async function registerOpenAPITools(
     throw new Error(`Failed to parse OpenAPI spec at ${specUrl}: ${err instanceof Error ? err.message : String(err)}`)
   }
 
-  const tools = generateTools(spec.operations)
   const baseUrl = spec.baseUrl
+  const rawTools = generateTools(spec.operations)
 
   console.error(`[api2ui-mcp] Parsed "${spec.title}" v${spec.version} (${spec.specVersion})`)
   console.error(`[api2ui-mcp] Base URL: ${baseUrl}`)
-  console.error(`[api2ui-mcp] Registering ${tools.length} tools from ${spec.operations.length} operations...`)
+  console.error(`[api2ui-mcp] Enriching ${rawTools.length} tools with semantic analysis...`)
+
+  const tools = await enrichTools(rawTools, baseUrl, { fetchSamples: true })
+
+  console.error(`[api2ui-mcp] Registering ${tools.length} tools...`)
 
   for (const tool of tools) {
     const hasInputs = Object.keys(tool.inputSchema).length > 0

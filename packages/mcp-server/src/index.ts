@@ -7,6 +7,7 @@
 
 export { createServer } from './server'
 export { generateTools } from './tool-generator'
+export { enrichTools } from './semantic-enrichment'
 export { executeTool } from './tool-executor'
 export type { ServerConfig, AuthConfig } from './types'
 export type { GeneratedTool } from './tool-generator'
