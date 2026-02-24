@@ -69,7 +69,7 @@ export function StatsRenderer({ data, schema, path }: RendererProps) {
 
   return (
     <div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 @lg:grid-cols-3 @5xl:grid-cols-4 gap-4">
         {data.map((item, index) => {
           const obj = item as Record<string, unknown>
           const label = getItemLabel(item)

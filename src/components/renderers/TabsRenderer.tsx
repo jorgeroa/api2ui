@@ -46,7 +46,7 @@ export function TabsRenderer({ data, schema, path, depth }: RendererProps) {
     <div className="border border-border rounded-lg overflow-hidden">
       {/* Summary header — primitive fields */}
       {primitiveFields.length > 0 && (
-        <div className="p-4 bg-muted border-b border-border">
+        <div className="p-4 bg-muted border-b border-border @container">
           {/* Empty fields toggle — only shown when there are empty fields */}
           {nullFieldCount > 0 && (
             <div className="flex justify-end -mt-1 mb-2">
@@ -69,7 +69,7 @@ export function TabsRenderer({ data, schema, path, depth }: RendererProps) {
               </button>
             </div>
           )}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 @md:grid-cols-3 gap-3">
             {primitiveFields.map(([name, def]) => (
               <div key={name} className="min-w-0">
                 <div className="text-xs text-muted-foreground font-medium truncate">{formatLabel(name)}</div>

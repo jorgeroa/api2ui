@@ -55,7 +55,8 @@ function App() {
     parsedSpec,
     selectedOperationIndex,
     setSelectedOperation,
-    reset
+    reset,
+    detailPanelOpen
   } = useAppStore()
   const { mode, setMode, clearFieldConfigs } = useConfigStore()
   const { getValues, clearValue, clearEndpoint } = useParameterStore()
@@ -288,7 +289,7 @@ function App() {
           />
           <main
             id="main-content"
-            className={`flex-1 overflow-y-auto py-8 px-6 ${isConfigureMode ? 'pt-20' : ''}`}
+            className={`flex-1 overflow-y-auto py-8 px-6 transition-[padding] duration-300 ${isConfigureMode ? 'pt-20' : ''} ${detailPanelOpen ? 'pr-[42rem]' : ''}`}
           >
             <div className={isConfigureMode ? 'ring-2 ring-ring ring-offset-4' : ''}>
               {/* Header */}
@@ -307,7 +308,7 @@ function App() {
               </div>
 
               {/* Main Content Area */}
-              <div className="bg-card rounded-lg shadow-md p-6 max-w-6xl mx-auto">
+              <div className="@container bg-card rounded-lg shadow-md p-6 max-w-6xl mx-auto">
                 {/* Standalone error (non-spec, non-parameterized URL failures; skip auth errors — shown in auth panel) */}
                 {error && !loading && !parsedSpec && !authError && !(url && url.includes('?')) && (
                   <ErrorDisplay error={error} onRetry={handleRetry} />
@@ -393,7 +394,7 @@ function App() {
         </div>
       ) : (
         // Centered layout for single-endpoint and direct URLs
-        <div className={`min-h-screen bg-background text-foreground py-8 px-4 ${isConfigureMode ? 'pt-20' : ''}`}>
+        <div className={`min-h-screen bg-background text-foreground py-8 px-4 transition-[padding] duration-300 ${isConfigureMode ? 'pt-20' : ''} ${detailPanelOpen ? 'pr-[42rem]' : ''}`}>
           <div className={`max-w-6xl mx-auto ${isConfigureMode ? 'ring-2 ring-ring ring-offset-4' : ''}`}>
             {/* Header */}
             <div className="text-center mb-8">
@@ -411,7 +412,7 @@ function App() {
             </div>
 
             {/* Main Content Area */}
-            <div className="bg-card rounded-lg shadow-md p-6">
+            <div className="@container bg-card rounded-lg shadow-md p-6">
               {/* Standalone error (non-spec, non-parameterized URL failures; skip auth errors — shown in auth panel) */}
               {error && !loading && !parsedSpec && !authError && !(url && url.includes('?')) && (
                 <ErrorDisplay error={error} onRetry={handleRetry} />

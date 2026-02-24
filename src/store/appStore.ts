@@ -44,6 +44,10 @@ interface AppState {
   setTabSelection: (path: string, index: number) => void
   getTabSelection: (path: string) => number
 
+  // Detail panel state
+  detailPanelOpen: boolean
+  setDetailPanelOpen: (open: boolean) => void
+
   // Actions
   startFetch: () => void
   fetchSuccess: (data: unknown, schema: UnifiedSchema) => void
@@ -71,6 +75,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   requestBody: '',
   analysisCache: new Map(),
   tabSelections: new Map(),
+  detailPanelOpen: false,
 
   setUrl: (url) => set({ url }),
   setHttpMethod: (method) => set({ httpMethod: method }),
@@ -111,6 +116,9 @@ export const useAppStore = create<AppState>()((set, get) => ({
     return { tabSelections: newSelections }
   }),
   getTabSelection: (path) => get().tabSelections.get(path) ?? 0,
+
+  // Detail panel
+  setDetailPanelOpen: (open) => set({ detailPanelOpen: open }),
 
   // OpenAPI actions
   clearSpec: () => set({

@@ -57,7 +57,7 @@ export function GalleryRenderer({ data, schema, path }: RendererProps) {
 
   return (
     <div>
-      <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+      <div className="columns-2 @lg:columns-3 @5xl:columns-4 gap-4 space-y-4">
         {data.map((item, index) => {
           const obj = item as Record<string, unknown>
           const title = getItemLabel(item)

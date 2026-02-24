@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import type { TypeSignature } from '../../types/schema'
 import { DynamicRenderer } from '../DynamicRenderer'
 import { getItemLabel } from '../../utils/itemLabel'
+import { useAppStore } from '../../store/appStore'
 import { OverlayNavProvider } from '../../contexts/OverlayContext'
 import type { OverlayNavItem } from '../../contexts/OverlayContext'
 
@@ -14,7 +15,14 @@ interface DetailPanelProps {
 
 export function DetailPanel({ item, schema, itemPath, onClose }: DetailPanelProps) {
   const open = item !== null
+  const setDetailPanelOpen = useAppStore(s => s.setDetailPanelOpen)
   const [stack, setStack] = useState<OverlayNavItem[]>([])
+
+  // Signal to App that the panel is open so it can add right padding
+  useEffect(() => {
+    if (open) setDetailPanelOpen(true)
+    return () => setDetailPanelOpen(false)
+  }, [open, setDetailPanelOpen])
 
   const push = useCallback((navItem: OverlayNavItem) => {
     setStack(prev => [...prev, navItem])
@@ -49,7 +57,7 @@ export function DetailPanel({ item, schema, itemPath, onClose }: DetailPanelProp
   if (!open) return null
 
   return (
-    <div className="fixed inset-y-0 right-0 z-40 w-full max-w-2xl bg-popover text-foreground shadow-2xl border-l border-border overflow-y-auto">
+    <div className="fixed inset-y-0 right-0 z-40 w-full max-w-2xl bg-popover text-foreground shadow-2xl border-l border-border overflow-y-auto overscroll-contain">
       {/* Sticky header with breadcrumb and close button */}
       <div className="sticky top-0 bg-popover border-b border-border px-6 py-3 flex items-center justify-between z-10">
         <h2 className="sr-only">
