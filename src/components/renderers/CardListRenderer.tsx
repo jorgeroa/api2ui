@@ -146,12 +146,12 @@ export function CardListRenderer({ data, schema, path, depth, importance }: Rend
             >
               {/* Hero image - full width at top of card */}
               {heroImage && (
-                <div className="w-full h-48 bg-muted overflow-hidden">
+                <div className="w-full aspect-video bg-muted overflow-hidden">
                   <img
                     src={heroImage.url}
                     alt={title}
                     loading="lazy"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                     onError={(e) => {
                       (e.currentTarget.parentElement as HTMLElement).style.display = 'none'
                     }}
