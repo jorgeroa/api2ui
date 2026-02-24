@@ -20,11 +20,26 @@ import { ThemeApplier } from './components/config/ThemeApplier'
 import { Sidebar } from './components/navigation/Sidebar'
 import { LayoutContainer } from './components/layout/LayoutContainer'
 import { parseUrlParameters, reconstructQueryString } from './services/urlParser/parser'
+import { ShareButton } from './components/ShareButton'
+import { DrilldownModeToggle } from './components/navigation/DrilldownModeToggle'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
 import { ExamplesPage } from './pages/ExamplesPage'
 import { AuthError } from './services/api/errors'
 import 'react-loading-skeleton/dist/skeleton.css'
+
+/** Toolbar row shown during loading so the UI doesn't shift when data arrives */
+function ResultsToolbar() {
+  return (
+    <div className="flex items-center justify-between mb-2">
+      <div />
+      <div className="flex items-center gap-2">
+        <ShareButton />
+        <DrilldownModeToggle />
+      </div>
+    </div>
+  )
+}
 
 function App() {
   const {
@@ -347,7 +362,8 @@ function App() {
                             {/* Inline operation error — form stays usable above */}
                             {error && <ErrorDisplay error={error} />}
 
-                            {/* Loading indicator for operation fetch */}
+                            {/* Toolbar + loading indicator for operation fetch */}
+                            {loading && <ResultsToolbar />}
                             {loading && <SkeletonTable />}
 
                             {/* Data Rendering (after fetching operation) */}
@@ -458,7 +474,8 @@ function App() {
                           {/* Inline operation error — form stays usable above */}
                           {error && <ErrorDisplay error={error} />}
 
-                          {/* Loading indicator for operation fetch */}
+                          {/* Toolbar + loading indicator for operation fetch */}
+                          {loading && <ResultsToolbar />}
                           {loading && <SkeletonTable />}
 
                           {/* Data Rendering (after fetching operation) */}
@@ -483,6 +500,7 @@ function App() {
               {/* Simple URL result (no query params, just data) */}
               {!parsedSpec && !error && url && !url.includes('?') && (
                 <>
+                  {loading && <ResultsToolbar />}
                   {loading && <SkeletonTable />}
                   {!loading && schema && data !== null && (
                     <DynamicRenderer
@@ -531,7 +549,8 @@ function App() {
                         {/* Inline error — form stays usable above */}
                         {error && <ErrorDisplay error={error} onRetry={handleRetry} />}
 
-                        {/* Loading indicator */}
+                        {/* Toolbar + loading indicator */}
+                        {loading && <ResultsToolbar />}
                         {loading && <SkeletonTable />}
 
                         {/* Data rendering - show when data is present */}
