@@ -13,6 +13,7 @@ dist-ssr
 *.local
 .planning
 .playwright-mcp
+.vite
 
 # Editor directories and files
 .vscode/*
