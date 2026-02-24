@@ -4,6 +4,7 @@ import type { FieldType } from '../../types/schema'
 import type { FieldRenderProps } from '../../types/plugins'
 import { useConfigStore } from '../../store/configStore'
 import { useAppStore } from '../../store/appStore'
+import { ExternalLink } from '../ui/ExternalLink'
 import { isImageUrl } from '../../utils/imageDetection'
 import { isEmail, isColorValue, isCurrencyField, isRatingField, detectPrimitiveMode } from '../../utils/primitiveDetection'
 import { registry } from '../registry/pluginRegistry'
@@ -334,9 +335,9 @@ export function PrimitiveRenderer({ data, schema, path }: RendererProps) {
       if (isAudioUrl(data) && overrideMode !== 'text') {
         return renderViaPlugin('core/audio-player', props) ?? <span title={data}>{data}</span>
       }
-      // Non-image URL: show as truncated text (link mode is an override handled above)
+      // Non-image URL: show as clickable link with interstitial
       const truncated = data.length > 100 ? `${data.slice(0, 100)}...` : data
-      return <span title={data}>{truncated}</span>
+      return <ExternalLink href={data} className="text-primary hover:text-primary/80 underline break-all" title={data}>{truncated}</ExternalLink>
     }
 
     // Date-like string detection
