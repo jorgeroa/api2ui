@@ -12,6 +12,13 @@ export interface MCPClientConfig {
 }
 
 /**
+ * Quote args that contain shell-special characters.
+ */
+function shellQuoteArgs(args: string[]): string {
+  return args.map(a => /[&|;<>()$`\\ "'\t\n]/.test(a) ? `"${a}"` : a).join(' ')
+}
+
+/**
  * Build the CLI args array from a server config.
  */
 function buildArgs(config: ServerConfig): string[] {
@@ -100,7 +107,7 @@ export function generateClaudeCodeConfig(config: ServerConfig): MCPClientConfig 
       ``,
       configJson,
       ``,
-      `Or use the CLI: claude mcp add ${serverName} -- npx @api2ui/mcp-server ${args.join(' ')}`,
+      `Or use the CLI: claude mcp add ${serverName} -- npx @api2ui/mcp-server ${shellQuoteArgs(args)}`,
     ].join('\n'),
   }
 }
@@ -119,7 +126,7 @@ export function generateGenericConfig(config: ServerConfig): MCPClientConfig {
     instructions: [
       `Run the MCP server:`,
       ``,
-      `  npx @api2ui/mcp-server ${args.join(' ')}`,
+      `  npx @api2ui/mcp-server ${shellQuoteArgs(args)}`,
       ``,
       `The server communicates over stdio using the MCP protocol.`,
     ].join('\n'),

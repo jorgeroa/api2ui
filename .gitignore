@@ -13,6 +13,7 @@ dist-ssr
 *.local
 .planning
 .playwright-mcp
+.mcp.json
 .vite
 
 # Editor directories and files

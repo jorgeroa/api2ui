@@ -52,7 +52,7 @@ function generateConfig(format: ExportFormat, apiUrl: string, name: string, auth
   const allArgs = ['@api2ui/mcp-server', '--api', apiUrl, '--name', name, ...authArgs]
 
   if (format === 'cli') {
-    return `npx @api2ui/mcp-server --api ${apiUrl} --name ${name}${authArgs.length ? ' ' + authArgs.join(' ') : ''}`
+    return `npx @api2ui/mcp-server --api "${apiUrl}" --name ${name}${authArgs.length ? ' ' + authArgs.join(' ') : ''}`
   }
 
   const config = {
