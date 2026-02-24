@@ -5,7 +5,7 @@
 
 /**
  * Extract group prefix from parameter name.
- * "ddcFilter[name]" -> "ddcFilter"
+ * "filter[name]" -> "filter"
  * "tag[]" -> null (array notation, not a group)
  * "simpleName" -> null (no group)
  */
@@ -34,7 +34,7 @@ const COMMON_SUFFIXES = [
 
 /**
  * Humanize group name for display.
- * "ddcFilter" -> "DDC"
+ * "userFilter" -> "User"
  * "searchParams" -> "Search"
  * "HTMLOptions" -> "HTML"
  * "filter2" -> "Filter 2"

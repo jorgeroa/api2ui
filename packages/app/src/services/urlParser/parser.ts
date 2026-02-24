@@ -19,7 +19,7 @@ const GROUP_PREFIX_REGEX = /^([a-zA-Z_][a-zA-Z0-9_]*)\[([^\]]+)\]$/
  * - Simple key=value pairs
  * - Bracket array notation (tag[]=a&tag[]=b)
  * - Repeated key arrays (tag=a&tag=b)
- * - Grouped parameters (ddcFilter[name]=foo)
+ * - Grouped parameters (filter[name]=foo)
  * - URL encoding/decoding
  *
  * @param url - Full URL or just query string (with or without leading ?)

@@ -13,9 +13,9 @@ import type { ParsedParameter } from '../openapi/types'
 export interface ParsedUrlParameter extends Omit<ParsedParameter, 'in' | 'required'> {
   in: 'query'
   required: false
-  /** Original key from URL (decoded, e.g., "tag[]" or "ddcFilter[name]") */
+  /** Original key from URL (decoded, e.g., "tag[]" or "filter[name]") */
   originalKey: string
-  /** Raw URL-encoded key (preserves original encoding, e.g., "ddcFilter%5Bname%5D") */
+  /** Raw URL-encoded key (preserves original encoding, e.g., "filter%5Bname%5D") */
   rawKey: string
   /** Raw URL-encoded value (preserves original encoding, e.g., "c,z" stays as "c,z" not "c%2Cz") */
   rawValue: string
@@ -23,7 +23,7 @@ export interface ParsedUrlParameter extends Omit<ParsedParameter, 'in' | 'requir
   isArray: boolean
   /** All values for array parameters */
   values?: string[]
-  /** Group name extracted from bracket prefix (e.g., "ddcFilter" from "ddcFilter[name]") */
+  /** Group name extracted from bracket prefix (e.g., "filter" from "filter[name]") */
   group?: string
 }
 

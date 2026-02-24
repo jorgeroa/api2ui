@@ -2,7 +2,7 @@ import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react
 import { humanizeGroupName } from '../../services/urlParser/groupUtils'
 
 interface ParameterGroupProps {
-  /** Raw group name (e.g., "ddcFilter") */
+  /** Raw group name (e.g., "filter") */
   groupName: string
   /** Parameter inputs to render inside */
   children: React.ReactNode
@@ -12,7 +12,7 @@ interface ParameterGroupProps {
 
 /**
  * Accordion wrapper for grouped parameters.
- * Parameters with common prefixes (e.g., ddcFilter[name], ddcFilter[age])
+ * Parameters with common prefixes (e.g., filter[name], filter[age])
  * auto-group into collapsible sections for reduced visual clutter.
  */
 export function ParameterGroup({ groupName, children, defaultOpen = false }: ParameterGroupProps) {

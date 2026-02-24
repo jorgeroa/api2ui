@@ -125,19 +125,19 @@ describe('parseUrlParameters', () => {
 
   describe('group extraction', () => {
     it('extracts group from bracket prefix', () => {
-      const result = parseUrlParameters('?ddcFilter[name]=foo')
+      const result = parseUrlParameters('?settings[name]=foo')
 
       expect(result.parameters).toHaveLength(1)
-      expect(result.parameters[0].name).toBe('ddcFilter[name]')
-      expect(result.parameters[0].group).toBe('ddcFilter')
-      expect(result.groups.get('ddcFilter')).toContain('ddcFilter[name]')
+      expect(result.parameters[0].name).toBe('settings[name]')
+      expect(result.parameters[0].group).toBe('settings')
+      expect(result.groups.get('settings')).toContain('settings[name]')
     })
 
     it('groups multiple parameters with same prefix', () => {
-      const result = parseUrlParameters('?ddcFilter[name]=foo&ddcFilter[age]=25')
+      const result = parseUrlParameters('?settings[name]=foo&settings[age]=25')
 
       expect(result.parameters).toHaveLength(2)
-      expect(result.groups.get('ddcFilter')).toEqual(['ddcFilter[name]', 'ddcFilter[age]'])
+      expect(result.groups.get('settings')).toEqual(['settings[name]', 'settings[age]'])
     })
 
     it('handles multiple different groups', () => {
