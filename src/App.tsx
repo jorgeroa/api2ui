@@ -290,8 +290,6 @@ function App() {
 
               {/* Main Content Area */}
               <div className="bg-card rounded-lg shadow-md p-6 max-w-6xl mx-auto">
-                {loading && !parsedSpec && !(url && url.includes('?')) && <SkeletonTable />}
-
                 {/* Standalone error (non-spec, non-parameterized URL failures; skip auth errors — shown in auth panel) */}
                 {error && !loading && !parsedSpec && !authError && !(url && url.includes('?')) && (
                   <ErrorDisplay error={error} onRetry={handleRetry} />
@@ -395,8 +393,6 @@ function App() {
 
             {/* Main Content Area */}
             <div className="bg-card rounded-lg shadow-md p-6">
-              {loading && !parsedSpec && !(url && url.includes('?')) && <SkeletonTable />}
-
               {/* Standalone error (non-spec, non-parameterized URL failures; skip auth errors — shown in auth panel) */}
               {error && !loading && !parsedSpec && !authError && !(url && url.includes('?')) && (
                 <ErrorDisplay error={error} onRetry={handleRetry} />
@@ -485,13 +481,18 @@ function App() {
               )}
 
               {/* Simple URL result (no query params, just data) */}
-              {!parsedSpec && !loading && !error && schema && data !== null && url && !url.includes('?') && (
-                <DynamicRenderer
-                  data={data}
-                  schema={schema.rootType}
-                  path="$"
-                  depth={0}
-                />
+              {!parsedSpec && !error && url && !url.includes('?') && (
+                <>
+                  {loading && <SkeletonTable />}
+                  {!loading && schema && data !== null && (
+                    <DynamicRenderer
+                      data={data}
+                      schema={schema.rootType}
+                      path="$"
+                      depth={0}
+                    />
+                  )}
+                </>
               )}
 
               {/* Direct API URL flow (URLs with query params) */}
