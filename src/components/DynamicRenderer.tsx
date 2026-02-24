@@ -25,6 +25,8 @@ interface DynamicRendererProps {
   schema: TypeSignature
   path?: string
   depth?: number
+  /** When true, suppresses Share + DrilldownModeToggle (rendered externally by LayoutContainer) */
+  hideViewControls?: boolean
 }
 
 const MAX_DEPTH = 5
@@ -48,6 +50,7 @@ export function DynamicRenderer({
   schema,
   path = '$',
   depth = 0,
+  hideViewControls = false,
 }: DynamicRendererProps) {
   const { fieldConfigs, setFieldComponentType, drilldownMode } = useConfigStore()
   const { getAnalysisCache } = useAppStore()
@@ -153,8 +156,19 @@ export function DynamicRenderer({
 
   const content = (
     <div>
-      {/* Navigation bar: breadcrumb + mode toggle — only at depth=0 when data exists */}
-      {depth === 0 && data != null && (
+      {/* Navigation bar: breadcrumb + view controls — only at depth=0 when data exists */}
+      {depth === 0 && data != null && (hideViewControls ? (
+        /* Breadcrumb only — view controls rendered externally by LayoutContainer */
+        navStack.length > 0 ? (
+          <div className="mb-2">
+            <Breadcrumb
+              rootLabel="Results"
+              stack={navStack}
+              onNavigate={handleBreadcrumbNav}
+            />
+          </div>
+        ) : null
+      ) : (
         <div className="flex items-center justify-between mb-2">
           {navStack.length > 0 ? (
             <Breadcrumb
@@ -163,14 +177,11 @@ export function DynamicRenderer({
               onNavigate={handleBreadcrumbNav}
             />
           ) : (
-            <div />
-          )}
-          <div className="flex items-center gap-2">
-            <ShareButton />
             <DrilldownModeToggle />
-          </div>
+          )}
+          <ShareButton />
         </div>
-      )}
+      ))}
 
       {canShowBadge && (
         <div className="flex justify-end mb-1">

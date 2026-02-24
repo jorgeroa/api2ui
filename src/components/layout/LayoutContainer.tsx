@@ -6,6 +6,8 @@ import { SidebarLayout } from './SidebarLayout'
 import { TopBarLayout } from './TopBarLayout'
 import { SplitLayout } from './SplitLayout'
 import { DrawerLayout } from './DrawerLayout'
+import { ShareButton } from '../ShareButton'
+import { DrilldownModeToggle } from '../navigation/DrilldownModeToggle'
 
 interface LayoutContainerProps {
   parameters: React.ReactNode
@@ -45,13 +47,18 @@ export function LayoutContainer({
 
   return (
     <div className={className}>
-      {/* Layout switcher - desktop only */}
+      {/* View controls bar - desktop only */}
       {!isMobile && (
-        <div className="flex justify-end mb-4">
-          <LayoutSwitcher
-            value={layout}
-            onChange={(newLayout) => setLayout(endpoint, newLayout)}
-          />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <LayoutSwitcher
+              value={layout}
+              onChange={(newLayout) => setLayout(endpoint, newLayout)}
+            />
+            <span className="text-border select-none">·</span>
+            <DrilldownModeToggle />
+          </div>
+          <ShareButton />
         </div>
       )}
 

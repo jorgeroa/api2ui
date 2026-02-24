@@ -20,7 +20,7 @@ export function AppliedFilters({
   }
 
   return (
-    <div className="sticky top-0 z-10 bg-background border-b border-border py-2 px-4 flex items-center gap-2 flex-wrap shadow-sm">
+    <div className="sticky top-0 z-10 bg-background py-2 px-4 flex items-center gap-2 flex-wrap">
       <span className="text-sm font-medium text-muted-foreground shrink-0">
         Filters:
       </span>

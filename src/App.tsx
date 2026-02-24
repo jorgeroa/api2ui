@@ -33,11 +33,8 @@ function ResultsToolbar() {
   return (
     <>
       <div className="flex items-center justify-between mb-2">
-        <div />
-        <div className="flex items-center gap-2">
-          <ShareButton />
-          <DrilldownModeToggle />
-        </div>
+        <DrilldownModeToggle />
+        <ShareButton />
       </div>
       {/* Skeleton placeholder matching ViewModeBadge pill size */}
       <div className="flex justify-end mb-1">
@@ -368,8 +365,7 @@ function App() {
                             {/* Inline operation error — form stays usable above */}
                             {error && <ErrorDisplay error={error} />}
 
-                            {/* Toolbar + loading indicator for operation fetch */}
-                            {loading && <ResultsToolbar />}
+                            {/* Loading indicator for operation fetch */}
                             {loading && <SkeletonTable />}
 
                             {/* Data Rendering (after fetching operation) */}
@@ -381,6 +377,7 @@ function App() {
                                   schema={schema.rootType}
                                   path="$"
                                   depth={0}
+                                  hideViewControls
                                 />
                               </div>
                             )}
@@ -480,8 +477,7 @@ function App() {
                           {/* Inline operation error — form stays usable above */}
                           {error && <ErrorDisplay error={error} />}
 
-                          {/* Toolbar + loading indicator for operation fetch */}
-                          {loading && <ResultsToolbar />}
+                          {/* Loading indicator for operation fetch */}
                           {loading && <SkeletonTable />}
 
                           {/* Data Rendering (after fetching operation) */}
@@ -493,6 +489,7 @@ function App() {
                                 schema={schema.rootType}
                                 path="$"
                                 depth={0}
+                                hideViewControls
                               />
                             </div>
                           )}
@@ -555,8 +552,7 @@ function App() {
                         {/* Inline error — form stays usable above */}
                         {error && <ErrorDisplay error={error} onRetry={handleRetry} />}
 
-                        {/* Toolbar + loading indicator */}
-                        {loading && <ResultsToolbar />}
+                        {/* Loading indicator */}
                         {loading && <SkeletonTable />}
 
                         {/* Data rendering - show when data is present */}
@@ -566,6 +562,7 @@ function App() {
                             schema={schema.rootType}
                             path="$"
                             depth={0}
+                            hideViewControls
                           />
                         )}
                       </>

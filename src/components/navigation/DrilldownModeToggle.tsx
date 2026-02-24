@@ -4,40 +4,40 @@ export function DrilldownModeToggle() {
   const { drilldownMode, setDrilldownMode } = useConfigStore()
 
   return (
-    <div className="flex items-center gap-2 text-xs">
-      <span className="text-muted-foreground">Click:</span>
-      <div className="inline-flex rounded-md border border-border overflow-hidden">
-        <button
-          onClick={() => setDrilldownMode('page')}
-          className={`px-2.5 py-1 transition-colors ${
-            drilldownMode === 'page'
-              ? 'bg-muted text-muted-foreground font-medium'
-              : 'bg-background text-muted-foreground hover:bg-muted'
-          }`}
-        >
-          Page
-        </button>
-        <button
-          onClick={() => setDrilldownMode('dialog')}
-          className={`px-2.5 py-1 border-l border-border transition-colors ${
-            drilldownMode === 'dialog'
-              ? 'bg-muted text-muted-foreground font-medium'
-              : 'bg-background text-muted-foreground hover:bg-muted'
-          }`}
-        >
-          Dialog
-        </button>
-        <button
-          onClick={() => setDrilldownMode('panel')}
-          className={`px-2.5 py-1 border-l border-border transition-colors ${
-            drilldownMode === 'panel'
-              ? 'bg-muted text-muted-foreground font-medium'
-              : 'bg-background text-muted-foreground hover:bg-muted'
-          }`}
-        >
-          Panel
-        </button>
-      </div>
+    <div className="inline-flex border border-border rounded-lg text-xs" role="group" aria-label="Drilldown mode">
+      <button
+        onClick={() => setDrilldownMode('page')}
+        title="Navigate in-page"
+        className={`p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded-l-lg ${
+          drilldownMode === 'page'
+            ? 'bg-background text-foreground shadow-sm font-medium'
+            : 'text-muted-foreground hover:bg-muted'
+        }`}
+      >
+        Page
+      </button>
+      <button
+        onClick={() => setDrilldownMode('dialog')}
+        title="Open in dialog"
+        className={`p-2 border-l border-border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${
+          drilldownMode === 'dialog'
+            ? 'bg-background text-foreground shadow-sm font-medium'
+            : 'text-muted-foreground hover:bg-muted'
+        }`}
+      >
+        Dialog
+      </button>
+      <button
+        onClick={() => setDrilldownMode('panel')}
+        title="Open in side panel"
+        className={`p-2 border-l border-border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded-r-lg ${
+          drilldownMode === 'panel'
+            ? 'bg-background text-foreground shadow-sm font-medium'
+            : 'text-muted-foreground hover:bg-muted'
+        }`}
+      >
+        Panel
+      </button>
     </div>
   )
 }
