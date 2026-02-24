@@ -180,8 +180,21 @@ async function registerOpenAPITools(
 }
 
 /**
+ * Sanitize a query param name into a valid JS identifier.
+ * e.g. "filter[name]" → "filter_name"
+ */
+function sanitizeParamName(name: string): string {
+  return name
+    .replace(/[^a-zA-Z0-9_]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '')
+}
+
+/**
  * Register a single "fetch" tool for a raw API URL.
- * Allows Claude to fetch the API with optional path/query customization.
+ * Parses query params from the URL and exposes each as an individual
+ * tool parameter with its default value, so Claude can override any
+ * param cleanly without duplication.
  */
 function registerRawAPITool(
   server: McpServer,
@@ -190,23 +203,59 @@ function registerRawAPITool(
 ): void {
   console.error(`[api2ui-mcp] Raw API mode: ${apiUrl}`)
 
+  // Parse URL into base path and individual query params
+  const parsed = new URL(apiUrl)
+  const baseUrl = `${parsed.origin}${parsed.pathname}`
+  const defaultParams: Array<{ original: string; sanitized: string; defaultValue: string }> = []
+  const seenSanitized = new Set<string>()
+
+  for (const [key, value] of parsed.searchParams.entries()) {
+    let sanitized = sanitizeParamName(key)
+    // Handle collisions by appending a number
+    if (seenSanitized.has(sanitized)) {
+      let i = 2
+      while (seenSanitized.has(`${sanitized}_${i}`)) i++
+      sanitized = `${sanitized}_${i}`
+    }
+    seenSanitized.add(sanitized)
+    defaultParams.push({ original: key, sanitized, defaultValue: value })
+  }
+
+  // Build Zod input schema: path + each query param
+  const inputSchema: Record<string, z.ZodTypeAny> = {
+    path: z.string().optional().describe('Additional path segment to append (e.g., "/users/1")'),
+  }
+
+  for (const param of defaultParams) {
+    const desc = param.original !== param.sanitized
+      ? `Query param "${param.original}" (default: "${param.defaultValue}")`
+      : `(default: "${param.defaultValue}")`
+    inputSchema[param.sanitized] = z.string().optional().describe(desc)
+  }
+
+  const paramCount = defaultParams.length
+  const description = paramCount > 0
+    ? `Fetch data from ${baseUrl} with ${paramCount} configurable query parameters. Each parameter has a default value that can be overridden.`
+    : `Fetch data from ${apiUrl}. Optionally append a path.`
+
   server.registerTool(
     'fetch_api',
-    {
-      description: `Fetch data from ${apiUrl}. Optionally append a path or query parameters.`,
-      inputSchema: {
-        path: z.string().optional().describe('Additional path to append (e.g., "/users/1")'),
-        query: z.string().optional().describe('Query string to append (e.g., "page=2&limit=10")'),
-      },
-    },
-    async (args: { path?: string; query?: string }) => {
+    { description, inputSchema },
+    async (args: Record<string, string | undefined>) => {
       try {
-        let url = apiUrl
+        let url = baseUrl
         if (args.path) {
           url = url.replace(/\/$/, '') + '/' + args.path.replace(/^\//, '')
         }
-        if (args.query) {
-          url += (url.includes('?') ? '&' : '?') + args.query
+
+        // Rebuild query string from defaults + overrides
+        if (defaultParams.length > 0) {
+          const params = new URLSearchParams()
+          for (const param of defaultParams) {
+            const value = args[param.sanitized] ?? param.defaultValue
+            params.append(param.original, value)
+          }
+          url += '?' + params.toString()
         }
 
         const headers: Record<string, string> = { 'Accept': 'application/json' }
@@ -237,5 +286,5 @@ function registerRawAPITool(
     }
   )
 
-  console.error(`[api2ui-mcp] 1 tool registered (fetch_api)`)
+  console.error(`[api2ui-mcp] 1 tool registered (fetch_api) with ${paramCount} query parameters`)
 }
