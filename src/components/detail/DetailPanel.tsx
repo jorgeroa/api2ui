@@ -40,11 +40,11 @@ export function DetailPanel({ item, schema, itemPath, onClose }: DetailPanelProp
   return (
     <Dialog open={open} onClose={handleClose} className="relative z-50">
       {/* Backdrop - lighter than modal */}
-      <div className="fixed inset-0 bg-black/20" aria-hidden="true" />
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
 
       {/* Panel container - positioned at right edge */}
       <div className="fixed inset-0 flex justify-end">
-        <DialogPanel className="w-full max-w-2xl bg-popover text-foreground shadow-xl h-full overflow-y-auto">
+        <DialogPanel className="w-full max-w-2xl bg-popover text-foreground shadow-2xl border-l border-border h-full overflow-y-auto">
           {/* Sticky header with breadcrumb and close button */}
           <div className="sticky top-0 bg-popover border-b border-border px-6 py-3 flex items-center justify-between z-10">
             <DialogTitle className="sr-only">

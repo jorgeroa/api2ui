@@ -41,11 +41,11 @@ export function DetailModal({ item, schema, itemPath, onClose }: DetailModalProp
   return (
     <Dialog open={open} onClose={handleClose} className="relative z-50">
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
 
       {/* Container to center the panel */}
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="max-w-3xl w-full bg-popover text-foreground rounded-xl shadow-lg max-h-[80vh] overflow-y-auto">
+        <DialogPanel className="max-w-3xl w-full bg-popover text-foreground rounded-xl shadow-2xl border border-border max-h-[80vh] overflow-y-auto">
           {/* Sticky header with breadcrumb and close button */}
           <div className="sticky top-0 bg-popover z-10 flex items-center justify-between px-4 py-2 border-b border-border rounded-t-xl">
             <DialogTitle className="sr-only">
