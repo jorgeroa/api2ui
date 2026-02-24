@@ -40,7 +40,7 @@ export function DetailPanel({ item, schema, itemPath, onClose }: DetailPanelProp
   return (
     <Dialog open={open} onClose={handleClose} className="relative z-50">
       {/* Backdrop - lighter than modal */}
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
+      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
 
       {/* Panel container - positioned at right edge */}
       <div className="fixed inset-0 flex justify-end">
