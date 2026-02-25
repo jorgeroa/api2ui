@@ -8,8 +8,9 @@ import { z } from 'zod'
 import { parseOpenAPISpec } from '@api2ui/semantic-analysis'
 import type { ParsedSpec } from '@api2ui/semantic-analysis'
 import { generateTools } from './tool-generator'
-import { enrichTools } from './semantic-enrichment'
+import { enrichTools, describeFieldsFromData } from './semantic-enrichment'
 import { executeTool } from './tool-executor'
+import { formatResponse } from './response-formatter'
 import type { ServerConfig, AuthConfig } from './types'
 
 /**
@@ -56,12 +57,15 @@ export async function createServer(config: ServerConfig): Promise<McpServer> {
 
   const auth = parseAuth(config)
 
+  const debug = config.debug ?? false
+  const fullResponse = config.fullResponse ?? false
+
   if (config.openapiUrl) {
     // OpenAPI mode: parse spec and generate tools for each operation
-    await registerOpenAPITools(server, config.openapiUrl, auth)
+    await registerOpenAPITools(server, config.openapiUrl, auth, debug, fullResponse)
   } else if (config.apiUrl) {
     // Raw API mode: register a single fetch tool
-    registerRawAPITool(server, config.apiUrl, auth)
+    await registerRawAPITool(server, config.apiUrl, auth, config.name, debug, fullResponse)
   } else {
     throw new Error('Either --openapi or --api must be specified')
   }
@@ -70,12 +74,53 @@ export async function createServer(config: ServerConfig): Promise<McpServer> {
 }
 
 /**
+ * Mask sensitive values in headers for debug output.
+ */
+function maskHeaders(headers: Record<string, string>): Record<string, string> {
+  const masked: Record<string, string> = {}
+  for (const [key, value] of Object.entries(headers)) {
+    const lower = key.toLowerCase()
+    if (lower === 'authorization' || lower.includes('key') || lower.includes('secret') || lower.includes('token')) {
+      // Show first 8 chars then mask
+      masked[key] = value.length > 12 ? value.slice(0, 8) + '***' : '***'
+    } else {
+      masked[key] = value
+    }
+  }
+  return masked
+}
+
+/**
+ * Format debug info as a prefix string for tool responses.
+ */
+function formatDebugInfo(
+  method: string,
+  url: string,
+  headers: Record<string, string>,
+  status: number,
+  responseSize: number,
+  elapsedMs: number
+): string {
+  const maskedHeaders = maskHeaders(headers)
+  const headerStr = Object.entries(maskedHeaders).map(([k, v]) => `${k}: ${v}`).join(', ')
+  const sizeStr = responseSize > 1024 ? `${(responseSize / 1024).toFixed(1)}KB` : `${responseSize}B`
+  return [
+    `[DEBUG] ${method} ${url}`,
+    `[DEBUG] Headers: ${headerStr}`,
+    `[DEBUG] Status: ${status} | Response: ${sizeStr} | Time: ${elapsedMs}ms`,
+    '',
+  ].join('\n')
+}
+
+/**
  * Parse an OpenAPI spec and register each operation as an MCP tool.
  */
 async function registerOpenAPITools(
   server: McpServer,
   specUrl: string,
-  auth: AuthConfig
+  auth: AuthConfig,
+  debug: boolean,
+  fullResponse: boolean
 ): Promise<void> {
   let spec: ParsedSpec
 
@@ -97,81 +142,63 @@ async function registerOpenAPITools(
   console.error(`[api2ui-mcp] Registering ${tools.length} tools...`)
 
   for (const tool of tools) {
+    // Add debug + full_response params to input schema
+    const toolSchema = {
+      ...tool.inputSchema,
+      debug: z.boolean().optional().describe('Set to true to see the request URL, headers, and timing'),
+      full_response: z.boolean().optional().describe('Set to true to disable truncation and return the full response'),
+    }
+
     const hasInputs = Object.keys(tool.inputSchema).length > 0
+
+    const handler = async (args: Record<string, unknown>) => {
+      const showDebug = debug || args.debug === true
+      const noTruncate = fullResponse || args.full_response === true
+      try {
+        const result = await executeTool(baseUrl, tool.operation, args, auth)
+        const responseText = formatResponse(result.data, noTruncate)
+        const prefix = showDebug
+          ? formatDebugInfo(result.request.method, result.request.url, result.request.headers, result.status, responseText.length, result.elapsedMs)
+          : ''
+
+        if (result.status >= 400) {
+          return {
+            content: [{
+              type: 'text' as const,
+              text: `${prefix}API error ${result.status}: ${responseText}`,
+            }],
+            isError: true,
+          }
+        }
+
+        return {
+          content: [{
+            type: 'text' as const,
+            text: `${prefix}${responseText}`,
+          }],
+        }
+      } catch (err) {
+        return {
+          content: [{
+            type: 'text' as const,
+            text: `Request failed: ${err instanceof Error ? err.message : String(err)}`,
+          }],
+          isError: true,
+        }
+      }
+    }
 
     if (hasInputs) {
       server.registerTool(
         tool.name,
-        {
-          description: tool.description,
-          inputSchema: tool.inputSchema,
-        },
-        async (args) => {
-          try {
-            const result = await executeTool(baseUrl, tool.operation, args as Record<string, unknown>, auth)
-
-            if (result.status >= 400) {
-              return {
-                content: [{
-                  type: 'text' as const,
-                  text: `API error ${result.status}: ${JSON.stringify(result.data, null, 2)}`,
-                }],
-                isError: true,
-              }
-            }
-
-            return {
-              content: [{
-                type: 'text' as const,
-                text: JSON.stringify(result.data, null, 2),
-              }],
-            }
-          } catch (err) {
-            return {
-              content: [{
-                type: 'text' as const,
-                text: `Request failed: ${err instanceof Error ? err.message : String(err)}`,
-              }],
-              isError: true,
-            }
-          }
-        }
+        { description: tool.description, inputSchema: toolSchema },
+        handler
       )
     } else {
-      // No input parameters — register without inputSchema
       server.registerTool(
         tool.name,
-        { description: tool.description },
-        async () => {
-          try {
-            const result = await executeTool(baseUrl, tool.operation, {}, auth)
-
-            if (result.status >= 400) {
-              return {
-                content: [{
-                  type: 'text' as const,
-                  text: `API error ${result.status}: ${JSON.stringify(result.data, null, 2)}`,
-                }],
-                isError: true,
-              }
-            }
-
-            return {
-              content: [{
-                type: 'text' as const,
-                text: JSON.stringify(result.data, null, 2),
-              }],
-            }
-          } catch (err) {
-            return {
-              content: [{
-                type: 'text' as const,
-                text: `Request failed: ${err instanceof Error ? err.message : String(err)}`,
-              }],
-              isError: true,
-            }
-          }
-        }
+        { description: tool.description, inputSchema: { debug: toolSchema.debug } },
+        handler
       )
     }
   }
@@ -196,11 +223,14 @@ function sanitizeParamName(name: string): string {
  * tool parameter with its default value, so Claude can override any
  * param cleanly without duplication.
  */
-function registerRawAPITool(
+async function registerRawAPITool(
   server: McpServer,
   apiUrl: string,
-  auth: AuthConfig
-): void {
+  auth: AuthConfig,
+  serverName: string | undefined,
+  debug: boolean,
+  fullResponse: boolean
+): Promise<void> {
   console.error(`[api2ui-mcp] Raw API mode: ${apiUrl}`)
 
   // Parse URL into base path and individual query params
@@ -233,15 +263,55 @@ function registerRawAPITool(
     inputSchema[param.sanitized] = z.string().optional().describe(desc)
   }
 
+  // Debug + truncation params for per-request control
+  inputSchema['debug'] = z.boolean().optional().describe('Set to true to see the request URL, headers, and timing')
+  inputSchema['full_response'] = z.boolean().optional().describe('Set to true to disable truncation and return the full response')
+
   const paramCount = defaultParams.length
-  const description = paramCount > 0
+  let description = paramCount > 0
     ? `Fetch data from ${baseUrl} with ${paramCount} configurable query parameters. Each parameter has a default value that can be overridden.`
     : `Fetch data from ${apiUrl}. Optionally append a path.`
 
+  // Fetch sample data and enrich description with semantic field info
+  try {
+    console.error(`[api2ui-mcp] Enriching tool with semantic analysis...`)
+    const sampleUrl = paramCount > 0
+      ? `${baseUrl}?${defaultParams.map(p => `${encodeURIComponent(p.original)}=${encodeURIComponent(p.defaultValue)}`).join('&')}`
+      : apiUrl
+    const sampleResponse = await fetch(sampleUrl, {
+      headers: { 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(5000),
+    })
+    if (sampleResponse.ok) {
+      const sampleData = await sampleResponse.json()
+      const fieldDesc = describeFieldsFromData(sampleData, sampleUrl)
+      if (fieldDesc) {
+        description = `${description}. ${fieldDesc}`
+        console.error(`[api2ui-mcp] ${fieldDesc}`)
+      }
+    }
+  } catch {
+    // Non-fatal — enrichment is best-effort
+    console.error(`[api2ui-mcp] Semantic enrichment skipped (fetch failed)`)
+  }
+
+  // Derive tool name from server name or URL hostname
+  let toolName = 'fetch_api'
+  if (serverName) {
+    toolName = `fetch_${sanitizeParamName(serverName)}`
+  } else {
+    const hostParts = parsed.hostname.replace(/^(www|api)\./, '').split('.')
+    if (hostParts.length > 0 && hostParts[0]) {
+      toolName = `fetch_${sanitizeParamName(hostParts[0])}`
+    }
+  }
+
   server.registerTool(
-    'fetch_api',
+    toolName,
     { description, inputSchema },
     async (args: Record<string, string | undefined>) => {
+      const showDebug = debug || String(args.debug) === 'true'
+      const noTruncate = fullResponse || String(args.full_response) === 'true'
       try {
         let url = baseUrl
         if (args.path) {
@@ -265,13 +335,27 @@ function registerRawAPITool(
           headers[auth.headerName] = auth.headerValue
         }
 
+        // API key auth: append as query parameter
+        if (auth.type === 'apikey' && auth.paramName && auth.paramValue) {
+          const urlObj = new URL(url)
+          urlObj.searchParams.set(auth.paramName, auth.paramValue)
+          url = urlObj.toString()
+        }
+
+        const start = performance.now()
         const response = await fetch(url, { headers })
+        const elapsedMs = Math.round(performance.now() - start)
         const data = await response.json()
+        const responseText = formatResponse(data, noTruncate)
+
+        const prefix = showDebug
+          ? formatDebugInfo('GET', url, headers, response.status, responseText.length, elapsedMs)
+          : ''
 
         return {
           content: [{
             type: 'text' as const,
-            text: JSON.stringify(data, null, 2),
+            text: `${prefix}${responseText}`,
           }],
         }
       } catch (err) {
@@ -286,5 +370,5 @@ function registerRawAPITool(
     }
   )
 
-  console.error(`[api2ui-mcp] 1 tool registered (fetch_api) with ${paramCount} query parameters`)
+  console.error(`[api2ui-mcp] 1 tool registered (${toolName}) with ${paramCount} query parameters`)
 }

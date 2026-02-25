@@ -12,7 +12,7 @@
 
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { createServer } from './server'
-import { generateClaudeDesktopConfig, generateClaudeCodeConfig } from './config-generator'
+import { generateClaudeDesktopConfig, generateClaudeCodeConfig, detectLocalCliPath } from './config-generator'
 import type { ServerConfig } from './types'
 
 interface CliOptions extends ServerConfig {
@@ -59,6 +59,14 @@ function parseArgs(argv: string[]): CliOptions {
         config.apiKey = next
         i += 2
         break
+      case '--debug':
+        config.debug = true
+        i++
+        break
+      case '--full-response':
+        config.fullResponse = true
+        i++
+        break
       case '--format':
         config.exportFormat = next as CliOptions['exportFormat']
         i += 2
@@ -97,6 +105,8 @@ Options:
   --token <token>     Bearer token for API authentication
   --header <h:v>      Custom header (e.g., "X-API-Key: secret")
   --api-key <k=v>     API key as query param (e.g., "apiKey=secret")
+  --debug             Show request URL, headers, and timing in responses
+  --full-response     Disable auto-truncation of large responses
   --format <fmt>      Export format: claude-desktop (default), claude-code
   -h, --help          Show this help
 
@@ -115,10 +125,11 @@ function handleExport(config: CliOptions): void {
   }
 
   const format = config.exportFormat || 'claude-desktop'
+  const localPath = detectLocalCliPath()
 
   const result = format === 'claude-code'
-    ? generateClaudeCodeConfig(config)
-    : generateClaudeDesktopConfig(config)
+    ? generateClaudeCodeConfig(config, localPath ?? undefined)
+    : generateClaudeDesktopConfig(config, localPath ?? undefined)
 
   console.log(result.instructions)
 }

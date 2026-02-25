@@ -77,6 +77,14 @@ export interface ExecutionResult {
   status: number
   data: unknown
   headers: Record<string, string>
+  /** Request metadata for debug output */
+  request: {
+    method: string
+    url: string
+    headers: Record<string, string>
+  }
+  /** Response time in milliseconds */
+  elapsedMs: number
 }
 
 /**
@@ -97,17 +105,20 @@ export async function executeTool(
     urlObj.searchParams.set(auth.paramName, auth.paramValue)
   }
 
+  const method = operation.method.toUpperCase()
   const init: RequestInit = {
-    method: operation.method.toUpperCase(),
+    method,
     headers,
   }
 
   // Add body for non-GET methods
-  if (args['body'] && operation.method.toUpperCase() !== 'GET') {
+  if (args['body'] && method !== 'GET') {
     init.body = typeof args['body'] === 'string' ? args['body'] : JSON.stringify(args['body'])
   }
 
+  const start = performance.now()
   const response = await fetch(url, init)
+  const elapsedMs = Math.round(performance.now() - start)
 
   // Collect response headers
   const responseHeaders: Record<string, string> = {}
@@ -128,5 +139,7 @@ export async function executeTool(
     status: response.status,
     data,
     headers: responseHeaders,
+    request: { method, url, headers },
+    elapsedMs,
   }
 }

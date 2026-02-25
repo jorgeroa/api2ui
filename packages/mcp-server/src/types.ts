@@ -15,6 +15,10 @@ export interface ServerConfig {
   header?: string
   /** API key query param: "param_name=value" */
   apiKey?: string
+  /** Enable debug output (show request URL, headers, timing) */
+  debug?: boolean
+  /** Disable response truncation (return full response) */
+  fullResponse?: boolean
 }
 
 export interface AuthConfig {

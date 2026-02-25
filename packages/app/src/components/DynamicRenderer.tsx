@@ -12,6 +12,8 @@ import { OnboardingTooltip } from './config/OnboardingTooltip'
 import { Breadcrumb } from './navigation/Breadcrumb'
 import { DrilldownModeToggle } from './navigation/DrilldownModeToggle'
 import { ShareButton } from './ShareButton'
+import { MCPButton } from './MCPExportDialog'
+import { MCPToolPreviewButton } from './MCPToolPreview'
 import { getDefaultTypeName } from '../services/selection'
 
 /** Normalize indexed array paths to generic paths for cache lookup.
@@ -179,7 +181,11 @@ export function DynamicRenderer({
           ) : (
             <DrilldownModeToggle />
           )}
-          <ShareButton />
+          <div className="flex items-center gap-2">
+            <MCPToolPreviewButton />
+            <MCPButton />
+            <ShareButton />
+          </div>
         </div>
       ))}
 

@@ -126,29 +126,11 @@ function enhanceParameterSchema(
 // ---------------------------------------------------------------------------
 
 /**
- * Generate a semantic description of response fields by fetching sample data.
+ * Extract semantic field descriptions from already-fetched API response data.
+ * Reusable by both OpenAPI enrichment and raw API mode.
  */
-async function describeResponseFields(
-  baseUrl: string,
-  operation: ParsedOperation
-): Promise<string | null> {
-  // Only enrich GET endpoints with no required path params (safe to fetch)
-  if (operation.method.toUpperCase() !== 'GET') return null
-  const hasRequiredPathParams = operation.parameters.some(
-    p => p.in === 'path' && p.required
-  )
-  if (hasRequiredPathParams) return null
-
+export function describeFieldsFromData(data: unknown, url: string): string | null {
   try {
-    const url = new URL(operation.path, baseUrl).toString()
-    const response = await fetch(url, {
-      headers: { 'Accept': 'application/json' },
-      signal: AbortSignal.timeout(5000),
-    })
-
-    if (!response.ok) return null
-
-    const data = await response.json()
     const analysis = analyzeApiResponse(data, url)
 
     // Only use top-level path analyses ($ or $[]) to avoid noisy nested detections
@@ -185,6 +167,36 @@ async function describeResponseFields(
       : ''
 
     return `Returns: ${capped.join(', ')}${suffix}`
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Generate a semantic description of response fields by fetching sample data.
+ */
+async function describeResponseFields(
+  baseUrl: string,
+  operation: ParsedOperation
+): Promise<string | null> {
+  // Only enrich GET endpoints with no required path params (safe to fetch)
+  if (operation.method.toUpperCase() !== 'GET') return null
+  const hasRequiredPathParams = operation.parameters.some(
+    p => p.in === 'path' && p.required
+  )
+  if (hasRequiredPathParams) return null
+
+  try {
+    const url = new URL(operation.path, baseUrl).toString()
+    const response = await fetch(url, {
+      headers: { 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(5000),
+    })
+
+    if (!response.ok) return null
+
+    const data = await response.json()
+    return describeFieldsFromData(data, url)
   } catch {
     return null
   }

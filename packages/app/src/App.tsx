@@ -21,6 +21,8 @@ import { Sidebar } from './components/navigation/Sidebar'
 import { LayoutContainer } from './components/layout/LayoutContainer'
 import { parseUrlParameters, reconstructQueryString } from './services/urlParser/parser'
 import { ShareButton } from './components/ShareButton'
+import { MCPButton } from './components/MCPExportDialog'
+import { MCPToolPreviewButton } from './components/MCPToolPreview'
 import { DrilldownModeToggle } from './components/navigation/DrilldownModeToggle'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
@@ -34,7 +36,11 @@ function ResultsToolbar() {
     <>
       <div className="flex items-center justify-between mb-2">
         <DrilldownModeToggle />
-        <ShareButton />
+        <div className="flex items-center gap-2">
+          <MCPToolPreviewButton />
+          <MCPButton />
+          <ShareButton />
+        </div>
       </div>
       {/* Skeleton placeholder matching ViewModeBadge pill size */}
       <div className="flex justify-end mb-1">

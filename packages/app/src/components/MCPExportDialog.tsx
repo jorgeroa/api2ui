@@ -48,16 +48,29 @@ function deriveServerName(url: string): string {
   }
 }
 
+/**
+ * Get the command and first arg for the MCP server.
+ * In dev mode, uses node + relative path to local CLI.
+ * In production, uses npx + package name.
+ */
+function getMcpCommand(): { command: string; pkg: string } {
+  if (import.meta.env.DEV) {
+    return { command: 'node', pkg: 'packages/mcp-server/dist/cli.js' }
+  }
+  return { command: 'npx', pkg: '@api2ui/mcp-server' }
+}
+
 function generateConfig(format: ExportFormat, apiUrl: string, name: string, authArgs: string[]): string {
-  const allArgs = ['@api2ui/mcp-server', '--api', apiUrl, '--name', name, ...authArgs]
+  const { command, pkg } = getMcpCommand()
+  const allArgs = [pkg, '--api', apiUrl, '--name', name, ...authArgs]
 
   if (format === 'cli') {
-    return `npx @api2ui/mcp-server --api "${apiUrl}" --name ${name}${authArgs.length ? ' ' + authArgs.join(' ') : ''}`
+    return `${command} ${pkg} --api "${apiUrl}" --name ${name}${authArgs.length ? ' ' + authArgs.join(' ') : ''}`
   }
 
   const config = {
     [name]: {
-      command: 'npx',
+      command,
       args: allArgs,
     },
   }
