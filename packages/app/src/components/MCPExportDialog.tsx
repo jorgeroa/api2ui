@@ -1,8 +1,10 @@
-import { useState } from 'react'
-import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
+import { useState, useMemo } from 'react'
+import { Dialog, DialogPanel, DialogTitle, Disclosure, DisclosureButton, DisclosurePanel, Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
 import { toast } from 'sonner'
 import { useAppStore } from '../store/appStore'
 import { useAuthStore } from '../store/authStore'
+import { parseUrlParameters } from '../services/urlParser/parser'
+import type { Credential } from '../types/auth'
 
 type ExportFormat = 'claude-desktop' | 'claude-code' | 'cli'
 
@@ -11,14 +13,40 @@ interface MCPExportDialogProps {
   onClose: () => void
 }
 
-import type { Credential } from '../types/auth'
+function sanitizeParamName(name: string): string {
+  return name
+    .replace(/[^a-zA-Z0-9_]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '')
+}
 
-/**
- * Build auth CLI args from a credential.
- */
+function deriveToolName(url: string, serverName?: string): string {
+  if (serverName) {
+    return `fetch_${sanitizeParamName(serverName)}`
+  }
+  try {
+    const hostname = new URL(url).hostname
+    const hostParts = hostname.replace(/^(www|api)\./, '').split('.')
+    if (hostParts.length > 0 && hostParts[0]) {
+      return `fetch_${sanitizeParamName(hostParts[0])}`
+    }
+  } catch { /* fallback */ }
+  return 'fetch_api'
+}
+
+function deriveServerName(url: string): string {
+  return deriveToolName(url).replace('fetch_', '')
+}
+
+function getMcpCommand(): { command: string; pkg: string } {
+  if (import.meta.env.DEV) {
+    return { command: 'node', pkg: 'packages/mcp-server/dist/cli.js' }
+  }
+  return { command: 'npx', pkg: '@api2ui/mcp-server' }
+}
+
 function buildAuthArgs(cred: Credential | null): string[] {
   if (!cred) return []
-
   switch (cred.type) {
     case 'bearer':
       return ['--token', cred.token]
@@ -31,36 +59,120 @@ function buildAuthArgs(cred: Credential | null): string[] {
   }
 }
 
-/**
- * Derive a clean server name from a URL.
- */
-function deriveServerName(url: string): string {
-  try {
-    const hostname = new URL(url).hostname
-    return hostname
-      .replace(/^(www|api)\./, '')
-      .replace(/\.[^.]+$/, '')
-      .replace(/[^a-zA-Z0-9]/g, '-')
-      .toLowerCase()
-      || 'my-api'
-  } catch {
-    return 'my-api'
-  }
+const CATEGORY_LABELS: Record<string, string> = {
+  price: 'currency/price',
+  email: 'email address',
+  phone: 'phone number',
+  url: 'URL',
+  image_url: 'image URL',
+  rating: 'rating score',
+  date: 'date/time',
+  name: 'name/identity',
+  description: 'description',
+  status: 'status indicator',
+  color: 'color value',
+  uuid: 'unique identifier',
+  address: 'address',
+  coordinates: 'coordinates',
+  percentage: 'percentage',
+  count: 'count/quantity',
+  tags: 'tags/labels',
+}
+
+function formatCategory(category: string): string {
+  return CATEGORY_LABELS[category] || category
 }
 
 /**
- * Get the command and first arg for the MCP server.
- * In dev mode, uses node + relative path to local CLI.
- * In production, uses npx + package name.
+ * Infer a useful description from a parameter's key name.
+ * Extracts the inner key (e.g. "zipcode" from "filter[zipcode]") and matches
+ * against common patterns to produce agent-friendly descriptions.
  */
-function getMcpCommand(): { command: string; pkg: string } {
-  if (import.meta.env.DEV) {
-    return { command: 'node', pkg: 'packages/mcp-server/dist/cli.js' }
+function inferParamDescription(originalKey: string, defaultValue: string): string {
+  // Extract the innermost key name from bracket notation
+  const bracketMatch = originalKey.match(/\[([^\]]+)\](?:\[([^\]]+)\])?$/)
+  const leafKey = bracketMatch
+    ? (bracketMatch[2] ?? bracketMatch[1] ?? originalKey)
+    : originalKey
+  const lower = leafKey.toLowerCase()
+
+  const PARAM_HINTS: Array<[RegExp, string]> = [
+    [/^(zip_?code|zip|postal)$/i, 'ZIP/postal code'],
+    [/^lat(itude)?$/i, 'Latitude coordinate'],
+    [/^(lng|lon|longitude)$/i, 'Longitude coordinate'],
+    [/^(distance|radius)$/i, 'Search radius (distance)'],
+    [/^(search_?term|search|query|q)$/i, 'Search text query'],
+    [/^page$/i, 'Page number for pagination'],
+    [/^(size|limit|per_?page|page_?size|count)$/i, 'Number of results per page'],
+    [/^(sort|sort_?by|order_?by)$/i, 'Sort field or order'],
+    [/^(sort_?order|order|direction)$/i, 'Sort direction (asc/desc)'],
+    [/^(name|provider_?name|user_?name)$/i, 'Name to filter by'],
+    [/^(insurance|insurance_?type|insurance_?types)$/i, 'Insurance type filter'],
+    [/^(search_?options|options|mode)$/i, 'Search mode or options'],
+    [/^(partner|partner_?site|site)_?id$/i, 'Partner/site identifier'],
+    [/^(show|enable|display)_?(\w+)$/i, 'Toggle for display option'],
+    [/^version$/i, 'API version'],
+    [/^(offset|skip)$/i, 'Number of results to skip'],
+    [/^(type|category|kind)$/i, 'Type or category filter'],
+    [/^(id|_id)$/i, 'Record identifier'],
+    [/^(start|from|begin)_?date$/i, 'Start date for range filter'],
+    [/^(end|to)_?date$/i, 'End date for range filter'],
+    [/^(language|lang|locale)$/i, 'Language or locale code'],
+    [/^(country|region|state)$/i, 'Geographic region filter'],
+    [/^(city|city_?name)$/i, 'City name'],
+    [/^(status|state)$/i, 'Status filter'],
+    [/^(fields|select|include)$/i, 'Fields to include in response'],
+    [/^(format|output)$/i, 'Response format'],
+  ]
+
+  for (const [pattern, hint] of PARAM_HINTS) {
+    if (pattern.test(lower)) {
+      const desc = defaultValue ? `${hint} (default: "${defaultValue}")` : hint
+      if (originalKey !== leafKey) {
+        return `${desc} — query param "${originalKey}"`
+      }
+      return desc
+    }
   }
-  return { command: 'npx', pkg: '@api2ui/mcp-server' }
+
+  // Fallback: show the original key mapping if sanitized, otherwise just the default
+  if (originalKey !== sanitizeParamName(originalKey)) {
+    return `Query param "${originalKey}"${defaultValue ? ` (default: "${defaultValue}")` : ''}`
+  }
+  return defaultValue ? `(default: "${defaultValue}")` : ''
 }
 
-function generateConfig(format: ExportFormat, apiUrl: string, name: string, authArgs: string[]): string {
+/**
+ * Collect semantic response fields from ALL analysis cache paths,
+ * not just top-level. Walks nested array paths to find fields in
+ * deeply nested structures.
+ */
+function getResponseFieldDescriptions(
+  analysisCache: Map<string, { semantics: Map<string, { detectedCategory?: string; level?: string }> }>
+): Array<{ name: string; category: string }> {
+  const fields: Array<{ name: string; category: string }> = []
+  const seen = new Set<string>()
+
+  // Sort paths by depth (shallower first) so top-level fields take priority
+  const sortedPaths = [...analysisCache.entries()].sort(
+    (a, b) => a[0].split('.').length - b[0].split('.').length
+  )
+
+  for (const [, entry] of sortedPaths) {
+    for (const [fieldPath, metadata] of entry.semantics) {
+      if (metadata.detectedCategory && (metadata.level === 'high' || metadata.level === 'medium')) {
+        const fieldName = fieldPath.split('.').pop() || fieldPath
+        if (seen.has(fieldName)) continue
+        seen.add(fieldName)
+        fields.push({ name: fieldName, category: formatCategory(metadata.detectedCategory) })
+      }
+    }
+  }
+
+  return fields.slice(0, 16)
+}
+
+function generateExportConfig(format: ExportFormat, apiUrl: string, name: string, authArgs: string[]): string {
   const { command, pkg } = getMcpCommand()
   const allArgs = [pkg, '--api', apiUrl, '--name', name, ...authArgs]
 
@@ -89,30 +201,88 @@ function getInstructions(format: ExportFormat): string {
   }
 }
 
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`}
+      fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+    </svg>
+  )
+}
+
 export function MCPExportDialog({ open, onClose }: MCPExportDialogProps) {
   const url = useAppStore((s) => s.url)
+  const data = useAppStore((s) => s.data)
+  const analysisCache = useAppStore((s) => s.analysisCache)
   const [format, setFormat] = useState<ExportFormat>('claude-desktop')
 
-  if (!url) return null
+  const toolInfo = useMemo(() => {
+    if (!url) return null
 
-  const serverName = deriveServerName(url)
+    const toolName = deriveToolName(url)
+    const { parameters } = parseUrlParameters(url)
 
-  // Get auth info if present
-  const authStore = useAuthStore.getState()
-  const cred = authStore.getActiveCredential(url)
-  const authArgs = buildAuthArgs(cred)
-
-  const configText = generateConfig(format, url, serverName, authArgs)
-  const instructions = getInstructions(format)
-
-  const handleCopy = async () => {
+    let baseUrl = url
     try {
-      await navigator.clipboard.writeText(configText)
-      toast.success('Config copied to clipboard')
+      const parsed = new URL(url)
+      baseUrl = `${parsed.origin}${parsed.pathname}`
+    } catch { /* keep original */ }
+
+    const toolParams = [
+      { name: 'path', type: 'string', description: 'Additional path segment to append (e.g., "/users/1")' },
+      ...parameters.map(p => ({
+        name: p.originalKey !== sanitizeParamName(p.originalKey) ? sanitizeParamName(p.originalKey) : p.originalKey,
+        type: p.isArray ? 'array' : 'string',
+        description: inferParamDescription(p.originalKey, String(p.schema.default ?? '')),
+      })),
+      { name: 'debug', type: 'boolean', description: 'Show request URL, headers, and timing' },
+      { name: 'full_response', type: 'boolean', description: 'Disable truncation, return full response' },
+    ]
+
+    const responseFields = getResponseFieldDescriptions(analysisCache as Map<string, { semantics: Map<string, { detectedCategory?: string; level?: string }> }>)
+
+    const paramCount = parameters.length
+    let description = paramCount > 0
+      ? `Fetch data from ${baseUrl} with ${paramCount} configurable query parameters. Each parameter has a default value that can be overridden.`
+      : `Fetch data from ${url}. Optionally append a path.`
+
+    if (responseFields.length > 0) {
+      const fieldStr = responseFields.map(f => `${f.name} (${f.category})`).join(', ')
+      description = `${description.replace(/\.$/, '')}. Returns: ${fieldStr}`
+    }
+
+    const authStore = useAuthStore.getState()
+    const cred = authStore.getActiveCredential(url)
+    const authArgs = buildAuthArgs(cred)
+    const serverName = deriveServerName(url)
+
+    return {
+      toolName,
+      description,
+      params: toolParams,
+      responseFields,
+      serverName,
+      cred,
+      authArgs,
+      hasData: data !== null && data !== undefined,
+    }
+  }, [url, data, analysisCache])
+
+  if (!url || !toolInfo) return null
+
+  const handleCopy = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success(`${label} copied`)
     } catch {
-      toast.info('MCP Config', { description: configText, duration: 10000 })
+      toast.info(label, { description: text, duration: 10000 })
     }
   }
+
+  const exportConfigText = generateExportConfig(format, url, toolInfo.serverName, toolInfo.authArgs)
+  const instructions = getInstructions(format)
 
   const formats: Array<{ value: ExportFormat; label: string }> = [
     { value: 'claude-desktop', label: 'Claude Desktop' },
@@ -122,71 +292,183 @@ export function MCPExportDialog({ open, onClose }: MCPExportDialogProps) {
 
   return (
     <Dialog open={open} onClose={onClose} className="relative z-50">
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
 
-      {/* Container */}
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="max-w-lg w-full bg-background rounded-xl shadow-lg p-6">
-          <DialogTitle className="text-lg font-semibold mb-1">
-            Connect via MCP
-          </DialogTitle>
-          <p className="text-sm text-muted-foreground mb-4">
-            Use this API as MCP tools in your AI assistant.
-          </p>
-
-          {/* Format selector */}
-          <div className="inline-flex border border-border rounded-lg text-xs mb-4" role="group">
-            {formats.map(({ value, label }) => (
-              <button
-                key={value}
-                onClick={() => setFormat(value)}
-                className={`px-3 py-1.5 transition-colors ${
-                  format === value
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-muted'
-                } ${value === 'claude-desktop' ? 'rounded-l-lg' : ''} ${
-                  value === 'cli' ? 'rounded-r-lg' : ''
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {/* Config display */}
-          <div className="relative">
-            <pre className="bg-muted rounded-lg p-3 text-xs font-mono overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all">
-              {configText}
-            </pre>
+      <div className="fixed inset-0 flex items-start justify-center pt-[10vh] px-4 pb-4">
+        <DialogPanel className="max-w-3xl w-full bg-background rounded-xl shadow-2xl border border-border flex flex-col max-h-[80vh]">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 pt-5 pb-2 shrink-0">
+            <DialogTitle className="text-lg font-semibold">
+              MCP Tools
+            </DialogTitle>
             <button
-              onClick={handleCopy}
-              className="absolute top-2 right-2 px-2 py-1 text-xs bg-background border border-border rounded hover:bg-muted transition-colors"
-              title="Copy to clipboard"
+              onClick={onClose}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Close"
             >
-              Copy
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
 
-          {/* Instructions */}
-          <p className="text-xs text-muted-foreground mt-3">
-            {instructions}
-          </p>
+          <TabGroup className="flex flex-col min-h-0 flex-1">
+            <TabList className="flex gap-1 px-6 border-b border-border shrink-0">
+              <Tab className="px-3 py-2 text-sm font-medium text-muted-foreground data-selected:text-foreground data-selected:border-b-2 data-selected:border-primary -mb-px outline-none transition-colors hover:text-foreground">
+                Preview
+              </Tab>
+              <Tab className="px-3 py-2 text-sm font-medium text-muted-foreground data-selected:text-foreground data-selected:border-b-2 data-selected:border-primary -mb-px outline-none transition-colors hover:text-foreground">
+                Export
+              </Tab>
+            </TabList>
 
-          {/* Auth warning */}
-          {cred && (
-            <p className="text-xs text-amber-500 mt-2">
-              This config includes your API credentials. Keep it private.
-            </p>
-          )}
+            <TabPanels className="flex-1 overflow-y-auto min-h-0">
+              {/* Preview Tab */}
+              <TabPanel className="px-6 py-4 space-y-5">
+                {/* Tool name + description */}
+                <section>
+                  <div className="flex items-center gap-2 mb-2">
+                    <code className="text-sm font-mono font-semibold text-foreground bg-muted px-2 py-0.5 rounded">
+                      {toolInfo.toolName}
+                    </code>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {toolInfo.description}
+                  </p>
+                </section>
 
-          {/* Close */}
-          <button
-            onClick={onClose}
-            className="w-full mt-4 px-4 py-2 bg-muted rounded-lg hover:bg-muted/80 transition-colors text-sm"
-          >
-            Done
-          </button>
+                {/* Parameters */}
+                <Disclosure defaultOpen>
+                  <DisclosureButton className="flex items-center justify-between w-full text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    {({ open: isOpen }) => (
+                      <>
+                        Parameters ({toolInfo.params.length})
+                        <ChevronIcon open={isOpen} />
+                      </>
+                    )}
+                  </DisclosureButton>
+                  <DisclosurePanel className="mt-2">
+                    <div className="border border-border rounded-lg overflow-hidden">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-muted/50 text-muted-foreground">
+                            <th className="text-left px-3 py-2 font-medium">Name</th>
+                            <th className="text-left px-3 py-2 font-medium w-16">Type</th>
+                            <th className="text-left px-3 py-2 font-medium">Description</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {toolInfo.params.map((param) => (
+                            <tr key={param.name} className="border-t border-border hover:bg-muted/30">
+                              <td className="px-3 py-2">
+                                <code className="font-mono text-foreground">{param.name}</code>
+                              </td>
+                              <td className="px-3 py-2 text-muted-foreground/70">{param.type}</td>
+                              <td className="px-3 py-2 text-muted-foreground">{param.description}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </DisclosurePanel>
+                </Disclosure>
+
+                {/* Response Fields */}
+                {toolInfo.responseFields.length > 0 && (
+                  <Disclosure defaultOpen>
+                    <DisclosureButton className="flex items-center justify-between w-full text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                      {({ open: isOpen }) => (
+                        <>
+                          Response Fields ({toolInfo.responseFields.length})
+                          <ChevronIcon open={isOpen} />
+                        </>
+                      )}
+                    </DisclosureButton>
+                    <DisclosurePanel className="mt-2 flex flex-wrap gap-2">
+                      {toolInfo.responseFields.map((field) => (
+                        <div
+                          key={field.name}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border text-xs"
+                        >
+                          <code className="font-mono text-foreground">{field.name}</code>
+                          <span className="text-muted-foreground/70">{field.category}</span>
+                        </div>
+                      ))}
+                    </DisclosurePanel>
+                  </Disclosure>
+                )}
+
+                {!toolInfo.hasData && (
+                  <p className="text-xs text-muted-foreground italic">
+                    Fetch the API to see response field semantics.
+                  </p>
+                )}
+
+              </TabPanel>
+
+              {/* Export Tab */}
+              <TabPanel className="px-6 py-4 flex flex-col gap-4 h-full">
+                <p className="text-sm text-muted-foreground shrink-0">
+                  Use this API as MCP tools in your AI assistant.
+                </p>
+
+                {/* Format selector */}
+                <div className="inline-flex border border-border rounded-lg text-xs shrink-0" role="group">
+                  {formats.map(({ value, label }) => (
+                    <button
+                      key={value}
+                      onClick={() => setFormat(value)}
+                      className={`px-3 py-1.5 transition-colors ${
+                        format === value
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:bg-muted'
+                      } ${value === 'claude-desktop' ? 'rounded-l-lg' : ''} ${
+                        value === 'cli' ? 'rounded-r-lg' : ''
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Config display */}
+                <div className="relative flex-1 min-h-0">
+                  <pre className="bg-muted rounded-lg p-3 text-xs font-mono overflow-x-auto h-full overflow-y-auto whitespace-pre-wrap break-all">
+                    {exportConfigText}
+                  </pre>
+                  <button
+                    onClick={() => handleCopy(exportConfigText, 'Config')}
+                    className="absolute top-2 right-2 px-2 py-1 text-xs bg-background border border-border rounded hover:bg-muted transition-colors"
+                    title="Copy to clipboard"
+                  >
+                    Copy
+                  </button>
+                </div>
+
+                {/* Instructions */}
+                <p className="text-xs text-muted-foreground shrink-0">
+                  {instructions}
+                </p>
+
+                {/* Auth warning */}
+                {toolInfo.cred && (
+                  <p className="text-xs text-amber-500 shrink-0">
+                    This config includes your API credentials. Keep it private.
+                  </p>
+                )}
+              </TabPanel>
+            </TabPanels>
+          </TabGroup>
+
+          {/* Footer */}
+          <div className="border-t border-border px-6 py-3 shrink-0 mt-auto">
+            <button
+              onClick={onClose}
+              className="w-full px-4 py-2 bg-muted rounded-lg hover:bg-muted/80 transition-colors text-sm"
+            >
+              Done
+            </button>
+          </div>
         </DialogPanel>
       </div>
     </Dialog>
@@ -207,7 +489,7 @@ export function MCPButton() {
       <button
         onClick={() => setOpen(true)}
         className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-muted-foreground bg-background border border-border rounded-md hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus-visible:ring-ring/50 focus:ring-offset-1"
-        title="Connect via MCP"
+        title="MCP Tools"
       >
         <svg
           className="w-3.5 h-3.5"
@@ -222,7 +504,7 @@ export function MCPButton() {
             d="M8.288 15.038a5.25 5.25 0 017.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12 20.5h.01"
           />
         </svg>
-        MCP
+        MCP Tools
       </button>
       <MCPExportDialog open={open} onClose={() => setOpen(false)} />
     </>

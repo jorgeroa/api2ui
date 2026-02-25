@@ -8,7 +8,6 @@ import { SplitLayout } from './SplitLayout'
 import { DrawerLayout } from './DrawerLayout'
 import { ShareButton } from '../ShareButton'
 import { MCPButton } from '../MCPExportDialog'
-import { MCPToolPreviewButton } from '../MCPToolPreview'
 import { DrilldownModeToggle } from '../navigation/DrilldownModeToggle'
 
 interface LayoutContainerProps {
@@ -61,7 +60,6 @@ export function LayoutContainer({
             <DrilldownModeToggle />
           </div>
           <div className="flex items-center gap-2">
-            <MCPToolPreviewButton />
             <MCPButton />
             <ShareButton />
           </div>
