@@ -16,14 +16,15 @@ export function buildToolsFromUrl(url: string): Tool[] {
   const hostname = parsedUrl.hostname.replace(/^(www|api)\./, '')
   const { parameters } = parseUrlParameters(url)
 
+  const pathname = parsedUrl.pathname.replace(/\/$/, '')
+  const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}${pathname}`
+
   const properties: Record<string, ToolParameter> = {
     path: {
       type: 'string',
-      description: 'Additional path segment to append to the base URL (e.g., "/1" to get item by ID, "/users" to access a sub-resource)',
+      description: `Optional sub-path to append AFTER the base path "${pathname}". For example "/1" to get item by ID, or "/search" for a search endpoint. Do NOT repeat "${pathname}" — it is already included. Omit this parameter to call the base URL as-is.`,
     },
   }
-
-  const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}${parsedUrl.pathname}`
 
   for (const param of parameters) {
     properties[param.name] = {
@@ -116,11 +117,15 @@ export function buildSystemPrompt(url: string, spec?: ParsedSpec | null): string
     ].join(' ')
   }
 
+  const parsedUrl = new URL(url)
+  const pathname = parsedUrl.pathname.replace(/\/$/, '')
+
   return [
     `You are a helpful assistant that queries the REST API at ${hostname} on behalf of the user.`,
     `You have a "query_api" tool that can fetch data from this API.`,
+    `The base URL is already set to ${parsedUrl.origin}${pathname} — do NOT repeat "${pathname}" in the path parameter.`,
+    `The path parameter is only for SUB-paths like "/1" or "/search". To call the base URL as-is, omit the path parameter entirely.`,
     `When the user asks a question, call the tool with appropriate parameters, then summarize the results in natural language.`,
-    `You can append path segments (e.g., path="/users/1") or set query parameters to navigate and filter the data.`,
     `Always call the tool to get real data — never make up responses.`,
     `Keep your text responses concise (2-3 sentences) and focus on the data.`,
   ].join(' ')

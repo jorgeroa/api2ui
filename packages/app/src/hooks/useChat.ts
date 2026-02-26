@@ -36,8 +36,13 @@ async function executeToolCall(
     // Raw URL mode: build URL from base + path + query params
     let targetUrl = baseUrl
     if (args.path && typeof args.path === 'string') {
-      const pathSegment = args.path.startsWith('/') ? args.path : `/${args.path}`
-      targetUrl += pathSegment
+      let pathSegment = args.path.startsWith('/') ? args.path : `/${args.path}`
+      // Guard against LLM repeating the base pathname (e.g. /products/products)
+      const basePath = parsedUrl.pathname.replace(/\/$/, '')
+      if (basePath !== '/' && pathSegment.startsWith(basePath)) {
+        pathSegment = pathSegment.slice(basePath.length) || ''
+      }
+      if (pathSegment) targetUrl += pathSegment
     }
 
     const queryParams = new URLSearchParams()
