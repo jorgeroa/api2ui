@@ -586,11 +586,9 @@ function App() {
               {!loading && !error && !schema && !parsedSpec && (
                 <div className="py-10">
                   <p className="text-center text-xl text-muted-foreground mb-8">
-                    Three ways to experience any API
+                    [Agent + User] eXperience for any API
                   </p>
-
-                  {/* Three Pillars */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
                     <div className="flex gap-3 p-4 rounded-lg">
                       <span className="text-2xl flex-shrink-0" aria-hidden="true">~</span>
                       <div>
@@ -610,38 +608,6 @@ function App() {
                       <div>
                         <p className="font-medium text-foreground text-base">MCP Export</p>
                         <p className="text-xs text-muted-foreground">Turn any API into tools for Claude Desktop, Claude Code, and other AI agents</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Supporting Features */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-                    <div className="flex gap-3 p-3 rounded-lg">
-                      <span className="text-2xl flex-shrink-0" aria-hidden="true">{'{}'}</span>
-                      <div>
-                        <p className="font-medium text-foreground text-sm">OpenAPI Support</p>
-                        <p className="text-xs text-muted-foreground">Auto-discovers endpoints, generates parameter forms, executes operations</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-3 p-3 rounded-lg">
-                      <span className="text-2xl flex-shrink-0" aria-hidden="true">#</span>
-                      <div>
-                        <p className="font-medium text-foreground text-sm">Shareable Links</p>
-                        <p className="text-xs text-muted-foreground">Share your API view with a single URL &mdash; no setup needed for recipients</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-3 p-3 rounded-lg">
-                      <span className="text-2xl flex-shrink-0" aria-hidden="true">*</span>
-                      <div>
-                        <p className="font-medium text-foreground text-sm">Authentication</p>
-                        <p className="text-xs text-muted-foreground">Bearer token, Basic Auth, API Key, and query parameter auth built-in</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-3 p-3 rounded-lg">
-                      <span className="text-2xl flex-shrink-0" aria-hidden="true">+</span>
-                      <div>
-                        <p className="font-medium text-foreground text-sm">Plugin System</p>
-                        <p className="text-xs text-muted-foreground">Extend rendering with community plugins &mdash; gauges, maps, charts, and more</p>
                       </div>
                     </div>
                   </div>
