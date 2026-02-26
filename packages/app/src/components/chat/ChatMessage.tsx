@@ -1,5 +1,3 @@
-import { DynamicRenderer } from '../DynamicRenderer'
-import { inferSchema } from '../../services/schema/inferrer'
 import type { UIMessage } from '../../services/llm/types'
 
 interface ChatMessageProps {
@@ -17,26 +15,11 @@ export function ChatMessage({ message }: ChatMessageProps) {
     )
   }
 
-  if (message.role === 'tool-result' && message.apiData !== undefined) {
-    const schema = inferSchema(message.apiData, '')
+  if (message.role === 'tool-result') {
     return (
-      <div className="px-4 py-2">
-        <div className="text-xs text-muted-foreground mb-1">
-          {message.toolName && `${message.toolName}(`}
-          {message.toolArgs && Object.entries(message.toolArgs)
-            .filter(([, v]) => v !== undefined && v !== '')
-            .map(([k, v]) => `${k}=${JSON.stringify(v)}`)
-            .join(', ')}
-          {message.toolName && ')'}
-        </div>
-        <div className="@container rounded-lg border border-border bg-card p-3 overflow-auto max-h-[400px]">
-          <DynamicRenderer
-            data={message.apiData}
-            schema={schema.rootType}
-            path="$"
-            depth={0}
-            hideViewControls
-          />
+      <div className="px-4 py-1.5">
+        <div className="text-xs text-muted-foreground bg-muted/50 rounded px-2.5 py-1.5 font-mono">
+          {message.text}
         </div>
       </div>
     )

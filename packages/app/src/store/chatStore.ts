@@ -19,6 +19,10 @@ interface ChatState {
   config: ChatConfig
   setConfig: (config: Partial<ChatConfig>) => void
 
+  /** Chat panel width as percentage (persisted) */
+  panelSize: number
+  setPanelSize: (size: number) => void
+
   /** Whether a request is in flight */
   sending: boolean
   setSending: (sending: boolean) => void
@@ -34,6 +38,7 @@ export const useChatStore = create<ChatState>()(
         model: DEFAULT_MODELS.openrouter,
         provider: 'openrouter',
       },
+      panelSize: 30,
       sending: false,
 
       setOpen: (open) => set({ open }),
@@ -52,15 +57,16 @@ export const useChatStore = create<ChatState>()(
       setConfig: (partial) => set((s) => ({
         config: { ...s.config, ...partial },
       })),
+      setPanelSize: (panelSize) => set({ panelSize }),
       setSending: (sending) => set({ sending }),
     }),
     {
       name: 'api2ui-chat',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         config: state.config,
-        // Don't persist messages or open state
+        panelSize: state.panelSize,
       }),
     }
   )

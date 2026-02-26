@@ -12,11 +12,33 @@ import { useChatStore } from '../store/chatStore'
 import { chatCompletion } from '../services/llm/client'
 import { buildToolsFromUrl, buildToolsFromSpec, buildSystemPrompt } from '../services/llm/toolBuilder'
 import { fetchWithAuth } from '../services/api/fetcher'
+import { inferSchema } from '../services/schema/inferrer'
 import type { ChatMessage, UIMessage, Tool } from '../services/llm/types'
 
 let messageCounter = 0
 function nextId(): string {
   return `msg-${Date.now()}-${++messageCounter}`
+}
+
+/** Generate a compact text summary for a tool result shown in the chat */
+function summarizeToolResult(
+  data: unknown,
+  toolName: string,
+  args: Record<string, unknown>,
+): string {
+  const argStr = Object.entries(args)
+    .filter(([, v]) => v !== undefined && v !== '')
+    .map(([k, v]) => `${k}=${JSON.stringify(v)}`)
+    .join(', ')
+
+  let countInfo = ''
+  if (Array.isArray(data)) {
+    countInfo = ` → ${data.length} item${data.length !== 1 ? 's' : ''}`
+  } else if (data && typeof data === 'object') {
+    countInfo = ` → ${Object.keys(data).length} field${Object.keys(data).length !== 1 ? 's' : ''}`
+  }
+
+  return `${toolName}(${argStr})${countInfo} — updated main view`
 }
 
 /**
@@ -195,12 +217,15 @@ export function useChat() {
           return
         }
 
-        // Add tool result as a UI message for rendering
+        // Push result to main view via appStore
+        const toolSchema = inferSchema(toolResult, url)
+        useAppStore.getState().fetchSuccess(toolResult, toolSchema)
+
+        // Add compact summary to chat (no inline rendering)
         const toolResultMsg: UIMessage = {
           id: nextId(),
           role: 'tool-result',
-          text: null,
-          apiData: toolResult,
+          text: summarizeToolResult(toolResult, toolCall.function.name, toolArgs),
           toolName: toolCall.function.name,
           toolArgs,
           timestamp: Date.now(),

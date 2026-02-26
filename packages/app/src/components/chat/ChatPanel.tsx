@@ -7,7 +7,7 @@ import { ChatInput } from './ChatInput'
 import { ChatSettings } from './ChatSettings'
 
 export function ChatPanel() {
-  const { open, setOpen, clearMessages } = useChatStore()
+  const { setOpen, clearMessages } = useChatStore()
   const url = useAppStore((s) => s.url)
   const { messages, sendMessage, sending, hasApiKey } = useChat()
   const [showSettings, setShowSettings] = useState(false)
@@ -24,15 +24,13 @@ export function ChatPanel() {
 
   // Show settings by default when no API key
   useEffect(() => {
-    if (open && !hasApiKey) {
+    if (!hasApiKey) {
       setShowSettings(true)
     }
-  }, [open, hasApiKey])
-
-  if (!open) return null
+  }, [hasApiKey])
 
   return (
-    <div className="fixed right-0 top-0 bottom-0 w-[420px] max-w-[100vw] bg-background border-l border-border shadow-lg z-40 flex flex-col">
+    <div className="h-full bg-background border-l border-border flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">

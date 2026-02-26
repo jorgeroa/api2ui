@@ -22,7 +22,9 @@ import { LayoutContainer } from './components/layout/LayoutContainer'
 import { parseUrlParameters, reconstructQueryString } from './services/urlParser/parser'
 import { ShareButton } from './components/ShareButton'
 import { MCPButton } from './components/MCPExportDialog'
-import { ChatPanel, ChatButton } from './components/chat/ChatPanel'
+import { ChatButton } from './components/chat/ChatPanel'
+import { AppShell } from './components/layout/AppShell'
+import { useChatStore } from './store/chatStore'
 import { DrilldownModeToggle } from './components/navigation/DrilldownModeToggle'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
@@ -64,6 +66,7 @@ function App() {
     reset,
     detailPanelOpen
   } = useAppStore()
+  const chatOpen = useChatStore((s) => s.open)
   const { mode, setMode, clearFieldConfigs } = useConfigStore()
   const { getValues, clearValue, clearEndpoint } = useParameterStore()
   const { fetchAndInfer, fetchOperation } = useAPIFetch()
@@ -285,6 +288,7 @@ function App() {
         </div>
       )}
 
+      <AppShell>
       {showSidebar ? (
         // Sidebar layout for multi-endpoint specs
         <div className="flex min-h-screen bg-background text-foreground">
@@ -401,7 +405,7 @@ function App() {
       ) : (
         // Centered layout for single-endpoint and direct URLs
         <div className={`min-h-screen bg-background text-foreground py-8 px-4 transition-[padding] duration-300 ${isConfigureMode ? 'pt-20' : ''} ${detailPanelOpen ? 'pr-[42rem]' : ''}`}>
-          <div className={`max-w-6xl mx-auto ${isConfigureMode ? 'ring-2 ring-ring ring-offset-4' : ''}`}>
+          <div className={`${chatOpen ? 'w-full' : 'max-w-6xl mx-auto'} ${isConfigureMode ? 'ring-2 ring-ring ring-offset-4' : ''}`}>
             {/* Header */}
             <div className="text-center mb-8">
               <h1 className="text-2xl font-semibold text-foreground mb-2">
@@ -620,9 +624,7 @@ function App() {
           </div>
         </div>
       )}
-
-      {/* Chat panel (right sidebar overlay) */}
-      <ChatPanel />
+      </AppShell>
 
       {/* Floating config toggle and panel */}
       <ConfigToggle />
