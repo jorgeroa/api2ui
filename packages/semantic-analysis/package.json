@@ -1,5 +1,5 @@
 {
-  "name": "@api2ui/semantic-analysis",
+  "name": "@api2aux/semantic-analysis",
   "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.js",

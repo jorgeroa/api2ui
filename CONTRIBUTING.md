@@ -1,10 +1,10 @@
-# Contributing to api2ui
+# Contributing to api2aux
 
 ## Setup
 
 ```bash
 git clone <repo-url>
-cd api2ui
+cd api2aux
 pnpm install
 pnpm dev
 ```

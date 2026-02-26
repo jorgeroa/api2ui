@@ -113,8 +113,8 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
         }
       }
     }
-    document.addEventListener('api2ui:configure-field', handler)
-    return () => document.removeEventListener('api2ui:configure-field', handler)
+    document.addEventListener('api2aux:configure-field', handler)
+    return () => document.removeEventListener('api2aux:configure-field', handler)
   }, [schema, data, path])
 
   const handleFieldContextMenu = (

@@ -1,6 +1,6 @@
 /**
  * Semantic enrichment for MCP tool definitions.
- * Uses @api2ui/semantic-analysis to make tool descriptions dramatically better
+ * Uses @api2aux/semantic-analysis to make tool descriptions dramatically better
  * than what basic OpenAPI → MCP converters produce.
  */
 
@@ -9,11 +9,11 @@ import {
   analyzeApiResponse,
   detectSemantics,
   getBestMatch,
-} from '@api2ui/semantic-analysis'
+} from '@api2aux/semantic-analysis'
 import type {
   ParsedOperation,
   ParsedParameter,
-} from '@api2ui/semantic-analysis'
+} from '@api2aux/semantic-analysis'
 import type { GeneratedTool } from './tool-generator'
 
 // ---------------------------------------------------------------------------

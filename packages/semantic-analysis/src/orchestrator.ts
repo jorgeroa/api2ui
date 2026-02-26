@@ -4,7 +4,7 @@
  *
  * Usage:
  * ```ts
- * import { analyzeApiResponse } from '@api2ui/semantic-analysis'
+ * import { analyzeApiResponse } from '@api2aux/semantic-analysis'
  *
  * const schema = inferSchema(responseData, { url })
  * const analysis = analyzeApiResponse(schema, responseData)

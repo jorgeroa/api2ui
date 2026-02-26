@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod'
-import type { ParsedOperation, ParsedParameter } from '@api2ui/semantic-analysis'
+import type { ParsedOperation, ParsedParameter } from '@api2aux/semantic-analysis'
 
 /** Generated tool definition ready for MCP registration */
 export interface GeneratedTool {

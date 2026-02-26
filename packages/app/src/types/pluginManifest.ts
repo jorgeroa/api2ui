@@ -14,7 +14,7 @@ export interface PluginManifest {
   name: string
   /** How the plugin is loaded */
   source: 'npm' | 'url' | 'local'
-  /** npm package name (when source = 'npm'), e.g. 'api2ui-plugin-mapbox' */
+  /** npm package name (when source = 'npm'), e.g. 'api2aux-plugin-mapbox' */
   package?: string
   /** CDN or remote URL (when source = 'url') */
   url?: string

@@ -1,6 +1,6 @@
-# api2ui-plugin-example
+# api2aux-plugin-example
 
-A template plugin for [api2ui](https://github.com/your-org/api2ui) — demonstrates how to build, package, and load a custom field renderer.
+A template plugin for [api2aux](https://github.com/your-org/api2aux) — demonstrates how to build, package, and load a custom field renderer.
 
 ## What it does
 
@@ -12,7 +12,7 @@ A template plugin for [api2ui](https://github.com/your-org/api2ui) — demonstra
 src/
   index.ts              # Plugin entry — exports `plugins` array
   ConfidenceGauge.tsx   # The React component
-  types.ts              # Inlined minimal types (no api2ui dependency)
+  types.ts              # Inlined minimal types (no api2aux dependency)
 package.json
 tsconfig.json
 vite.config.ts          # Vite library mode build
@@ -27,7 +27,7 @@ pnpm build
 
 Output: `dist/index.mjs` — an ES module ready for browser import.
 
-## Loading into api2ui
+## Loading into api2aux
 
 ### Option 1: URL (development)
 
@@ -38,11 +38,11 @@ pnpm build
 pnpm dlx serve dist -l 3001 --cors
 ```
 
-In api2ui: Configure View > Plugins > Install plugin > enter `http://localhost:3001/index.mjs`
+In api2aux: Configure View > Plugins > Install plugin > enter `http://localhost:3001/index.mjs`
 
 ### Option 2: Local path (development)
 
-Point api2ui at your local build output:
+Point api2aux at your local build output:
 
 ```
 source: 'local'
@@ -55,12 +55,12 @@ path: '/absolute/path/to/dist/index.mjs'
 pnpm publish
 ```
 
-In api2ui: Configure View > Plugins > Install plugin > enter `api2ui-plugin-example`
+In api2aux: Configure View > Plugins > Install plugin > enter `api2aux-plugin-example`
 
 ## Creating your own plugin
 
 1. Copy this directory
-2. Rename `api2ui-plugin-example` to `api2ui-plugin-your-name` in `package.json`
+2. Rename `api2aux-plugin-example` to `api2aux-plugin-your-name` in `package.json`
 3. Replace `ConfidenceGauge.tsx` with your component
 4. Update `src/index.ts`:
    - Change the plugin `id` (use `@your-org/plugin-name` format)

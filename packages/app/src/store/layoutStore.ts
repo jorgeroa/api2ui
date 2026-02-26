@@ -52,7 +52,7 @@ export const useLayoutStore = create<LayoutStore>()(
         }),
     }),
     {
-      name: 'api2ui-layouts',
+      name: 'api2aux-layouts',
       version: 1,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({

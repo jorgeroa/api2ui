@@ -6,7 +6,7 @@
  * - url:  Loads from a CDN or remote URL
  * - local: Loads from a local file path (dev/testing)
  *
- * Plugin packages follow the naming convention `api2ui-plugin-*`
+ * Plugin packages follow the naming convention `api2aux-plugin-*`
  * and export a `plugins` array of FieldPlugin instances.
  */
 

@@ -1,8 +1,8 @@
 {
-  "name": "api2ui-monorepo",
+  "name": "api2aux-monorepo",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter @api2ui/app dev",
+    "dev": "pnpm --filter @api2aux/app dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",

@@ -29,7 +29,7 @@ export function createMockManifest(overrides?: Partial<PluginManifest>): PluginM
     id: 'test/mock-manifest',
     name: 'Mock Plugin Package',
     source: 'npm',
-    package: 'api2ui-plugin-test',
+    package: 'api2aux-plugin-test',
     version: '1.0.0',
     enabled: true,
     ...overrides,

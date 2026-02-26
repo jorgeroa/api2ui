@@ -1,24 +1,24 @@
-# api2ui Plugin Authoring Guide
+# api2aux Plugin Authoring Guide
 
-Build custom field renderers for api2ui. Plugins extend how data fields are displayed — from simple text formatting to interactive maps, charts, and media players.
+Build custom field renderers for api2aux. Plugins extend how data fields are displayed — from simple text formatting to interactive maps, charts, and media players.
 
 ## Working Example
 
-A complete, buildable template plugin lives in [`examples/api2ui-plugin-example/`](../examples/api2ui-plugin-example/). It renders a Confidence Gauge (semicircular SVG arc, red → yellow → green) and demonstrates both detection strategies: `semanticHints` and `customCategories`.
+A complete, buildable template plugin lives in [`examples/api2aux-plugin-example/`](../examples/api2aux-plugin-example/). It renders a Confidence Gauge (semicircular SVG arc, red → yellow → green) and demonstrates both detection strategies: `semanticHints` and `customCategories`.
 
 ```bash
-cd examples/api2ui-plugin-example
+cd examples/api2aux-plugin-example
 npm install
 npm run build        # → dist/index.mjs
 ```
 
-Copy the example directory as a starting point for your own plugin. See its [README](../examples/api2ui-plugin-example/README.md) for loading instructions.
+Copy the example directory as a starting point for your own plugin. See its [README](../examples/api2aux-plugin-example/README.md) for loading instructions.
 
 ## Quick Start
 
 ```bash
-mkdir api2ui-plugin-my-gauge
-cd api2ui-plugin-my-gauge
+mkdir api2aux-plugin-my-gauge
+cd api2aux-plugin-my-gauge
 npm init -y
 npm install react --save-peer
 ```
@@ -27,7 +27,7 @@ Create your plugin:
 
 ```tsx
 // src/index.ts
-import type { FieldPlugin, FieldRenderProps } from 'api2ui/types/plugins'
+import type { FieldPlugin, FieldRenderProps } from 'api2aux/types/plugins'
 
 function AnimatedGauge({ value, fieldName }: FieldRenderProps) {
   const num = typeof value === 'number' ? value : 0
@@ -132,7 +132,7 @@ interface FieldRenderProps {
 
 ### Strategy 1: Override an existing core category
 
-Use `semanticHints` when your plugin provides a better renderer for a category that api2ui already detects (rating, price, status, email, geo, etc.).
+Use `semanticHints` when your plugin provides a better renderer for a category that api2aux already detects (rating, price, status, email, geo, etc.).
 
 ```typescript
 {
@@ -150,7 +150,7 @@ Your plugin appears as an alternative in the ComponentPicker for fields detected
 
 ### Strategy 2: Declare a custom category
 
-Use `customCategories` when your plugin detects a data pattern that api2ui doesn't know about.
+Use `customCategories` when your plugin detects a data pattern that api2aux doesn't know about.
 
 ```typescript
 {
@@ -177,10 +177,10 @@ Custom categories use regex/keyword matching (not embeddings) and compete alongs
 
 ## Package Structure
 
-Plugin npm packages should follow the naming convention `api2ui-plugin-*`:
+Plugin npm packages should follow the naming convention `api2aux-plugin-*`:
 
 ```
-api2ui-plugin-my-gauge/
+api2aux-plugin-my-gauge/
   src/
     index.ts          # Exports: plugins: FieldPlugin[]
     AnimatedGauge.tsx  # Component implementation
@@ -192,7 +192,7 @@ api2ui-plugin-my-gauge/
 
 ```json
 {
-  "name": "api2ui-plugin-my-gauge",
+  "name": "api2aux-plugin-my-gauge",
   "version": "1.0.0",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -200,7 +200,7 @@ api2ui-plugin-my-gauge/
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0"
   },
-  "keywords": ["api2ui-plugin", "gauge", "visualization"]
+  "keywords": ["api2aux-plugin", "gauge", "visualization"]
 }
 ```
 
@@ -218,7 +218,7 @@ export default plugins
 
 ## Installation
 
-Users install plugins through the Settings panel in api2ui:
+Users install plugins through the Settings panel in api2aux:
 
 1. Open **Configure View** > **Plugins**
 2. Click **Install plugin**
@@ -228,13 +228,13 @@ Users install plugins through the Settings panel in api2ui:
 Programmatic installation:
 
 ```typescript
-import { usePluginStore } from 'api2ui/store/pluginStore'
+import { usePluginStore } from 'api2aux/store/pluginStore'
 
 usePluginStore.getState().installPlugin({
   id: '@my-org/animated-gauge',
   name: 'Animated Gauge',
   source: 'npm',
-  package: 'api2ui-plugin-my-gauge',
+  package: 'api2aux-plugin-my-gauge',
   version: '1.0.0',
   enabled: true,
 })

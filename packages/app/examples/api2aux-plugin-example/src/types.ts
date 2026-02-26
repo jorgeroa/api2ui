@@ -1,9 +1,9 @@
 /**
  * Minimal inlined types for standalone plugin development.
- * These mirror the core api2ui plugin types so the template has zero
- * dependency on the api2ui source tree.
+ * These mirror the core api2aux plugin types so the template has zero
+ * dependency on the api2aux source tree.
  *
- * For full type definitions, see: src/types/plugins.ts in the api2ui repo.
+ * For full type definitions, see: src/types/plugins.ts in the api2aux repo.
  */
 
 import type { ComponentType } from 'react'

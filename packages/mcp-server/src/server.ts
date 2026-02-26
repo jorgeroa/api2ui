@@ -5,8 +5,8 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
-import { parseOpenAPISpec } from '@api2ui/semantic-analysis'
-import type { ParsedSpec } from '@api2ui/semantic-analysis'
+import { parseOpenAPISpec } from '@api2aux/semantic-analysis'
+import type { ParsedSpec } from '@api2aux/semantic-analysis'
 import { generateTools } from './tool-generator'
 import { enrichTools, describeFieldsFromData } from './semantic-enrichment'
 import { executeTool } from './tool-executor'
@@ -48,7 +48,7 @@ function parseAuth(config: ServerConfig): AuthConfig {
  * Returns the server instance (call .connect(transport) to start).
  */
 export async function createServer(config: ServerConfig): Promise<McpServer> {
-  const serverName = config.name || 'api2ui-mcp'
+  const serverName = config.name || 'api2aux-mcp'
 
   const server = new McpServer({
     name: serverName,
@@ -133,13 +133,13 @@ async function registerOpenAPITools(
   const baseUrl = spec.baseUrl
   const rawTools = generateTools(spec.operations)
 
-  console.error(`[api2ui-mcp] Parsed "${spec.title}" v${spec.version} (${spec.specVersion})`)
-  console.error(`[api2ui-mcp] Base URL: ${baseUrl}`)
-  console.error(`[api2ui-mcp] Enriching ${rawTools.length} tools with semantic analysis...`)
+  console.error(`[api2aux-mcp] Parsed "${spec.title}" v${spec.version} (${spec.specVersion})`)
+  console.error(`[api2aux-mcp] Base URL: ${baseUrl}`)
+  console.error(`[api2aux-mcp] Enriching ${rawTools.length} tools with semantic analysis...`)
 
   const tools = await enrichTools(rawTools, baseUrl, { fetchSamples: true })
 
-  console.error(`[api2ui-mcp] Registering ${tools.length} tools...`)
+  console.error(`[api2aux-mcp] Registering ${tools.length} tools...`)
 
   for (const tool of tools) {
     // Add debug + full_response params to input schema
@@ -203,7 +203,7 @@ async function registerOpenAPITools(
     }
   }
 
-  console.error(`[api2ui-mcp] ${tools.length} tools registered`)
+  console.error(`[api2aux-mcp] ${tools.length} tools registered`)
 }
 
 /**
@@ -231,7 +231,7 @@ async function registerRawAPITool(
   debug: boolean,
   fullResponse: boolean
 ): Promise<void> {
-  console.error(`[api2ui-mcp] Raw API mode: ${apiUrl}`)
+  console.error(`[api2aux-mcp] Raw API mode: ${apiUrl}`)
 
   // Parse URL into base path and individual query params
   const parsed = new URL(apiUrl)
@@ -274,7 +274,7 @@ async function registerRawAPITool(
 
   // Fetch sample data and enrich description with semantic field info
   try {
-    console.error(`[api2ui-mcp] Enriching tool with semantic analysis...`)
+    console.error(`[api2aux-mcp] Enriching tool with semantic analysis...`)
     const sampleUrl = paramCount > 0
       ? `${baseUrl}?${defaultParams.map(p => `${encodeURIComponent(p.original)}=${encodeURIComponent(p.defaultValue)}`).join('&')}`
       : apiUrl
@@ -287,12 +287,12 @@ async function registerRawAPITool(
       const fieldDesc = describeFieldsFromData(sampleData, sampleUrl)
       if (fieldDesc) {
         description = `${description}. ${fieldDesc}`
-        console.error(`[api2ui-mcp] ${fieldDesc}`)
+        console.error(`[api2aux-mcp] ${fieldDesc}`)
       }
     }
   } catch {
     // Non-fatal — enrichment is best-effort
-    console.error(`[api2ui-mcp] Semantic enrichment skipped (fetch failed)`)
+    console.error(`[api2aux-mcp] Semantic enrichment skipped (fetch failed)`)
   }
 
   // Derive tool name from server name or URL hostname
@@ -370,5 +370,5 @@ async function registerRawAPITool(
     }
   )
 
-  console.error(`[api2ui-mcp] 1 tool registered (${toolName}) with ${paramCount} query parameters`)
+  console.error(`[api2aux-mcp] 1 tool registered (${toolName}) with ${paramCount} query parameters`)
 }

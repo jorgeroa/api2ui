@@ -47,8 +47,8 @@ export function CardListRenderer({ data, schema, path, depth, importance }: Rend
         }
       }
     }
-    document.addEventListener('api2ui:configure-field', handler)
-    return () => document.removeEventListener('api2ui:configure-field', handler)
+    document.addEventListener('api2aux:configure-field', handler)
+    return () => document.removeEventListener('api2aux:configure-field', handler)
   }, [schema, data])
 
   const handleFieldContextMenu = (

@@ -1,7 +1,7 @@
 {
-  "name": "api2ui-plugin-example",
+  "name": "api2aux-plugin-example",
   "version": "1.0.0",
-  "description": "Example api2ui plugin — Confidence Gauge component",
+  "description": "Example api2aux plugin — Confidence Gauge component",
   "type": "module",
   "main": "dist/index.mjs",
   "module": "dist/index.mjs",
@@ -14,7 +14,7 @@
     "dev": "vite build --watch"
   },
   "keywords": [
-    "api2ui-plugin",
+    "api2aux-plugin",
     "gauge",
     "percentage",
     "visualization"

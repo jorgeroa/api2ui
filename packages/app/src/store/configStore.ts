@@ -260,7 +260,7 @@ export const useConfigStore = create<ConfigStore>()(
       },
     }),
     {
-      name: 'api2ui-config',
+      name: 'api2aux-config',
       version: 3,
       storage: createJSONStorage(() => localStorage),
       migrate: (persistedState: unknown, version: number) => {

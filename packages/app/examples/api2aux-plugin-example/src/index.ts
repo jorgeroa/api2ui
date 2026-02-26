@@ -1,5 +1,5 @@
 /**
- * api2ui-plugin-example — Confidence Gauge plugin
+ * api2aux-plugin-example — Confidence Gauge plugin
  *
  * Demonstrates both detection strategies:
  * 1. semanticHints: overrides the core 'rating' category
@@ -28,7 +28,7 @@ export const plugins: FieldPlugin[] = [
     component: ConfidenceGauge,
     source: PluginSource.Community,
     version: '1.0.0',
-    author: 'api2ui',
+    author: 'api2aux',
     tags: ['gauge', 'percentage', 'confidence', 'visualization'],
 
     customCategories: [

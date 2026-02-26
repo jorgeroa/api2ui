@@ -1,8 +1,8 @@
 /**
- * @api2ui/mcp-server
+ * @api2aux/mcp-server
  *
  * MCP server that turns any API into semantic-aware tools.
- * Use programmatically or via CLI (api2ui-mcp).
+ * Use programmatically or via CLI (api2aux-mcp).
  */
 
 export { createServer } from './server'

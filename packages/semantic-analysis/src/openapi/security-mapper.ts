@@ -2,7 +2,7 @@ import type { OpenAPIV3, OpenAPIV2 } from 'openapi-types'
 import type { ParsedSecurityScheme } from './types'
 
 /**
- * Map OpenAPI/Swagger security schemes to api2ui auth types.
+ * Map OpenAPI/Swagger security schemes to api2aux auth types.
  *
  * @param schemes - Record of security scheme name to scheme object
  * @returns Array of parsed security schemes with mapped auth types

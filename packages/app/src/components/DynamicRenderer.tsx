@@ -101,8 +101,8 @@ export function DynamicRenderer({
         setShowPicker(true)
       }
     }
-    document.addEventListener('api2ui:open-picker', handler)
-    return () => document.removeEventListener('api2ui:open-picker', handler)
+    document.addEventListener('api2aux:open-picker', handler)
+    return () => document.removeEventListener('api2aux:open-picker', handler)
   }, [depth, path])
 
   // Guard against excessive depth

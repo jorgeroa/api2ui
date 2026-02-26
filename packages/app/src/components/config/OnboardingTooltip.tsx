@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 
-const STORAGE_KEY = 'api2ui-onboarding-field-config'
+const STORAGE_KEY = 'api2aux-onboarding-field-config'
 
 export function OnboardingTooltip() {
   const [visible, setVisible] = useState(false)

@@ -10,7 +10,7 @@ importers:
 
   packages/app:
     dependencies:
-      '@api2ui/semantic-analysis':
+      '@api2aux/semantic-analysis':
         specifier: workspace:*
         version: link:../semantic-analysis
       '@apidevtools/swagger-parser':
@@ -164,7 +164,7 @@ importers:
 
   packages/mcp-server:
     dependencies:
-      '@api2ui/semantic-analysis':
+      '@api2aux/semantic-analysis':
         specifier: workspace:*
         version: link:../semantic-analysis
       '@modelcontextprotocol/sdk':

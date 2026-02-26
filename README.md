@@ -1,4 +1,4 @@
-# api2ui
+# api2aux
 
 Paste a JSON API URL and instantly see it rendered as a beautiful, interactive UI. Semantic field detection automatically formats prices, emails, dates, ratings, images, and more.
 

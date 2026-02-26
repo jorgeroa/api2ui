@@ -1,5 +1,5 @@
 {
-  "name": "@api2ui/app",
+  "name": "@api2aux/app",
   "private": true,
   "version": "0.5.0",
   "type": "module",
@@ -13,7 +13,7 @@
     "generate-embeddings": "node scripts/generate-embeddings.mjs"
   },
   "dependencies": {
-    "@api2ui/semantic-analysis": "workspace:*",
+    "@api2aux/semantic-analysis": "workspace:*",
     "@apidevtools/swagger-parser": "^12.1.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",

@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
 /**
- * CLI entry point for the api2ui MCP server.
+ * CLI entry point for the api2aux MCP server.
  *
  * Usage:
- *   api2ui-mcp --openapi https://petstore.swagger.io/v2/swagger.json
- *   api2ui-mcp --api https://jsonplaceholder.typicode.com
- *   api2ui-mcp --openapi URL --token YOUR_TOKEN
- *   api2ui-mcp export --api URL --name my-api
+ *   api2aux-mcp --openapi https://petstore.swagger.io/v2/swagger.json
+ *   api2aux-mcp --api https://jsonplaceholder.typicode.com
+ *   api2aux-mcp --openapi URL --token YOUR_TOKEN
+ *   api2aux-mcp export --api URL --name my-api
  */
 
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
@@ -91,17 +91,17 @@ function parseArgs(argv: string[]): CliOptions {
 
 function printHelp(): void {
   console.error(`
-api2ui-mcp — Turn any API into MCP tools
+api2aux-mcp — Turn any API into MCP tools
 
 Usage:
-  api2ui-mcp --openapi <url>             Start MCP server from OpenAPI spec
-  api2ui-mcp --api <url>                 Start MCP server for raw API URL
-  api2ui-mcp export --openapi <url>      Generate client config snippet
+  api2aux-mcp --openapi <url>             Start MCP server from OpenAPI spec
+  api2aux-mcp --api <url>                 Start MCP server for raw API URL
+  api2aux-mcp export --openapi <url>      Generate client config snippet
 
 Options:
   --openapi <url>     OpenAPI/Swagger spec URL
   --api <url>         Raw API base URL
-  --name <name>       Server name (default: api2ui-mcp)
+  --name <name>       Server name (default: api2aux-mcp)
   --token <token>     Bearer token for API authentication
   --header <h:v>      Custom header (e.g., "X-API-Key: secret")
   --api-key <k=v>     API key as query param (e.g., "apiKey=secret")
@@ -111,10 +111,10 @@ Options:
   -h, --help          Show this help
 
 Examples:
-  api2ui-mcp --openapi https://petstore.swagger.io/v2/swagger.json
-  api2ui-mcp --api https://jsonplaceholder.typicode.com --name jsonplaceholder
-  api2ui-mcp export --openapi https://api.example.com/openapi.json --name my-api
-  api2ui-mcp export --api https://example.com/api --format claude-code
+  api2aux-mcp --openapi https://petstore.swagger.io/v2/swagger.json
+  api2aux-mcp --api https://jsonplaceholder.typicode.com --name jsonplaceholder
+  api2aux-mcp export --openapi https://api.example.com/openapi.json --name my-api
+  api2aux-mcp export --api https://example.com/api --format claude-code
 `)
 }
 
@@ -145,9 +145,9 @@ async function handleServe(config: CliOptions): Promise<void> {
     const server = await createServer(config)
     const transport = new StdioServerTransport()
     await server.connect(transport)
-    console.error('[api2ui-mcp] Server running on stdio')
+    console.error('[api2aux-mcp] Server running on stdio')
   } catch (err) {
-    console.error(`[api2ui-mcp] Fatal: ${err instanceof Error ? err.message : String(err)}`)
+    console.error(`[api2aux-mcp] Fatal: ${err instanceof Error ? err.message : String(err)}`)
     process.exit(1)
   }
 }

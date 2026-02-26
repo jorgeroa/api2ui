@@ -48,7 +48,7 @@ export function ExternalLink({ href, children, className, title }: ExternalLinkP
           <div className="fixed inset-0 flex items-center justify-center p-4">
             <DialogPanel className="max-w-md w-full bg-background rounded-xl shadow-2xl border border-border p-6">
               <DialogTitle className="text-lg font-semibold mb-2">
-                Leaving api2ui
+                Leaving api2aux
               </DialogTitle>
 
               <p className="text-sm text-muted-foreground mb-4">

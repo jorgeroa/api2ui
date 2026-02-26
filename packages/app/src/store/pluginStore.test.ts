@@ -112,9 +112,9 @@ describe('pluginStore.updatePlugin', () => {
   })
 
   it('preserves unchanged fields', () => {
-    getStore().installPlugin(createMockManifest({ id: 'a', source: 'npm', package: 'api2ui-plugin-test' }))
+    getStore().installPlugin(createMockManifest({ id: 'a', source: 'npm', package: 'api2aux-plugin-test' }))
     getStore().updatePlugin('a', { version: '3.0.0' })
-    expect(getStore().installed[0].package).toBe('api2ui-plugin-test')
+    expect(getStore().installed[0].package).toBe('api2aux-plugin-test')
   })
 
   it('is a no-op for unknown ID', () => {
@@ -159,14 +159,14 @@ describe('pluginStore persistence', () => {
 
     // The partialize config only persists `installed`, not `loadErrors`.
     // Zustand persist writes to localStorage synchronously.
-    const stored = JSON.parse(localStorage.getItem('api2ui-plugins') || '{}')
+    const stored = JSON.parse(localStorage.getItem('api2aux-plugins') || '{}')
     expect(stored.state?.installed).toHaveLength(1)
     expect(stored.state?.installed[0].id).toBe('a')
   })
 
   it('loadErrors are NOT persisted', () => {
     getStore().setLoadError('a', 'boom')
-    const stored = JSON.parse(localStorage.getItem('api2ui-plugins') || '{}')
+    const stored = JSON.parse(localStorage.getItem('api2aux-plugins') || '{}')
     expect(stored.state?.loadErrors).toBeUndefined()
   })
 })

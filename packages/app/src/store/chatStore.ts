@@ -61,7 +61,7 @@ export const useChatStore = create<ChatState>()(
       setSending: (sending) => set({ sending }),
     }),
     {
-      name: 'api2ui-chat',
+      name: 'api2aux-chat',
       version: 3,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({

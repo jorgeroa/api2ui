@@ -168,7 +168,7 @@ export const useAuthStore = create<AuthStore>()(
       },
     }),
     {
-      name: 'api2ui-auth',
+      name: 'api2aux-auth',
       version: 1,
       storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({

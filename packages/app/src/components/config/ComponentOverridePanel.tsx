@@ -42,7 +42,7 @@ export function ComponentOverridePanel() {
           <div className="flex items-center gap-2 ml-4">
             <button
               onClick={() => {
-                document.dispatchEvent(new CustomEvent('api2ui:open-picker', { detail: { fieldPath: path } }))
+                document.dispatchEvent(new CustomEvent('api2aux:open-picker', { detail: { fieldPath: path } }))
               }}
               className="px-2 py-1 text-xs bg-muted text-muted-foreground rounded hover:bg-muted/80 transition-colors"
             >

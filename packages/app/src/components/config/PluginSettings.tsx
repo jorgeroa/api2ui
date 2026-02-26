@@ -154,7 +154,7 @@ export function PluginSettings() {
             </select>
             <input
               type="text"
-              placeholder={installForm.source === 'npm' ? 'api2ui-plugin-name' : 'https://cdn.example.com/plugin.js'}
+              placeholder={installForm.source === 'npm' ? 'api2aux-plugin-name' : 'https://cdn.example.com/plugin.js'}
               value={installForm.value}
               onChange={(e) => setInstallForm((f) => ({ ...f, value: e.target.value }))}
               className="flex-1 px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus-visible:ring-ring/50"

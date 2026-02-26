@@ -104,7 +104,7 @@ export const useParameterStore = create<ParameterStore>()(
         })),
     }),
     {
-      name: 'api2ui-parameters',
+      name: 'api2aux-parameters',
       version: 1,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({

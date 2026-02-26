@@ -42,7 +42,7 @@ function getMcpCommand(): { command: string; pkg: string } {
   if (import.meta.env.DEV) {
     return { command: 'node', pkg: 'packages/mcp-server/dist/cli.js' }
   }
-  return { command: 'npx', pkg: '@api2ui/mcp-server' }
+  return { command: 'npx', pkg: '@api2aux/mcp-server' }
 }
 
 function buildAuthArgs(cred: Credential | null): string[] {

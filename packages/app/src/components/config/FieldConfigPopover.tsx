@@ -210,7 +210,7 @@ export function FieldConfigPopover({
           onClick={() => {
             onClose()
             document.dispatchEvent(
-              new CustomEvent('api2ui:open-config-panel', { detail: { fieldPath } })
+              new CustomEvent('api2aux:open-config-panel', { detail: { fieldPath } })
             )
           }}
           className="mt-2 text-xs text-primary hover:text-primary/80 hover:underline w-full text-left"

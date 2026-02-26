@@ -1,5 +1,5 @@
 /**
- * @api2ui/semantic-analysis
+ * @api2aux/semantic-analysis
  *
  * Pure TypeScript semantic analysis engine for API responses.
  * Detects field categories (price, email, rating, etc.), calculates importance,

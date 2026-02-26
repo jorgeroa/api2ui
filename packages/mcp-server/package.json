@@ -1,12 +1,12 @@
 {
-  "name": "@api2ui/mcp-server",
+  "name": "@api2aux/mcp-server",
   "version": "0.1.0",
   "type": "module",
   "description": "MCP server that turns any API into semantic-aware tools for Claude Desktop, Cursor, and other MCP clients",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "api2ui-mcp": "./bin/api2ui-mcp"
+    "api2aux-mcp": "./bin/api2aux-mcp"
   },
   "exports": {
     ".": {
@@ -25,7 +25,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@api2ui/semantic-analysis": "workspace:*",
+    "@api2aux/semantic-analysis": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "zod": "^3.25.0"
   },

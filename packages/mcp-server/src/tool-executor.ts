@@ -3,7 +3,7 @@
  * Builds URLs, adds auth headers, handles path/query params.
  */
 
-import type { ParsedOperation } from '@api2ui/semantic-analysis'
+import type { ParsedOperation } from '@api2aux/semantic-analysis'
 import type { AuthConfig } from './types'
 
 /**

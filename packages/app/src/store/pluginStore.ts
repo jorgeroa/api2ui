@@ -83,7 +83,7 @@ export const usePluginStore = create<PluginStore>()(
       clearAll: () => set({ installed: [], loadErrors: {} }),
     }),
     {
-      name: 'api2ui-plugins',
+      name: 'api2aux-plugins',
       version: 1,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({

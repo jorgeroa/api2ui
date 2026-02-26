@@ -44,7 +44,7 @@ export async function chatCompletion(
       'Authorization': `Bearer ${config.apiKey}`,
       ...(config.provider === 'openrouter' ? {
         'HTTP-Referer': window.location.origin,
-        'X-Title': 'api2ui',
+        'X-Title': 'api2aux',
       } : {}),
     },
     body: JSON.stringify(body),

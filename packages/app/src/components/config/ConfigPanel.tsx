@@ -27,7 +27,7 @@ export function ConfigPanel() {
     }, 150)
   }, [])
 
-  // Listen for 'api2ui:open-config-panel' events from FieldConfigPopover "More settings..."
+  // Listen for 'api2aux:open-config-panel' events from FieldConfigPopover "More settings..."
   useEffect(() => {
     const handler = (e: Event) => {
       const { fieldPath } = (e as CustomEvent).detail
@@ -39,8 +39,8 @@ export function ConfigPanel() {
       // Scroll to the field after panel opens
       scrollToField(fieldPath)
     }
-    document.addEventListener('api2ui:open-config-panel', handler)
-    return () => document.removeEventListener('api2ui:open-config-panel', handler)
+    document.addEventListener('api2aux:open-config-panel', handler)
+    return () => document.removeEventListener('api2aux:open-config-panel', handler)
   }, [scrollToField])
 
   // Handle "configure in context" from FieldListPanel: close panel, dispatch event for renderer
@@ -48,7 +48,7 @@ export function ConfigPanel() {
     togglePanel() // Close the config panel
     // Dispatch event for renderers to pick up and open popover
     document.dispatchEvent(
-      new CustomEvent('api2ui:configure-field', { detail: { fieldPath } })
+      new CustomEvent('api2aux:configure-field', { detail: { fieldPath } })
     )
   }, [togglePanel])
 

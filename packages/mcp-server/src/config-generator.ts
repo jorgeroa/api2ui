@@ -78,14 +78,14 @@ function buildCommand(localCliPath?: string): { command: string; prefix: string[
   if (localCliPath) {
     return { command: 'node', prefix: [localCliPath] }
   }
-  return { command: 'npx', prefix: ['@api2ui/mcp-server'] }
+  return { command: 'npx', prefix: ['@api2aux/mcp-server'] }
 }
 
 /**
  * Generate a Claude Desktop configuration snippet.
  */
 export function generateClaudeDesktopConfig(config: ServerConfig, localCliPath?: string): MCPClientConfig {
-  const serverName = config.name || 'api2ui'
+  const serverName = config.name || 'api2aux'
   const args = buildArgs(config)
   const { command, prefix } = buildCommand(localCliPath)
 
@@ -119,7 +119,7 @@ export function generateClaudeDesktopConfig(config: ServerConfig, localCliPath?:
  * Generate a Claude Code (CLI) configuration snippet.
  */
 export function generateClaudeCodeConfig(config: ServerConfig, localCliPath?: string): MCPClientConfig {
-  const serverName = config.name || 'api2ui'
+  const serverName = config.name || 'api2aux'
   const args = buildArgs(config)
   const { command, prefix } = buildCommand(localCliPath)
 

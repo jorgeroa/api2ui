@@ -37,8 +37,8 @@ export function GalleryRenderer({ data, schema, path }: RendererProps) {
         }
       }
     }
-    document.addEventListener('api2ui:configure-field', handler)
-    return () => document.removeEventListener('api2ui:configure-field', handler)
+    document.addEventListener('api2aux:configure-field', handler)
+    return () => document.removeEventListener('api2aux:configure-field', handler)
   }, [schema, data])
 
   if (schema.kind !== 'array' || schema.items.kind !== 'object') {
