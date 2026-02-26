@@ -62,12 +62,20 @@ export const useChatStore = create<ChatState>()(
     }),
     {
       name: 'api2ui-chat',
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         config: state.config,
         panelSize: state.panelSize,
       }),
+      migrate: (persisted: unknown, version: number) => {
+        const state = persisted as Record<string, unknown>
+        // v2→v3: reset panelSize (was saved as pixels, now percentage)
+        if (version < 3) {
+          state.panelSize = 30
+        }
+        return state
+      },
     }
   )
 )

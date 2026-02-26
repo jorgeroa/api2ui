@@ -6,8 +6,9 @@ import { useMediaQuery } from '../../hooks/useMediaQuery'
 import { ChatPanel } from '../chat/ChatPanel'
 import { ChatDrawer } from '../chat/ChatDrawer'
 
-const CHAT_MIN_SIZE = 20
-const CHAT_MAX_SIZE = 50
+// Sizes as percentages (strings because the library treats numbers as pixels)
+const CHAT_MIN_SIZE = '20'
+const CHAT_MAX_SIZE = '50'
 const CHAT_DEFAULT_SIZE = 30
 
 interface AppShellProps {
@@ -51,7 +52,7 @@ export function AppShell({ children }: AppShellProps) {
       onLayoutChanged={handleLayoutChanged}
       className="h-screen"
     >
-      <Panel id="main" minSize={35} defaultSize={100 - chatDefault}>
+      <Panel id="main" minSize="35" defaultSize={`${100 - chatDefault}`}>
         <div className="h-full overflow-auto">
           {children}
         </div>
@@ -63,7 +64,7 @@ export function AppShell({ children }: AppShellProps) {
         id="chat"
         minSize={CHAT_MIN_SIZE}
         maxSize={CHAT_MAX_SIZE}
-        defaultSize={chatDefault}
+        defaultSize={`${chatDefault}`}
       >
         <ChatPanel />
       </Panel>
