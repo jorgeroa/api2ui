@@ -13,6 +13,7 @@ import { Breadcrumb } from './navigation/Breadcrumb'
 import { DrilldownModeToggle } from './navigation/DrilldownModeToggle'
 import { ShareButton } from './ShareButton'
 import { MCPButton } from './MCPExportDialog'
+import { ChatButton } from './chat/ChatPanel'
 import { getDefaultTypeName } from '../services/selection'
 
 /** Normalize indexed array paths to generic paths for cache lookup.
@@ -181,6 +182,7 @@ export function DynamicRenderer({
             <DrilldownModeToggle />
           )}
           <div className="flex items-center gap-2">
+            <ChatButton />
             <MCPButton />
             <ShareButton />
           </div>
