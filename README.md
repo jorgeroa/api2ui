@@ -1,6 +1,8 @@
 # api2aux
 
-Paste a JSON API URL and instantly see it rendered as a beautiful, interactive UI. Semantic field detection automatically formats prices, emails, dates, ratings, images, and more.
+Paste an API URL. See it. Chat it. Share it with agents.
+
+Three ways to experience any API: **smart rendering** with semantic field detection, **AI chat** to converse with endpoints in natural language, and **MCP export** to turn any API into tools for Claude Desktop, Claude Code, and other AI agents.
 
 ## Quick Start
 

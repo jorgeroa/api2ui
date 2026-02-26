@@ -308,7 +308,7 @@ function App() {
                   <button onClick={handleGoHome} className="cursor-pointer hover:opacity-70 transition-opacity">api2aux</button>
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Paste an API URL, see it rendered
+                  Paste an API URL. See it. Chat it. Share it with agents.
                 </p>
               </div>
 
@@ -412,7 +412,7 @@ function App() {
                 <button onClick={handleGoHome} className="cursor-pointer hover:opacity-70 transition-opacity">api2aux</button>
               </h1>
               <p className="text-sm text-muted-foreground">
-                Paste an API URL, see it rendered
+                Paste an API URL. See it. Chat it. Share it with agents.
               </p>
             </div>
 
@@ -586,16 +586,36 @@ function App() {
               {!loading && !error && !schema && !parsedSpec && (
                 <div className="py-10">
                   <p className="text-center text-xl text-muted-foreground mb-8">
-                    Paste any JSON API URL and see it rendered instantly.
+                    Three ways to experience any API
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-                    <div className="flex gap-3 p-3 rounded-lg">
+
+                  {/* Three Pillars */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mb-6">
+                    <div className="flex gap-3 p-4 rounded-lg">
                       <span className="text-2xl flex-shrink-0" aria-hidden="true">~</span>
                       <div>
-                        <p className="font-medium text-foreground text-sm">Semantic Detection</p>
-                        <p className="text-xs text-muted-foreground">Prices, emails, dates, ratings, and images auto-formatted across 5 languages</p>
+                        <p className="font-medium text-foreground text-base">Smart Rendering</p>
+                        <p className="text-xs text-muted-foreground">Semantic detection auto-formats prices, dates, emails, ratings, images, and more</p>
                       </div>
                     </div>
+                    <div className="flex gap-3 p-4 rounded-lg">
+                      <span className="text-2xl flex-shrink-0" aria-hidden="true">{'>'}_</span>
+                      <div>
+                        <p className="font-medium text-foreground text-base">AI Chat</p>
+                        <p className="text-xs text-muted-foreground">Converse with any API in natural language &mdash; the AI reads docs and calls endpoints for you</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3 p-4 rounded-lg">
+                      <span className="text-2xl flex-shrink-0" aria-hidden="true">{'->'}</span>
+                      <div>
+                        <p className="font-medium text-foreground text-base">MCP Export</p>
+                        <p className="text-xs text-muted-foreground">Turn any API into tools for Claude Desktop, Claude Code, and other AI agents</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Supporting Features */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
                     <div className="flex gap-3 p-3 rounded-lg">
                       <span className="text-2xl flex-shrink-0" aria-hidden="true">{'{}'}</span>
                       <div>
@@ -615,6 +635,13 @@ function App() {
                       <div>
                         <p className="font-medium text-foreground text-sm">Authentication</p>
                         <p className="text-xs text-muted-foreground">Bearer token, Basic Auth, API Key, and query parameter auth built-in</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3 p-3 rounded-lg">
+                      <span className="text-2xl flex-shrink-0" aria-hidden="true">+</span>
+                      <div>
+                        <p className="font-medium text-foreground text-sm">Plugin System</p>
+                        <p className="text-xs text-muted-foreground">Extend rendering with community plugins &mdash; gauges, maps, charts, and more</p>
                       </div>
                     </div>
                   </div>
