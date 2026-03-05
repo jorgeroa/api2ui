@@ -26,10 +26,21 @@ export interface DeployResult {
  * Deploy an API as a hosted MCP server by registering it with the Worker.
  */
 export async function deployAsMcpServer(config: DeployConfig): Promise<DeployResult> {
+  // OpenAPI specs can have circular $refs after dereferencing.
+  // Use a seen-set replacer to safely serialize.
+  const seen = new WeakSet()
+  const body = JSON.stringify(config, (_key, value) => {
+    if (typeof value === 'object' && value !== null) {
+      if (seen.has(value)) return undefined
+      seen.add(value)
+    }
+    return value
+  })
+
   const response = await fetch(`${MCP_WORKER_URL}/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(config),
+    body,
   })
 
   if (!response.ok) {
