@@ -230,7 +230,8 @@ export function MCPExportDialog({ open, onClose }: MCPExportDialogProps) {
   const analysisCache = useAppStore((s) => s.analysisCache)
   const [format, setFormat] = useState<ExportFormat>('claude-desktop')
   const [deploying, setDeploying] = useState(false)
-  const [deployResult, setDeployResult] = useState<DeployResult | null>(null)
+  const deployResult = useAppStore((s) => s.mcpDeployResult)
+  const setDeployResult = useAppStore((s) => s.setMcpDeployResult)
   const [deployError, setDeployError] = useState<string | null>(null)
 
   const toolInfo = useMemo(() => {

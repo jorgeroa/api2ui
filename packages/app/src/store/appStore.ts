@@ -3,6 +3,7 @@ import type { UnifiedSchema, SemanticMetadata } from '../types/schema'
 import type { ParsedSpec } from '../services/openapi/types'
 import type { ImportanceScore, GroupingResult } from '../services/analysis/types'
 import type { ComponentSelection } from '../services/selection/types'
+import type { DeployResult } from '../services/mcp/deploy'
 
 interface AnalysisCacheEntry {
   semantics: Map<string, SemanticMetadata>
@@ -44,6 +45,10 @@ interface AppState {
   setTabSelection: (path: string, index: number) => void
   getTabSelection: (path: string) => number
 
+  // MCP deploy state
+  mcpDeployResult: DeployResult | null
+  setMcpDeployResult: (result: DeployResult | null) => void
+
   // Detail panel state
   detailPanelOpen: boolean
   setDetailPanelOpen: (open: boolean) => void
@@ -75,6 +80,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   requestBody: '',
   analysisCache: new Map(),
   tabSelections: new Map(),
+  mcpDeployResult: null,
   detailPanelOpen: false,
 
   setUrl: (url) => set({ url }),
@@ -94,7 +100,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
     parameterValues: {},
     httpMethod: 'GET',
     requestBody: '',
-    analysisCache: new Map()
+    analysisCache: new Map(),
+    mcpDeployResult: null,
   }),
 
   // Analysis cache actions
@@ -116,6 +123,9 @@ export const useAppStore = create<AppState>()((set, get) => ({
     return { tabSelections: newSelections }
   }),
   getTabSelection: (path) => get().tabSelections.get(path) ?? 0,
+
+  // MCP deploy
+  setMcpDeployResult: (result) => set({ mcpDeployResult: result }),
 
   // Detail panel
   setDetailPanelOpen: (open) => set({ detailPanelOpen: open }),
