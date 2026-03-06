@@ -49,6 +49,14 @@ export interface LLMResponse {
   }
 }
 
+/** A cached tool result that can be viewed in the main panel */
+export interface ToolResultEntry {
+  toolName: string
+  toolArgs: Record<string, unknown>
+  data: unknown
+  summary: string
+}
+
 /** A message in the chat UI (extends LLM message with UI-specific fields) */
 export interface UIMessage {
   id: string
@@ -60,6 +68,8 @@ export interface UIMessage {
   toolName?: string
   /** Tool call arguments */
   toolArgs?: Record<string, unknown>
+  /** All tool results from this turn (for "view result" links) */
+  toolResults?: ToolResultEntry[]
   /** Is this message still streaming/loading */
   loading?: boolean
   /** Error message if something went wrong */

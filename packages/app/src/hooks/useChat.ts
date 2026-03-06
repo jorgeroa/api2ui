@@ -13,7 +13,7 @@ import { chatCompletion } from '../services/llm/client'
 import { buildToolsFromUrl, buildToolsFromSpec, buildSystemPrompt } from '../services/llm/toolBuilder'
 import { fetchWithAuth } from '../services/api/fetcher'
 import { inferSchema } from '../services/schema/inferrer'
-import type { ChatMessage, UIMessage, Tool } from '../services/llm/types'
+import type { ChatMessage, UIMessage, Tool, ToolResultEntry } from '../services/llm/types'
 
 let messageCounter = 0
 function nextId(): string {
@@ -189,6 +189,7 @@ export function useChat() {
       // Each round may have multiple parallel tool_calls that all get executed
       const MAX_ROUNDS = 3
       let roundCount = 0
+      const collectedResults: ToolResultEntry[] = []
       let currentResponse = await chatCompletion(llmMessages, tools, config)
       let currentChoice = currentResponse.choices[0]
       if (!currentChoice) throw new Error('No response from LLM')
@@ -243,10 +244,18 @@ export function useChat() {
           const toolSchema = inferSchema(toolResult, url)
           useAppStore.getState().fetchSuccess(toolResult, toolSchema)
 
+          const summary = summarizeToolResult(toolResult, toolCall.function.name, toolArgs)
+          collectedResults.push({
+            toolName: toolCall.function.name,
+            toolArgs,
+            data: toolResult,
+            summary,
+          })
+
           addMessage({
             id: nextId(),
             role: 'tool-result',
-            text: summarizeToolResult(toolResult, toolCall.function.name, toolArgs),
+            text: summary,
             toolName: toolCall.function.name,
             toolArgs,
             timestamp: Date.now(),
@@ -278,6 +287,8 @@ export function useChat() {
       updateMessage(assistantId, {
         text: responseText,
         loading: false,
+        // Attach all tool results so the user can click to view any of them
+        ...(collectedResults.length > 1 ? { toolResults: collectedResults } : {}),
       })
     } catch (err) {
       updateMessage(assistantId, {
