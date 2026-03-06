@@ -143,8 +143,6 @@ export function DetailRendererGrouped({
   // Helper: Render an image field (full-width)
   const renderImageField = (fieldName: string, value: string) => {
     const displayLabel = getDisplayLabel(fieldName)
-    const fieldPath = `${path}.${fieldName}`
-
     return (
       <div
         key={fieldName}

@@ -189,7 +189,7 @@ let llmHistory: ChatMessage[] = []
 export function useChat() {
   const url = useAppStore((s) => s.url)
   const parsedSpec = useAppStore((s) => s.parsedSpec)
-  const { messages, addMessage, updateMessage, clearMessages, config, sending, setSending, chatApiUrl, setChatApiUrl } = useChatStore()
+  const { messages, addMessage, updateMessage, clearMessages, config, sending, setSending, setChatApiUrl } = useChatStore()
 
   // Reset LLM history when messages are cleared
   if (messages.length === 0 && llmHistory.length > 0) {

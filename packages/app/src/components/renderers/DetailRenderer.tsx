@@ -476,7 +476,7 @@ export function DetailRenderer({ data, schema, path, depth }: RendererProps) {
     })
   }
 
-  const fieldsContent = renderFields()
+  renderFields()
 
   // Conditional grouped/ungrouped rendering
   if (shouldGroup) {

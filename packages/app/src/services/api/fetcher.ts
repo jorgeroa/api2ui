@@ -3,10 +3,11 @@ import { useAuthStore } from '../../store/authStore'
 import type { Credential } from '../../types/auth'
 
 /**
- * In dev mode, rewrite absolute URLs through the Vite proxy to avoid CORS.
+ * Rewrite absolute URLs through the CORS proxy.
+ * In dev: handled by Vite plugin. In prod: handled by Cloudflare Pages Function.
  */
 function proxyUrl(url: string): string {
-  if (import.meta.env.DEV && url.startsWith('http')) {
+  if (url.startsWith('http')) {
     return `/api-proxy/${encodeURIComponent(url)}`
   }
   return url
