@@ -3,6 +3,8 @@ import type { TypeSignature } from '../../types/schema'
 import { DynamicRenderer } from '../DynamicRenderer'
 import { getItemLabel } from '../../utils/itemLabel'
 import { useAppStore } from '../../store/appStore'
+import { useChatStore } from '../../store/chatStore'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
 import { OverlayNavProvider } from '../../contexts/OverlayContext'
 import type { OverlayNavItem } from '../../contexts/OverlayContext'
 
@@ -16,7 +18,17 @@ interface DetailPanelProps {
 export function DetailPanel({ item, schema, itemPath, onClose }: DetailPanelProps) {
   const open = item !== null
   const setDetailPanelOpen = useAppStore(s => s.setDetailPanelOpen)
+  const chatOpen = useChatStore((s) => s.open)
+  const panelSize = useChatStore((s) => s.panelSize)
+  const isMobile = useMediaQuery('(max-width: 767px)')
   const [stack, setStack] = useState<OverlayNavItem[]>([])
+
+  // When chat is open on desktop, offset from right to avoid overlapping the chat panel
+  // panelSize is a percentage of viewport; add 6px for the separator
+  const chatOffset = chatOpen && !isMobile
+  const rightStyle = chatOffset ? `calc(${panelSize}% + 6px)` : '0'
+  // Also shrink the panel to fit within the remaining space
+  const maxWidthStyle = chatOffset ? `calc(${100 - panelSize}vw - 6px)` : undefined
 
   // Signal to App that the panel is open so it can add right padding
   useEffect(() => {
@@ -57,7 +69,7 @@ export function DetailPanel({ item, schema, itemPath, onClose }: DetailPanelProp
   if (!open) return null
 
   return (
-    <div className="fixed inset-y-0 right-0 z-40 w-full max-w-2xl bg-popover text-foreground shadow-2xl border-l border-border overflow-y-auto overscroll-contain">
+    <div className="fixed inset-y-0 z-40 w-full max-w-2xl bg-popover text-foreground shadow-2xl border-l border-border overflow-y-auto overscroll-contain" style={{ right: rightStyle, maxWidth: maxWidthStyle }}>
       {/* Sticky header with breadcrumb and close button */}
       <div className="sticky top-0 bg-popover border-b border-border px-6 py-3 flex items-center justify-between z-10">
         <h2 className="sr-only">

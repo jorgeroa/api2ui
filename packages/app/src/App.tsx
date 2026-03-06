@@ -267,7 +267,7 @@ function App() {
           />
           <main
             id="main-content"
-            className={`flex-1 overflow-y-auto py-8 px-6 transition-[padding] duration-300 ${detailPanelOpen ? 'pr-[42rem]' : ''}`}
+            className={`flex-1 overflow-y-auto py-8 px-6 transition-[padding] duration-300 ${detailPanelOpen && !chatOpen ? 'pr-[42rem]' : ''}`}
           >
             <div>
               {/* Header */}
@@ -279,7 +279,7 @@ function App() {
                   <button onClick={handleGoHome} className="cursor-pointer hover:opacity-70 transition-opacity">api2aux</button>
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Paste an API URL. See it. Chat it. Share it with agents.
+                  Paste an API URL. Get instant [Agent + User] eXperience.
                 </p>
               </div>
 
@@ -375,7 +375,7 @@ function App() {
         </div>
       ) : (
         // Centered layout for single-endpoint and direct URLs
-        <div className={`min-h-screen bg-background text-foreground py-8 px-4 transition-[padding] duration-300 ${detailPanelOpen ? 'pr-[42rem]' : ''}`}>
+        <div className={`min-h-screen bg-background text-foreground py-8 px-4 transition-[padding] duration-300 ${detailPanelOpen && !chatOpen ? 'pr-[42rem]' : ''}`}>
           <div className={chatOpen ? 'w-full' : 'max-w-6xl mx-auto'}>
             {/* Header */}
             <div className="relative text-center mb-8">
@@ -386,7 +386,7 @@ function App() {
                 <button onClick={handleGoHome} className="cursor-pointer hover:opacity-70 transition-opacity">api2aux</button>
               </h1>
               <p className="text-sm text-muted-foreground">
-                Paste an API URL. See it. Chat it. Share it with agents.
+                Paste an API URL. Get instant [Agent + User] eXperience.
               </p>
             </div>
 
@@ -563,29 +563,32 @@ function App() {
               {/* Welcome Message with Feature Highlights */}
               {!loading && !error && !schema && !parsedSpec && (
                 <div className="py-10">
-                  <p className="text-center text-xl text-muted-foreground mb-8">
-                    [Agent + User] eXperience for any API
-                  </p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
                     <div className="flex gap-3 p-4 rounded-lg">
-                      <span className="text-2xl flex-shrink-0" aria-hidden="true">~</span>
+                      <svg className="w-6 h-6 shrink-0 text-muted-foreground mt-0.5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                      </svg>
                       <div>
-                        <p className="font-medium text-foreground text-base">Smart Rendering</p>
-                        <p className="text-xs text-muted-foreground">Semantic detection auto-formats prices, dates, emails, ratings, images, and more</p>
+                        <p className="font-medium text-foreground text-base">Explore</p>
+                        <p className="text-xs text-muted-foreground">Smart UI that auto-detects prices, dates, ratings, images, and nested data structures</p>
                       </div>
                     </div>
                     <div className="flex gap-3 p-4 rounded-lg">
-                      <span className="text-2xl flex-shrink-0" aria-hidden="true">{'>'}_</span>
+                      <svg className="w-6 h-6 shrink-0 text-muted-foreground mt-0.5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+                      </svg>
                       <div>
-                        <p className="font-medium text-foreground text-base">AI Chat</p>
-                        <p className="text-xs text-muted-foreground">Converse with any API in natural language &mdash; the AI reads docs and calls endpoints for you</p>
+                        <p className="font-medium text-foreground text-base">Chat</p>
+                        <p className="text-xs text-muted-foreground">Ask questions in plain language &mdash; AI queries the API and shows results inline</p>
                       </div>
                     </div>
                     <div className="flex gap-3 p-4 rounded-lg">
-                      <span className="text-2xl flex-shrink-0" aria-hidden="true">{'->'}</span>
+                      <svg className="w-6 h-6 shrink-0 text-muted-foreground mt-0.5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+                      </svg>
                       <div>
-                        <p className="font-medium text-foreground text-base">MCP Export</p>
-                        <p className="text-xs text-muted-foreground">Turn any API into tools for Claude Desktop, Claude Code, and other AI agents</p>
+                        <p className="font-medium text-foreground text-base">Share</p>
+                        <p className="text-xs text-muted-foreground">Export as MCP tools for Claude Desktop, Claude Code, and other AI agents</p>
                       </div>
                     </div>
                   </div>

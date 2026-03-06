@@ -125,8 +125,6 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
           >
             <option value="GET">GET</option>
             <option value="POST">POST</option>
-            <option value="PUT">PUT</option>
-            <option value="PATCH">PATCH</option>
           </select>
           <input
             type="text"
