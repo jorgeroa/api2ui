@@ -185,28 +185,32 @@ export function useChat() {
         ...llmHistory,
       ]
 
-      // Call LLM
-      const response = await chatCompletion(llmMessages, tools, config)
-      const choice = response.choices[0]
-      if (!choice) throw new Error('No response from LLM')
+      // Tool calling loop: allow up to MAX_TOOL_CALLS per user message
+      const MAX_TOOL_CALLS = 3
+      let toolCallCount = 0
+      let currentResponse = await chatCompletion(llmMessages, tools, config)
+      let currentChoice = currentResponse.choices[0]
+      if (!currentChoice) throw new Error('No response from LLM')
 
-      const assistantMessage = choice.message
-
-      // Check if LLM wants to call a tool
-      if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-        const toolCall = assistantMessage.tool_calls[0]!
+      while (
+        currentChoice.message.tool_calls &&
+        currentChoice.message.tool_calls.length > 0 &&
+        toolCallCount < MAX_TOOL_CALLS
+      ) {
+        toolCallCount++
+        const toolCall = currentChoice.message.tool_calls[0]!
         const toolArgs = JSON.parse(toolCall.function.arguments)
 
         // Track assistant tool_call in LLM history
         llmHistory.push({
           role: 'assistant',
           content: null,
-          tool_calls: assistantMessage.tool_calls,
+          tool_calls: currentChoice.message.tool_calls,
         })
 
         // Update assistant message to show tool call
         updateMessage(assistantId, {
-          text: `Calling ${toolCall.function.name}...`,
+          text: `Calling ${toolCall.function.name}...${toolCallCount > 1 ? ` (${toolCallCount}/${MAX_TOOL_CALLS})` : ''}`,
           toolName: toolCall.function.name,
           toolArgs,
         })
@@ -216,7 +220,6 @@ export function useChat() {
         try {
           toolResult = await executeToolCall(toolCall.function.name, toolArgs, url)
         } catch (err) {
-          // Track error in LLM history so it stays consistent
           llmHistory.push({
             role: 'tool',
             content: `Error: ${err instanceof Error ? err.message : String(err)}`,
@@ -231,20 +234,19 @@ export function useChat() {
           return
         }
 
-        // Push result to main view via appStore
+        // Push result to main view (last tool call wins)
         const toolSchema = inferSchema(toolResult, url)
         useAppStore.getState().fetchSuccess(toolResult, toolSchema)
 
-        // Add compact summary to chat (no inline rendering)
-        const toolResultMsg: UIMessage = {
+        // Add compact summary to chat
+        addMessage({
           id: nextId(),
           role: 'tool-result',
           text: summarizeToolResult(toolResult, toolCall.function.name, toolArgs),
           toolName: toolCall.function.name,
           toolArgs,
           timestamp: Date.now(),
-        }
-        addMessage(toolResultMsg)
+        })
 
         // Track tool result in LLM history
         const truncatedResult = JSON.stringify(toolResult).slice(0, 8000)
@@ -254,33 +256,25 @@ export function useChat() {
           tool_call_id: toolCall.id,
         })
 
-        // Send full history (now includes tool_calls + tool response) for summarization
-        const followUpMessages: ChatMessage[] = [
+        // Call LLM again — with tools so it can decide to call another, or respond with text
+        const nextMessages: ChatMessage[] = [
           { role: 'system', content: systemPrompt },
           ...llmHistory,
         ]
-
-        // No tools needed for summarization — keeps the model focused on text
-        const followUp = await chatCompletion(followUpMessages, [], config)
-        const followUpChoice = followUp.choices[0]
-        const followUpText = followUpChoice?.message?.content || 'Done.'
-
-        // Track the follow-up response in LLM history
-        llmHistory.push({ role: 'assistant', content: followUpText })
-
-        updateMessage(assistantId, {
-          text: followUpText,
-          loading: false,
-        })
-      } else {
-        // No tool call — just a text response
-        const responseText = assistantMessage.content || ''
-        llmHistory.push({ role: 'assistant', content: responseText })
-        updateMessage(assistantId, {
-          text: responseText,
-          loading: false,
-        })
+        // On last allowed iteration, send no tools to force a text response
+        const nextTools = toolCallCount >= MAX_TOOL_CALLS ? [] : tools
+        currentResponse = await chatCompletion(nextMessages, nextTools, config)
+        currentChoice = currentResponse.choices[0]
+        if (!currentChoice) throw new Error('No response from LLM')
       }
+
+      // Final text response (either after tool calls or direct response)
+      const responseText = currentChoice.message.content || 'Done.'
+      llmHistory.push({ role: 'assistant', content: responseText })
+      updateMessage(assistantId, {
+        text: responseText,
+        loading: false,
+      })
     } catch (err) {
       updateMessage(assistantId, {
         text: `Error: ${err instanceof Error ? err.message : String(err)}`,

@@ -4,7 +4,7 @@
  */
 
 import type { Tool, ToolParameter } from './types'
-import type { ParsedSpec } from '../openapi/types'
+import type { ParsedSpec, ParsedOperation } from '../openapi/types'
 import { parseUrlParameters } from '../urlParser/parser'
 
 /**
@@ -75,8 +75,7 @@ export function buildToolsFromSpec(spec: ParsedSpec): Tool[] {
     }
 
     const name = sanitizeToolName(op.operationId || `${op.method}_${op.path}`)
-    const description = [op.summary, op.description].filter(Boolean).join('. ') ||
-      `${op.method.toUpperCase()} ${op.path}`
+    const description = buildToolDescription(op)
 
     return {
       type: 'function' as const,
@@ -91,6 +90,47 @@ export function buildToolsFromSpec(spec: ParsedSpec): Tool[] {
       },
     }
   })
+}
+
+function buildToolCatalog(spec: ParsedSpec): string | null {
+  if (spec.operations.length <= 10) return null // Not needed for small APIs
+
+  const tagMap = new Map<string, string[]>()
+  for (const op of spec.operations) {
+    const tags = op.tags.length > 0 ? op.tags : ['Other']
+    const toolName = sanitizeToolName(op.operationId || `${op.method}_${op.path}`)
+    for (const tag of tags) {
+      const list = tagMap.get(tag) || []
+      list.push(toolName)
+      tagMap.set(tag, list)
+    }
+  }
+
+  const lines = ['Tool categories:']
+  for (const [tag, tools] of tagMap) {
+    lines.push(`- ${tag} (${tools.length}): ${tools.join(', ')}`)
+  }
+  return lines.join('\n')
+}
+
+function buildToolDescription(op: ParsedOperation): string {
+  const parts: string[] = []
+  if (op.summary) {
+    parts.push(op.summary)
+  } else if (op.description) {
+    const firstSentence = op.description.split(/\.\s/)[0]
+    parts.push(firstSentence ? firstSentence + '.' : op.description)
+  } else {
+    parts.push(`${op.method.toUpperCase()} ${op.path}`)
+  }
+  // Include path so LLM can see endpoint structure
+  if (op.summary || op.description) {
+    parts.push(`${op.method.toUpperCase()} ${op.path}`)
+  }
+  if (op.tags.length > 0) {
+    parts.push(`Tags: ${op.tags.join(', ')}`)
+  }
+  return parts.join(' | ')
 }
 
 function sanitizeToolName(name: string): string {
@@ -108,14 +148,23 @@ export function buildSystemPrompt(url: string, spec?: ParsedSpec | null): string
   const hostname = new URL(url).hostname
 
   if (spec) {
-    return [
+    const lines = [
       `You are a helpful assistant that queries the "${spec.title}" API (${spec.baseUrl}) on behalf of the user.`,
       `The API has ${spec.operations.length} operations available as tools.`,
       `IMPORTANT: You MUST always call a tool to answer the user's question. NEVER answer from your own knowledge.`,
       `Your role is to fetch real-time data from the API, not to provide information you already know.`,
       `Even if you know the answer, call the relevant API tool so the UI updates with fresh data.`,
+      `You can call multiple tools in sequence if needed — for example, to compare data from two endpoints.`,
       `When the user asks a question, determine which API operation to call, execute it, then summarize the results concisely (2-3 sentences).`,
-    ].join(' ')
+    ]
+
+    // Add tag-grouped tool catalog for navigation
+    const catalog = buildToolCatalog(spec)
+    if (catalog) {
+      return lines.join(' ') + '\n\n' + catalog
+    }
+
+    return lines.join(' ')
   }
 
   const parsedUrl = new URL(url)
