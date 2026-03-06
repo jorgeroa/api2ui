@@ -78,6 +78,15 @@ export const EXAMPLES: Example[] = [
     category: 'api-specs',
     featured: true,
   },
+  {
+    title: 'D&D 5e API',
+    description: 'Full RPG reference — classes, spells, monsters, and equipment',
+    url: 'https://api.apis.guru/v2/specs/dnd5eapi.co/0.1/openapi.json',
+    type: 'OpenAPI',
+    features: ['endpoints', 'parameters', 'chat'],
+    category: 'api-specs',
+    featured: true,
+  },
 
   // ── Featured POST/GraphQL examples ────────────────────────────────
 
