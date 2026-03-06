@@ -189,7 +189,7 @@ let llmHistory: ChatMessage[] = []
 export function useChat() {
   const url = useAppStore((s) => s.url)
   const parsedSpec = useAppStore((s) => s.parsedSpec)
-  const { messages, addMessage, updateMessage, clearMessages, config, sending, setSending } = useChatStore()
+  const { messages, addMessage, updateMessage, clearMessages, config, sending, setSending, chatApiUrl, setChatApiUrl } = useChatStore()
 
   // Reset LLM history when messages are cleared
   if (messages.length === 0 && llmHistory.length > 0) {
@@ -207,6 +207,11 @@ export function useChat() {
         error: 'No API key configured',
       })
       return
+    }
+
+    // Track which API this chat belongs to
+    if (messages.length === 0) {
+      setChatApiUrl(url?.split('?')[0] ?? '')
     }
 
     // Add user message

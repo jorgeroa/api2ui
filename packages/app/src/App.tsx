@@ -41,7 +41,6 @@ function ResultsToolbar() {
           <ChatButton />
           <MCPButton />
           <ShareButton />
-          <ThemeToggle />
         </div>
       </div>
     </>
@@ -219,6 +218,9 @@ function App() {
     return (
       <>
         <ThemeApplier />
+        <div className="fixed top-4 right-4 z-50">
+          <ThemeToggle />
+        </div>
         <ExamplesPage
           onExampleClick={(exampleUrl, method, body) => {
             setUrl(exampleUrl)
@@ -269,7 +271,10 @@ function App() {
           >
             <div>
               {/* Header */}
-              <div className="text-center mb-8">
+              <div className="relative text-center mb-8">
+                <div className="absolute right-0 top-0">
+                  <ThemeToggle />
+                </div>
                 <h1 className="text-2xl font-semibold text-foreground mb-2">
                   <button onClick={handleGoHome} className="cursor-pointer hover:opacity-70 transition-opacity">api2aux</button>
                 </h1>
@@ -373,7 +378,10 @@ function App() {
         <div className={`min-h-screen bg-background text-foreground py-8 px-4 transition-[padding] duration-300 ${detailPanelOpen ? 'pr-[42rem]' : ''}`}>
           <div className={chatOpen ? 'w-full' : 'max-w-6xl mx-auto'}>
             {/* Header */}
-            <div className="text-center mb-8">
+            <div className="relative text-center mb-8">
+              <div className="absolute right-0 top-0">
+                <ThemeToggle />
+              </div>
               <h1 className="text-2xl font-semibold text-foreground mb-2">
                 <button onClick={handleGoHome} className="cursor-pointer hover:opacity-70 transition-opacity">api2aux</button>
               </h1>

@@ -11,7 +11,6 @@ import { DrilldownModeToggle } from './navigation/DrilldownModeToggle'
 import { ShareButton } from './ShareButton'
 import { MCPButton } from './MCPExportDialog'
 import { ChatButton } from './chat/ChatPanel'
-import { ThemeToggle } from './config/ThemeToggle'
 import { getDefaultTypeName } from '../services/selection'
 
 /** Normalize indexed array paths to generic paths for cache lookup.
@@ -149,7 +148,6 @@ export function DynamicRenderer({
             <ChatButton />
             <MCPButton />
             <ShareButton />
-            <ThemeToggle />
           </div>
         </div>
       ))}

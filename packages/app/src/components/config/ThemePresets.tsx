@@ -38,9 +38,29 @@ const THEME_CONFIGS: Record<ThemePreset, ThemeConfig> = {
     name: 'Ocean',
     variant: 'Light',
   },
+  rose: {
+    colors: ['#f7eef2', '#4a2035', '#f0d8e4'],
+    name: 'Rose',
+    variant: 'Light',
+  },
+  slate: {
+    colors: ['#2a2d35', '#e8e9ec', '#3a3d45'],
+    name: 'Slate',
+    variant: 'Dark',
+  },
+  sunset: {
+    colors: ['#f7f0e5', '#4a2810', '#f0d8b8'],
+    name: 'Sunset',
+    variant: 'Light',
+  },
+  nord: {
+    colors: ['#2e3440', '#d8dee9', '#3b4252'],
+    name: 'Nord',
+    variant: 'Dark',
+  },
 }
 
-const PRESETS: ThemePreset[] = ['light', 'dark', 'midnight', 'forest', 'sand', 'ocean']
+const PRESETS: ThemePreset[] = ['light', 'dark', 'midnight', 'forest', 'sand', 'ocean', 'rose', 'slate', 'sunset', 'nord']
 
 function PresetCard({ preset, selected, onClick }: { preset: ThemePreset; selected: boolean; onClick: () => void }) {
   const config = THEME_CONFIGS[preset]
@@ -48,7 +68,7 @@ function PresetCard({ preset, selected, onClick }: { preset: ThemePreset; select
   return (
     <button
       onClick={onClick}
-      className={`relative p-3 rounded-lg border-2 transition-all hover:shadow-md ${
+      className={`relative p-2 rounded-lg border-2 transition-all hover:shadow-md ${
         selected
           ? 'border-foreground ring-1 ring-ring'
           : 'border-border hover:border-foreground/20'
@@ -57,20 +77,19 @@ function PresetCard({ preset, selected, onClick }: { preset: ThemePreset; select
       aria-pressed={selected}
     >
       {/* Color preview strip */}
-      <div className="flex gap-1 mb-2">
+      <div className="flex gap-0.5 mb-1.5">
         {config.colors.map((color, i) => (
           <div
             key={i}
-            className="h-5 flex-1 rounded-sm"
+            className="h-4 flex-1 rounded-sm"
             style={{ backgroundColor: color }}
           />
         ))}
       </div>
 
-      {/* Name and variant label */}
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-foreground">{config.name}</span>
-        <span className="text-[10px] text-muted-foreground">{config.variant}</span>
+      {/* Name */}
+      <div className="text-[10px] font-medium text-foreground text-center leading-tight">
+        {config.name}
       </div>
     </button>
   )
@@ -80,7 +99,7 @@ export function ThemePresets() {
   const { globalTheme, applyTheme } = useConfigStore()
 
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <div className="grid grid-cols-5 gap-2">
       {PRESETS.map((preset) => (
         <PresetCard
           key={preset}

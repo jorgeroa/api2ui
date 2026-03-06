@@ -8,7 +8,7 @@ import { ChatInput } from './ChatInput'
 import { ChatSettings } from './ChatSettings'
 
 export function ChatPanel() {
-  const { setOpen, clearMessages } = useChatStore()
+  const { setOpen, clearMessages, chatApiUrl } = useChatStore()
   const url = useAppStore((s) => s.url)
   const { messages, sendMessage, sending, hasApiKey, contextStats, llmHistory } = useChat()
   const [showSettings, setShowSettings] = useState(false)
@@ -79,6 +79,27 @@ export function ChatPanel() {
 
       {/* Settings (collapsible) */}
       {showSettings && <ChatSettings />}
+
+      {/* Stale chat banner — shown when API changed since last chat */}
+      {messages.length > 0 && chatApiUrl && url && url.split('?')[0] !== chatApiUrl && (
+        <div className="mx-3 mt-2 p-2.5 rounded-md bg-muted border border-border text-xs text-muted-foreground">
+          <p className="mb-1.5">This chat was with a different API.</p>
+          <div className="flex gap-2">
+            <button
+              onClick={clearMessages}
+              className="px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-xs font-medium"
+            >
+              Start fresh
+            </button>
+            <button
+              onClick={() => useChatStore.getState().setChatApiUrl(url!.split('?')[0] ?? '')}
+              className="px-2 py-1 rounded bg-muted hover:bg-accent text-foreground transition-colors text-xs"
+            >
+              Keep chat
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto">

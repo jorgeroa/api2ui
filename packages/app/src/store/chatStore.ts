@@ -15,6 +15,10 @@ interface ChatState {
   updateMessage: (id: string, updates: Partial<UIMessage>) => void
   clearMessages: () => void
 
+  /** The API URL this chat session belongs to (base URL without query params) */
+  chatApiUrl: string
+  setChatApiUrl: (url: string) => void
+
   /** LLM configuration (persisted) */
   config: ChatConfig
   setConfig: (config: Partial<ChatConfig>) => void
@@ -33,6 +37,7 @@ export const useChatStore = create<ChatState>()(
     (set) => ({
       open: false,
       messages: [],
+      chatApiUrl: '',
       config: {
         apiKey: '',
         model: DEFAULT_MODELS.openrouter,
@@ -52,7 +57,8 @@ export const useChatStore = create<ChatState>()(
           m.id === id ? { ...m, ...updates } : m
         ),
       })),
-      clearMessages: () => set({ messages: [] }),
+      clearMessages: () => set({ messages: [], chatApiUrl: '' }),
+      setChatApiUrl: (chatApiUrl) => set({ chatApiUrl }),
 
       setConfig: (partial) => set((s) => ({
         config: { ...s.config, ...partial },

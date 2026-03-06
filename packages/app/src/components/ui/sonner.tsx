@@ -8,7 +8,7 @@ import {
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { useConfigStore } from "../../store/configStore"
 
-const DARK_THEMES = new Set(['dark', 'midnight', 'forest'])
+const DARK_THEMES = new Set(['dark', 'midnight', 'forest', 'slate', 'nord'])
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const globalTheme = useConfigStore((s) => s.globalTheme)

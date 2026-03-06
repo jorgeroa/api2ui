@@ -12,6 +12,10 @@ export const ThemePreset = {
   Forest: 'forest',
   Sand: 'sand',
   Ocean: 'ocean',
+  Rose: 'rose',
+  Slate: 'slate',
+  Sunset: 'sunset',
+  Nord: 'nord',
 } as const
 export type ThemePreset = typeof ThemePreset[keyof typeof ThemePreset]
 
