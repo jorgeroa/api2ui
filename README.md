@@ -6,12 +6,41 @@ Three ways to experience any API: **smart rendering** with semantic field detect
 
 ## Quick Start
 
+### Development
+
 ```bash
 pnpm install
 pnpm dev
 ```
 
 Open http://localhost:5173 and paste any JSON API URL, or try a built-in example.
+
+### Docker (self-hosting)
+
+```bash
+docker compose up
+```
+
+This runs a combined server on http://localhost:8787 with the app, MCP worker, and CORS proxy.
+
+### Environment Variables
+
+Copy `.env.example` and adjust as needed:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VITE_MCP_WORKER_URL` | MCP worker URL for hosted deployments | _(empty — disables hosted tab)_ |
+| `PORT` | Server port (Docker / Node adapter) | `8787` |
+
+## Packages
+
+| Package | Description |
+|---------|-------------|
+| `packages/app` | React web app (Vite) |
+| `packages/mcp-server` | Standalone MCP server CLI — turns any API into tools for Claude Desktop, Cursor, etc. |
+| `packages/mcp-worker` | Hosted multi-tenant MCP server (Node.js) |
+| `packages/semantic-analysis` | OpenAPI parser and semantic field classification |
+| `packages/tool-utils` | Shared tool name/description generation |
 
 ## Features
 
@@ -21,83 +50,39 @@ Fields are automatically classified using an embedding-based engine with 21 sema
 ### OpenAPI/Swagger Support
 Paste a spec URL to browse tagged endpoints in a sidebar, fill in parameters with auto-generated forms, and execute operations. Supports OpenAPI 2.0 and 3.x.
 
+### AI Chat
+Converse with API endpoints in natural language. The chat system generates tool calls from your questions and displays results with semantic rendering.
+
+### MCP Export
+Export any API as MCP tools — download a config for Claude Desktop, copy a CLI command for Claude Code, or deploy as a hosted MCP server.
+
 ### Component Switching
-Switch between table, card list, and list views via a dropdown badge. The system auto-selects the best component based on data shape, but you can override per-field.
-
-### Configure Mode
-Hide/show fields, rename labels, reorder columns via drag-and-drop, and override component types. All settings persist to localStorage.
-
-### Theming
-Light, dark, compact, and spacious presets plus fine-grained control over colors, typography, spacing, and border radius. Supports per-endpoint style overrides.
+Switch between table, card list, and list views. The system auto-selects the best component based on data shape, but you can override per-field.
 
 ### Authentication
 Bearer token, Basic Auth, API Key (header/query), and query parameter authentication. Credentials are stored in sessionStorage (per-tab, not shared).
 
 ### Shareable Links
-Click "Share" to copy a URL that encodes the API endpoint and view configuration. Recipients see the same data and layout without needing to configure anything.
-
-## Built-in Examples
-
-| Example | URL | Showcases |
-|---------|-----|-----------|
-| User Directory | `jsonplaceholder.typicode.com/users` | Table with email, phone, address detection |
-| Single User | `jsonplaceholder.typicode.com/users/1` | Detail view with nested objects |
-| Product Catalog | `dummyjson.com/products` | Card grid with images, prices, ratings |
-| Pet Store API | `petstore.swagger.io/v2/swagger.json` | OpenAPI multi-endpoint navigation |
-| GitHub Profile | `api.github.com/users/octocat` | Avatar, URL, date, name detection |
-
-## Tech Stack
-
-- **React 19** + TypeScript
-- **Vite** for dev server and builds
-- **Zustand** for state management with localStorage/sessionStorage persistence
-- **Tailwind CSS 4** for styling
-- **multilingual-e5-small** embeddings (pre-computed at build time) for semantic classification
-- **Headless UI** for accessible dialogs
-- **@dnd-kit** for drag-and-drop column reordering
-- **@apidevtools/swagger-parser** for OpenAPI spec dereferencing
-
-## Project Structure
-
-```
-src/
-  components/
-    config/          Configuration panel, theme, field controls
-    renderers/       Table, CardList, List, Detail, Primitive, JSON
-    navigation/      Sidebar, Breadcrumb, DrilldownModeToggle
-    auth/            Authentication forms and lock icon
-    openapi/         Operation selector
-    forms/           Parameter input forms
-  services/
-    api/             Fetch with CORS detection and typed errors
-    semantic/        Embedding-based field classification engine
-    sharing/         Shareable link encoding/decoding
-    analysis/        Field importance scoring and grouping
-    openapi/         OpenAPI 2.0 & 3.x parser
-    schema/          JSON schema inference engine
-    selection/       Schema-to-component selection heuristics
-    urlParser/       URL parameter parsing
-  store/             Zustand stores (app, config, auth, layout, parameters)
-scripts/
-  categories.json    Semantic category definitions (21 categories, 652 tokens)
-  generate-embeddings.mjs  Build-time embedding generation
-```
+Click "Share" to copy a URL that encodes the API endpoint and view configuration.
 
 ## Scripts
 
 | Command | Description |
 |---------|-------------|
-| `pnpm dev` | Start dev server |
-| `pnpm build` | Type-check and build |
-| `pnpm preview` | Preview production build |
-| `pnpm test` | Run tests with Vitest |
-| `pnpm lint` | Run ESLint |
-| `pnpm generate-embeddings` | Regenerate semantic embeddings |
+| `pnpm dev` | Start app dev server |
+| `pnpm build` | Build all packages |
+| `pnpm test` | Run tests |
+| `pnpm -r test:run` | Run tests (CI mode) |
 
-## Contributing
+## Tech Stack
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for how to set up the dev environment, add semantic categories, create value validators, and add rendering components.
+- **React 19** + TypeScript
+- **Vite** for dev server and builds
+- **Hono** for the Node.js server and MCP worker
+- **Zustand** for state management
+- **Tailwind CSS 4** for styling
+- **@modelcontextprotocol/sdk** for MCP protocol support
 
 ## License
 
-MIT
+AGPL-3.0 — see [LICENSE](LICENSE).
