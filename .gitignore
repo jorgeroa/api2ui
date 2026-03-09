@@ -29,3 +29,6 @@ wrangler.toml
 *.njsproj
 *.sln
 *.sw?
+
+.env*
+!.env.example
