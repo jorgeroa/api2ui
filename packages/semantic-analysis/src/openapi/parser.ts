@@ -1,9 +1,9 @@
 /**
- * OpenAPI/Swagger spec parsing — delegates to api-bridge-rt.
+ * OpenAPI/Swagger spec parsing — delegates to api-invoke.
  */
 
-import { parseOpenAPISpec as bridgeParse } from 'api-bridge-rt'
-import type { ParsedAPI } from 'api-bridge-rt'
+import { parseOpenAPISpec as bridgeParse } from 'api-invoke'
+import type { ParsedAPI } from 'api-invoke'
 
 /**
  * Parse an OpenAPI/Swagger spec URL or object.

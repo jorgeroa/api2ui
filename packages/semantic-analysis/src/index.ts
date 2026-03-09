@@ -81,9 +81,9 @@ export type {
   Auth,
   AuthConfig,
   ExecutionResult,
-} from 'api-bridge-rt'
+} from 'api-invoke'
 
-export { AuthConfigType, ParamLocation } from 'api-bridge-rt'
+export { AuthConfigType, ParamLocation } from 'api-invoke'
 
 // === Shared Types ===
 export { FieldType, Confidence } from './types/schema'

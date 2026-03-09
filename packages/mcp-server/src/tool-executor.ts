@@ -1,12 +1,12 @@
 /**
  * Executes API calls for MCP tool invocations.
- * Delegates to api-bridge-rt with throwOnHttpError: false so error
+ * Delegates to api-invoke with throwOnHttpError: false so error
  * responses are returned as data (needed for MCP tools to show
  * error details to the LLM).
  */
 
-import { executeOperation } from 'api-bridge-rt'
-import type { Operation, Auth, ExecutionResult } from 'api-bridge-rt'
+import { executeOperation } from 'api-invoke'
+import type { Operation, Auth, ExecutionResult } from 'api-invoke'
 
 export type { ExecutionResult }
 

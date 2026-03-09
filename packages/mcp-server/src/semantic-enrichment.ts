@@ -10,8 +10,8 @@ import {
   detectSemantics,
   getBestMatch,
 } from '@api2aux/semantic-analysis'
-import type { Operation, Parameter } from 'api-bridge-rt'
-import { HttpMethod, ParamLocation } from 'api-bridge-rt'
+import type { Operation, Parameter } from 'api-invoke'
+import { HttpMethod, ParamLocation } from 'api-invoke'
 import type { GeneratedTool } from './tool-generator'
 
 // ---------------------------------------------------------------------------

@@ -2,8 +2,8 @@
  * Configuration types for the MCP server.
  */
 
-export { toAuth, AuthConfigType } from 'api-bridge-rt'
-export type { AuthConfig } from 'api-bridge-rt'
+export { toAuth, AuthConfigType } from 'api-invoke'
+export type { AuthConfig } from 'api-invoke'
 
 export interface ServerConfig {
   /** API URL to proxy (for raw JSON APIs) */

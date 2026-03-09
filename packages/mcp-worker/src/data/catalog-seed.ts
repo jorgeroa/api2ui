@@ -3,7 +3,7 @@
  * Used by both the seed endpoint and the seed script.
  */
 
-import type { Operation } from 'api-bridge-rt'
+import type { Operation } from 'api-invoke'
 
 export interface CatalogSeedEntry {
   name: string

@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod'
-import type { Operation } from 'api-bridge-rt'
+import type { Operation } from 'api-invoke'
 import { generateToolDefinitions } from '@api2aux/tool-utils'
 import type { JsonSchemaProperty, UnifiedToolDefinition } from '@api2aux/tool-utils'
 

@@ -19,7 +19,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "api-bridge-rt": "file:../../../api-bridge-rt"
+    "api-invoke": "file:../../../api-invoke"
   },
   "devDependencies": {
     "tsup": "^8.5.1",

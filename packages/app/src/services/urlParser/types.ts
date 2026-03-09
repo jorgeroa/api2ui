@@ -1,12 +1,12 @@
 /**
  * Types for URL parameter parsing.
- * Extends Parameter from api-bridge-rt with URL-specific fields.
+ * Extends Parameter from api-invoke with URL-specific fields.
  */
 
 import type { Parameter } from '@api2aux/semantic-analysis'
 
 /**
- * A parsed URL parameter, extending api-bridge-rt's Parameter.
+ * A parsed URL parameter, extending api-invoke's Parameter.
  * For URL parsing, we always use 'query' location and mark required as false
  * since we can't know requiredness from URL alone.
  */

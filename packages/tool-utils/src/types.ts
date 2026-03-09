@@ -1,6 +1,6 @@
 /**
  * Minimal operation interface for tool generation.
- * Satisfied by api-bridge-rt's Operation via structural typing.
+ * Satisfied by api-invoke's Operation via structural typing.
  */
 export interface ToolOperation {
   id: string

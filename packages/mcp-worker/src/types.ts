@@ -1,12 +1,12 @@
 /**
  * Types for the hosted MCP worker.
- * Uses Operation from api-bridge-rt directly.
+ * Uses Operation from api-invoke directly.
  */
 
-import type { Operation, AuthConfigType, ParamLocation } from 'api-bridge-rt'
+import type { Operation, AuthConfigType, ParamLocation } from 'api-invoke'
 
-export { toAuth, AuthConfigType } from 'api-bridge-rt'
-export type { AuthConfig } from 'api-bridge-rt'
+export { toAuth, AuthConfigType } from 'api-invoke'
+export type { AuthConfig } from 'api-invoke'
 
 // ── Storage interface (runtime-agnostic) ─────────────────────────────
 
