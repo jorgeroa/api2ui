@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest'
 import { getDefaultComponent, mapToComponents } from './mapper'
 import type { TypeSignature, UnifiedSchema } from '../types/schema'
 

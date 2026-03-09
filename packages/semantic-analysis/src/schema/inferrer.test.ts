@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest'
 import { inferSchema } from './inferrer'
 import type { TypeSignature } from '../types/schema'
 
