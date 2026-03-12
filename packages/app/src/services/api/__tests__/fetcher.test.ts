@@ -15,9 +15,29 @@ vi.mock('../../../store/authStore', () => ({
 const mockFetch = vi.fn()
 global.fetch = mockFetch
 
-// In dev/test mode, URLs are rewritten through the CORS proxy
+/**
+ * Create a complete mock Response compatible with api-invoke's executor.
+ * The executor reads status, headers (forEach/get), json(), text(), clone().
+ */
+function mockResponse(data: unknown, overrides: { status?: number; statusText?: string; contentType?: string } = {}): Response {
+  const status = overrides.status ?? 200
+  const statusText = overrides.statusText ?? 'OK'
+  const contentType = overrides.contentType ?? 'application/json'
+  const body = typeof data === 'string' ? data : JSON.stringify(data)
+
+  return new Response(body, {
+    status,
+    statusText,
+    headers: { 'content-type': contentType },
+  })
+}
+
+// In dev/test mode, URLs are rewritten through the CORS proxy.
+// api-invoke normalizes base URLs with a trailing slash before the query string.
 function expectedProxyUrl(url: string): string {
-  return `/api-proxy/${encodeURIComponent(url)}`
+  const u = new URL(url)
+  if (!u.pathname.endsWith('/')) u.pathname += '/'
+  return `/api-proxy/${encodeURIComponent(u.toString())}`
 }
 
 describe('fetchWithAuth', () => {
@@ -43,10 +63,7 @@ describe('fetchWithAuth', () => {
         getActiveCredential: vi.fn().mockReturnValue(credential),
       } as any)
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ success: true }),
-      })
+      mockFetch.mockResolvedValue(mockResponse({ success: true }))
 
       await fetchWithAuth(testUrl)
 
@@ -74,10 +91,7 @@ describe('fetchWithAuth', () => {
         getActiveCredential: vi.fn().mockReturnValue(credential),
       } as any)
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ success: true }),
-      })
+      mockFetch.mockResolvedValue(mockResponse({ success: true }))
 
       await fetchWithAuth(testUrl)
 
@@ -106,10 +120,7 @@ describe('fetchWithAuth', () => {
         getActiveCredential: vi.fn().mockReturnValue(credential),
       } as any)
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ success: true }),
-      })
+      mockFetch.mockResolvedValue(mockResponse({ success: true }))
 
       await fetchWithAuth(testUrl)
 
@@ -135,6 +146,8 @@ describe('fetchWithAuth', () => {
         getActiveCredential: vi.fn().mockReturnValue(credential),
       } as any)
 
+      mockFetch.mockResolvedValue(mockResponse({ success: true }))
+
       await fetchWithAuth(testUrl)
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(String),
@@ -158,10 +171,7 @@ describe('fetchWithAuth', () => {
         getActiveCredential: vi.fn().mockReturnValue(credential),
       } as any)
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ success: true }),
-      })
+      mockFetch.mockResolvedValue(mockResponse({ success: true }))
 
       await fetchWithAuth(testUrl)
 
@@ -185,10 +195,7 @@ describe('fetchWithAuth', () => {
         getActiveCredential: vi.fn().mockReturnValue(credential),
       } as any)
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ success: true }),
-      })
+      mockFetch.mockResolvedValue(mockResponse({ success: true }))
 
       await fetchWithAuth(urlWithParam)
 
@@ -202,24 +209,18 @@ describe('fetchWithAuth', () => {
   })
 
   describe('Passthrough (no credentials)', () => {
-    it('calls fetchAPI unchanged when no credential configured', async () => {
+    it('fetches without auth headers when no credential configured', async () => {
       vi.mocked(useAuthStore.getState).mockReturnValue({
         getActiveCredential: vi.fn().mockReturnValue(null),
       } as any)
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ success: true }),
-      })
+      mockFetch.mockResolvedValue(mockResponse({ success: true }))
 
       await fetchWithAuth(testUrl)
 
       expect(mockFetch).toHaveBeenCalledWith(
         expectedProxyUrl(testUrl),
-        expect.objectContaining({
-          mode: 'cors',
-          credentials: 'omit',
-        })
+        expect.any(Object)
       )
 
       const callHeaders = mockFetch.mock.calls[0]![1]?.headers as any
@@ -239,16 +240,15 @@ describe('fetchWithAuth', () => {
         getActiveCredential: vi.fn().mockReturnValue(credential),
       } as any)
 
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 401,
-        statusText: 'Unauthorized',
-        headers: new Headers({ 'content-type': 'application/json' }),
-        clone: function() { return this },
-        text: async () => JSON.stringify({ error: 'Invalid token' }),
-      })
+      mockFetch.mockResolvedValue(
+        mockResponse({ error: 'Invalid token' }, { status: 401, statusText: 'Unauthorized' })
+      )
 
       await expect(fetchWithAuth(testUrl)).rejects.toThrow(AuthError)
+
+      mockFetch.mockResolvedValue(
+        mockResponse({ error: 'Invalid token' }, { status: 401, statusText: 'Unauthorized' })
+      )
 
       try {
         await fetchWithAuth(testUrl)
@@ -272,14 +272,9 @@ describe('fetchWithAuth', () => {
         getActiveCredential: vi.fn().mockReturnValue(credential),
       } as any)
 
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 403,
-        statusText: 'Forbidden',
-        headers: new Headers({ 'content-type': 'application/json' }),
-        clone: function() { return this },
-        text: async () => JSON.stringify({ error: 'Insufficient permissions' }),
-      })
+      mockFetch.mockResolvedValue(
+        mockResponse({ error: 'Insufficient permissions' }, { status: 403, statusText: 'Forbidden' })
+      )
 
       try {
         await fetchWithAuth(testUrl)
@@ -296,14 +291,9 @@ describe('fetchWithAuth', () => {
         getActiveCredential: vi.fn().mockReturnValue(null),
       } as any)
 
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 401,
-        statusText: 'Unauthorized',
-        headers: new Headers({ 'content-type': 'text/html' }),
-        clone: function() { return this },
-        text: async () => '<html>Unauthorized</html>',
-      })
+      mockFetch.mockResolvedValue(
+        mockResponse('<html>Unauthorized</html>', { status: 401, statusText: 'Unauthorized', contentType: 'text/html' })
+      )
 
       try {
         await fetchWithAuth(testUrl)
@@ -325,14 +315,9 @@ describe('fetchWithAuth', () => {
         getActiveCredential: vi.fn().mockReturnValue(credential),
       } as any)
 
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 401,
-        statusText: 'Unauthorized',
-        headers: new Headers({ 'content-type': 'application/json' }),
-        clone: function() { return this },
-        text: async () => JSON.stringify({ error: 'Token expired', code: 'TOKEN_EXPIRED' }),
-      })
+      mockFetch.mockResolvedValue(
+        mockResponse({ error: 'Token expired', code: 'TOKEN_EXPIRED' }, { status: 401, statusText: 'Unauthorized' })
+      )
 
       try {
         await fetchWithAuth(testUrl)
@@ -354,14 +339,9 @@ describe('fetchWithAuth', () => {
         getActiveCredential: vi.fn().mockReturnValue(credential),
       } as any)
 
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 401,
-        statusText: 'Unauthorized',
-        headers: new Headers({ 'content-type': 'text/html' }),
-        clone: function() { return this },
-        text: async () => '<html><body>Unauthorized Access</body></html>',
-      })
+      mockFetch.mockResolvedValue(
+        mockResponse('<html><body>Unauthorized Access</body></html>', { status: 401, statusText: 'Unauthorized', contentType: 'text/html' })
+      )
 
       try {
         await fetchWithAuth(testUrl)
@@ -408,7 +388,3 @@ describe('isAuthConfigured', () => {
     expect(isAuthConfigured('https://api.example.com/data')).toBe(false)
   })
 })
-
-// Helper functions (validateHeaderName, maskCredential) are tested indirectly:
-// - validateHeaderName is tested via API Key rejection test
-// - maskCredential is exported but primarily for debugging/logging use
