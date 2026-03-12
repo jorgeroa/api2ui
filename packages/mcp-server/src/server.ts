@@ -6,10 +6,11 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { parseOpenAPISpec } from '@api2aux/semantic-analysis'
-import type { ParsedAPI, ExecutionResult } from 'api-invoke'
-import { injectAuth, ContentType, HeaderName } from 'api-invoke'
+import type { ParsedAPI, ExecutionResult, Auth } from 'api-invoke'
+import { parseRawUrl } from 'api-invoke'
 import { generateTools } from './tool-generator'
-import { enrichTools, describeFieldsFromData } from './semantic-enrichment'
+import type { GeneratedTool } from './tool-generator'
+import { enrichTools } from './semantic-enrichment'
 import { executeTool } from './tool-executor'
 import { formatResponse } from './response-formatter'
 import type { ServerConfig, AuthConfig } from './types'
@@ -109,6 +110,92 @@ function formatDebugInfo(result: ExecutionResult, responseSize: number): string 
 }
 
 /**
+ * Create a tool handler that executes an operation and formats the response.
+ * Shared by both OpenAPI and raw API modes.
+ */
+function createToolHandler(
+  baseUrl: string,
+  tool: GeneratedTool,
+  bridgeAuth: Auth | undefined,
+  debug: boolean,
+  fullResponse: boolean
+) {
+  return async (args: Record<string, unknown>) => {
+    const showDebug = debug || args.debug === true
+    const noTruncate = fullResponse || args.full_response === true
+    try {
+      const result = await executeTool(baseUrl, tool.operation, args, bridgeAuth)
+      const responseText = formatResponse(result.data, noTruncate)
+      const prefix = showDebug
+        ? formatDebugInfo(result, responseText.length)
+        : ''
+
+      if (result.status >= 400) {
+        return {
+          content: [{
+            type: 'text' as const,
+            text: `${prefix}API error ${result.status}: ${responseText}`,
+          }],
+          isError: true,
+        }
+      }
+
+      return {
+        content: [{
+          type: 'text' as const,
+          text: `${prefix}${responseText}`,
+        }],
+      }
+    } catch (err) {
+      return {
+        content: [{
+          type: 'text' as const,
+          text: `Request failed: ${err instanceof Error ? err.message : String(err)}`,
+        }],
+        isError: true,
+      }
+    }
+  }
+}
+
+/**
+ * Register tools on an MCP server from generated tool definitions.
+ */
+function registerToolsOnServer(
+  server: McpServer,
+  tools: GeneratedTool[],
+  baseUrl: string,
+  bridgeAuth: Auth | undefined,
+  debug: boolean,
+  fullResponse: boolean
+): void {
+  for (const tool of tools) {
+    const toolSchema = {
+      ...tool.inputSchema,
+      debug: z.boolean().optional().describe('Set to true to see the request URL, headers, and timing'),
+      full_response: z.boolean().optional().describe('Set to true to disable truncation and return the full response'),
+    }
+
+    const hasInputs = Object.keys(tool.inputSchema).length > 0
+    const handler = createToolHandler(baseUrl, tool, bridgeAuth, debug, fullResponse)
+
+    if (hasInputs) {
+      server.registerTool(
+        tool.name,
+        { description: tool.description, inputSchema: toolSchema },
+        handler
+      )
+    } else {
+      server.registerTool(
+        tool.name,
+        { description: tool.description, inputSchema: { debug: toolSchema.debug } },
+        handler
+      )
+    }
+  }
+}
+
+/**
  * Parse an OpenAPI spec and register each operation as an MCP tool.
  */
 async function registerOpenAPITools(
@@ -138,76 +225,16 @@ async function registerOpenAPITools(
 
   console.error(`[api2aux-mcp] Registering ${tools.length} tools...`)
 
-  for (const tool of tools) {
-    // Add debug + full_response params to input schema
-    const toolSchema = {
-      ...tool.inputSchema,
-      debug: z.boolean().optional().describe('Set to true to see the request URL, headers, and timing'),
-      full_response: z.boolean().optional().describe('Set to true to disable truncation and return the full response'),
-    }
-
-    const hasInputs = Object.keys(tool.inputSchema).length > 0
-
-    const handler = async (args: Record<string, unknown>) => {
-      const showDebug = debug || args.debug === true
-      const noTruncate = fullResponse || args.full_response === true
-      try {
-        const result = await executeTool(baseUrl, tool.operation, args, bridgeAuth)
-        const responseText = formatResponse(result.data, noTruncate)
-        const prefix = showDebug
-          ? formatDebugInfo(result, responseText.length)
-          : ''
-
-        if (result.status >= 400) {
-          return {
-            content: [{
-              type: 'text' as const,
-              text: `${prefix}API error ${result.status}: ${responseText}`,
-            }],
-            isError: true,
-          }
-        }
-
-        return {
-          content: [{
-            type: 'text' as const,
-            text: `${prefix}${responseText}`,
-          }],
-        }
-      } catch (err) {
-        return {
-          content: [{
-            type: 'text' as const,
-            text: `Request failed: ${err instanceof Error ? err.message : String(err)}`,
-          }],
-          isError: true,
-        }
-      }
-    }
-
-    if (hasInputs) {
-      server.registerTool(
-        tool.name,
-        { description: tool.description, inputSchema: toolSchema },
-        handler
-      )
-    } else {
-      server.registerTool(
-        tool.name,
-        { description: tool.description, inputSchema: { debug: toolSchema.debug } },
-        handler
-      )
-    }
-  }
+  registerToolsOnServer(server, tools, baseUrl, bridgeAuth, debug, fullResponse)
 
   console.error(`[api2aux-mcp] ${tools.length} tools registered`)
 }
 
 /**
- * Sanitize a query param name into a valid JS identifier.
- * e.g. "filter[name]" → "filter_name"
+ * Sanitize a string into a valid tool name segment.
+ * e.g. "my-api" → "my_api"
  */
-function sanitizeParamName(name: string): string {
+function sanitizeName(name: string): string {
   return name
     .replace(/[^a-zA-Z0-9_]/g, '_')
     .replace(/_+/g, '_')
@@ -215,10 +242,8 @@ function sanitizeParamName(name: string): string {
 }
 
 /**
- * Register a single "fetch" tool for a raw API URL.
- * Parses query params from the URL and exposes each as an individual
- * tool parameter with its default value, so Claude can override any
- * param cleanly without duplication.
+ * Register tools for a raw API URL using parseRawUrl().
+ * Uses the same generateTools → enrichTools → register pipeline as OpenAPI mode.
  */
 async function registerRawAPITool(
   server: McpServer,
@@ -230,140 +255,34 @@ async function registerRawAPITool(
 ): Promise<void> {
   console.error(`[api2aux-mcp] Raw API mode: ${apiUrl}`)
 
+  const spec = parseRawUrl(apiUrl)
+  const baseUrl = spec.baseUrl
   const bridgeAuth = toAuth(auth)
+  const rawTools = generateTools(spec.operations)
 
-  // Parse URL into base path and individual query params
+  // Override tool name from server name or hostname
   const parsed = new URL(apiUrl)
-  const baseUrl = `${parsed.origin}${parsed.pathname}`
-  const defaultParams: Array<{ original: string; sanitized: string; defaultValue: string }> = []
-  const seenSanitized = new Set<string>()
-
-  for (const [key, value] of parsed.searchParams.entries()) {
-    let sanitized = sanitizeParamName(key)
-    // Handle collisions by appending a number
-    if (seenSanitized.has(sanitized)) {
-      let i = 2
-      while (seenSanitized.has(`${sanitized}_${i}`)) i++
-      sanitized = `${sanitized}_${i}`
-    }
-    seenSanitized.add(sanitized)
-    defaultParams.push({ original: key, sanitized, defaultValue: value })
-  }
-
-  // Build Zod input schema: path + each query param
-  const inputSchema: Record<string, z.ZodTypeAny> = {
-    path: z.string().optional().describe('Additional path segment to append (e.g., "/users/1")'),
-  }
-
-  for (const param of defaultParams) {
-    const desc = param.original !== param.sanitized
-      ? `Query param "${param.original}" (default: "${param.defaultValue}")`
-      : `(default: "${param.defaultValue}")`
-    inputSchema[param.sanitized] = z.string().optional().describe(desc)
-  }
-
-  // Debug + truncation params for per-request control
-  inputSchema['debug'] = z.boolean().optional().describe('Set to true to see the request URL, headers, and timing')
-  inputSchema['full_response'] = z.boolean().optional().describe('Set to true to disable truncation and return the full response')
-
-  const paramCount = defaultParams.length
-  let description = paramCount > 0
-    ? `Fetch data from ${baseUrl} with ${paramCount} configurable query parameters. Each parameter has a default value that can be overridden.`
-    : `Fetch data from ${apiUrl}. Optionally append a path.`
-
-  // Fetch sample data and enrich description with semantic field info
-  try {
-    console.error(`[api2aux-mcp] Enriching tool with semantic analysis...`)
-    const sampleUrl = paramCount > 0
-      ? `${baseUrl}?${defaultParams.map(p => `${encodeURIComponent(p.original)}=${encodeURIComponent(p.defaultValue)}`).join('&')}`
-      : apiUrl
-    const sampleResponse = await fetch(sampleUrl, {
-      headers: { [HeaderName.ACCEPT]: ContentType.JSON },
-      signal: AbortSignal.timeout(5000),
-    })
-    if (sampleResponse.ok) {
-      const sampleData = await sampleResponse.json()
-      const fieldDesc = describeFieldsFromData(sampleData, sampleUrl)
-      if (fieldDesc) {
-        description = `${description}. ${fieldDesc}`
-        console.error(`[api2aux-mcp] ${fieldDesc}`)
-      }
-    }
-  } catch {
-    // Non-fatal — enrichment is best-effort
-    console.error(`[api2aux-mcp] Semantic enrichment skipped (fetch failed)`)
-  }
-
-  // Derive tool name from server name or URL hostname
-  let toolName = 'fetch_api'
+  let toolName: string
   if (serverName) {
-    toolName = `fetch_${sanitizeParamName(serverName)}`
+    toolName = `fetch_${sanitizeName(serverName)}`
   } else {
     const hostParts = parsed.hostname.replace(/^(www|api)\./, '').split('.')
-    if (hostParts.length > 0 && hostParts[0]) {
-      toolName = `fetch_${sanitizeParamName(hostParts[0])}`
-    }
+    toolName = hostParts[0] ? `fetch_${sanitizeName(hostParts[0])}` : 'fetch_api'
   }
 
-  server.registerTool(
-    toolName,
-    { description, inputSchema },
-    async (args: Record<string, string | undefined>) => {
-      const showDebug = debug || String(args.debug) === 'true'
-      const noTruncate = fullResponse || String(args.full_response) === 'true'
-      try {
-        let url = baseUrl
-        if (args.path) {
-          url = url.replace(/\/$/, '') + '/' + args.path.replace(/^\//, '')
-        }
+  // Enrich with semantic analysis (best-effort sample fetch)
+  console.error(`[api2aux-mcp] Enriching tool with semantic analysis...`)
+  const tools = await enrichTools(rawTools, baseUrl, { fetchSamples: true })
 
-        // Rebuild query string from defaults + overrides
-        if (defaultParams.length > 0) {
-          const params = new URLSearchParams()
-          for (const param of defaultParams) {
-            const value = args[param.sanitized] ?? param.defaultValue
-            params.append(param.original, value)
-          }
-          url += '?' + params.toString()
-        }
+  // Override the auto-generated name
+  for (const tool of tools) {
+    tool.name = toolName
+  }
 
-        const headers: Record<string, string> = { [HeaderName.ACCEPT]: ContentType.JSON }
-        if (bridgeAuth) {
-          const authed = injectAuth(url, headers, bridgeAuth)
-          url = authed.url
-          Object.assign(headers, authed.headers)
-        }
+  const paramCount = spec.operations[0]?.parameters.length ?? 0
+  console.error(`[api2aux-mcp] Registering ${tools.length} tool(s)...`)
 
-        const start = performance.now()
-        const response = await fetch(url, { headers })
-        const elapsedMs = Math.round(performance.now() - start)
-        const data = await response.json()
-        const responseText = formatResponse(data, noTruncate)
+  registerToolsOnServer(server, tools, baseUrl, bridgeAuth, debug, fullResponse)
 
-        const prefix = showDebug
-          ? formatDebugInfo(
-              { request: { method: 'GET', url, headers }, status: response.status, elapsedMs } as ExecutionResult,
-              responseText.length
-            )
-          : ''
-
-        return {
-          content: [{
-            type: 'text' as const,
-            text: `${prefix}${responseText}`,
-          }],
-        }
-      } catch (err) {
-        return {
-          content: [{
-            type: 'text' as const,
-            text: `Fetch failed: ${err instanceof Error ? err.message : String(err)}`,
-          }],
-          isError: true,
-        }
-      }
-    }
-  )
-
-  console.error(`[api2aux-mcp] 1 tool registered (${toolName}) with ${paramCount} query parameters`)
+  console.error(`[api2aux-mcp] ${tools.length} tool registered (${toolName}) with ${paramCount} query parameters`)
 }
