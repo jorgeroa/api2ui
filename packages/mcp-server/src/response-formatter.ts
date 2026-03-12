@@ -27,7 +27,11 @@ interface TruncationMeta {
  */
 export function formatResponse(data: unknown, fullResponse?: boolean): string {
   if (fullResponse) {
-    return JSON.stringify(data, null, 2)
+    try {
+      return JSON.stringify(data, null, 2)
+    } catch {
+      return String(data)
+    }
   }
 
   const truncated = truncateData(data)

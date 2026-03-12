@@ -81,7 +81,8 @@ export async function findExistingDeployment(apiUrl: string): Promise<DeployResu
       mcpUrl: match.mcpUrl,
       expiresAt: match.expiresAt,
     }
-  } catch {
+  } catch (err) {
+    console.warn('[api2aux] Failed to check existing deployments:', err instanceof Error ? err.message : err)
     return null
   }
 }

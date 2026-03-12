@@ -30,9 +30,20 @@ function parseArgs(argv: string[]): CliOptions {
     i = 3
   }
 
+  // Flags that expect a value argument
+  const VALUE_FLAGS = new Set([
+    '--openapi', '--api', '--graphql', '--name', '--token',
+    '--header', '--api-key', '--cookie', '--format',
+  ])
+
   while (i < argv.length) {
     const arg = argv[i]
     const next = argv[i + 1]
+
+    // Guard: if a value-flag's next arg looks like another flag, warn
+    if (arg && VALUE_FLAGS.has(arg) && (next === undefined || next.startsWith('--'))) {
+      console.error(`[api2aux-mcp] Warning: "${arg}" expects a value but got "${next ?? '(end of args)'}"`)
+    }
 
     switch (arg) {
       case '--openapi':
@@ -88,7 +99,10 @@ function parseArgs(argv: string[]): CliOptions {
         i++
         break
       default:
-        // Skip unknown args silently (node may inject extra args)
+        // Node may inject extra args, but warn on unrecognized --flags (likely typos)
+        if (arg?.startsWith('--')) {
+          console.error(`[api2aux-mcp] Warning: Unknown option "${arg}"`)
+        }
         i++
         break
     }

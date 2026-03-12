@@ -140,7 +140,8 @@ export function decodeShareableState(hash: string): ShareableState | null {
     if (typeof payload.u !== 'string' || !payload.u) return null
 
     return expand(payload)
-  } catch {
+  } catch (err) {
+    console.warn('[api2aux] Failed to decode share link:', err instanceof Error ? err.message : err)
     return null
   }
 }

@@ -23,6 +23,10 @@ function credentialToAuth(credential: Credential): Auth {
       return { type: 'apiKey', location: ParamLocation.HEADER, name: credential.headerName, value: credential.value }
     case 'queryParam':
       return { type: 'apiKey', location: ParamLocation.QUERY, name: credential.paramName, value: credential.value }
+    default: {
+      const _exhaustive: never = credential
+      return _exhaustive
+    }
   }
 }
 

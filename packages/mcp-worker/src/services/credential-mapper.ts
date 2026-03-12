@@ -34,12 +34,18 @@ export function mapCredentials(request: Request, config: TenantConfig): AuthConf
       const token = authHeader?.startsWith('Bearer ')
         ? authHeader.slice(7)
         : forwardedKey
-      if (!token) return { type: AuthConfigType.NONE }
+      if (!token) {
+        console.warn(`[api2aux-mcp-worker] No credentials found for auth type ${config.authType}. Proceeding without auth.`)
+        return { type: AuthConfigType.NONE }
+      }
       return { type: AuthConfigType.BEARER, token }
     }
 
     case AuthConfigType.HEADER: {
-      if (!config.authParamName || !forwardedKey) return { type: AuthConfigType.NONE }
+      if (!config.authParamName || !forwardedKey) {
+        console.warn(`[api2aux-mcp-worker] No credentials found for auth type ${config.authType}. Proceeding without auth.`)
+        return { type: AuthConfigType.NONE }
+      }
       return {
         type: AuthConfigType.HEADER,
         headerName: config.authParamName,
@@ -48,7 +54,10 @@ export function mapCredentials(request: Request, config: TenantConfig): AuthConf
     }
 
     case AuthConfigType.API_KEY: {
-      if (!config.authParamName || !forwardedKey) return { type: AuthConfigType.NONE }
+      if (!config.authParamName || !forwardedKey) {
+        console.warn(`[api2aux-mcp-worker] No credentials found for auth type ${config.authType}. Proceeding without auth.`)
+        return { type: AuthConfigType.NONE }
+      }
       return {
         type: AuthConfigType.API_KEY,
         paramName: config.authParamName,

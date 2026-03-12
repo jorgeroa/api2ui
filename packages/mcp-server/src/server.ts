@@ -360,7 +360,7 @@ function registerToolsOnServer(
     } else {
       server.registerTool(
         tool.name,
-        { description: tool.description, inputSchema: { debug: toolSchema.debug } },
+        { description: tool.description, inputSchema: { debug: toolSchema.debug, full_response: toolSchema.full_response, dry_run: toolSchema.dry_run } },
         handler
       )
     }
@@ -549,7 +549,7 @@ function registerGraphQLToolsOnServer(
     } else {
       server.registerTool(
         tool.name,
-        { description: tool.description, inputSchema: { debug: toolSchema.debug } },
+        { description: tool.description, inputSchema: { debug: toolSchema.debug, full_response: toolSchema.full_response, dry_run: toolSchema.dry_run } },
         handler
       )
     }

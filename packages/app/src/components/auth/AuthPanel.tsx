@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { AuthTypeSelector } from './AuthTypeSelector'
 import { CredentialForm } from './CredentialForm'
@@ -39,8 +39,14 @@ export function AuthPanel({ url, isOpen, authError, detectedAuth, onConfigureCli
   }, [storeType])
 
   // Separate supported and unsupported schemes
-  const supportedSchemes = detectedAuth?.filter(s => s.authType !== null && APP_AUTH_TYPES.has(s.authType)) ?? []
-  const unsupportedSchemes = detectedAuth?.filter(s => s.authType === null) ?? []
+  const supportedSchemes = useMemo(
+    () => detectedAuth?.filter(s => s.authType !== null && APP_AUTH_TYPES.has(s.authType)) ?? [],
+    [detectedAuth]
+  )
+  const unsupportedSchemes = useMemo(
+    () => detectedAuth?.filter(s => s.authType === null) ?? [],
+    [detectedAuth]
+  )
 
   // Auto-select first supported scheme when detectedAuth changes
   useEffect(() => {
