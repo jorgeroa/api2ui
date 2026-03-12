@@ -14,7 +14,7 @@ const proxy = corsProxy()
 /**
  * Convert app Credential to api-invoke Auth.
  */
-function credentialToAuth(credential: Credential): Auth {
+export function credentialToAuth(credential: Credential): Auth {
   switch (credential.type) {
     case AuthType.Bearer:
       return { type: 'bearer', token: credential.token }

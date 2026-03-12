@@ -1,10 +1,20 @@
 import { useAppStore } from '../store/appStore'
 import { useConfigStore } from '../store/configStore'
-import { fetchWithAuth, type FetchOptions } from '../services/api/fetcher'
+import { fetchWithAuth, credentialToAuth, type FetchOptions } from '../services/api/fetcher'
 import { inferSchema } from '../services/schema/inferrer'
 import { parseOpenAPISpec } from '@api2aux/semantic-analysis'
 import type { Operation } from '@api2aux/semantic-analysis'
-import { buildUrl } from 'api-invoke'
+import {
+  executeOperation,
+  corsProxy,
+  parseGraphQLSchema,
+  hasGraphQLErrors,
+  getGraphQLErrors,
+} from 'api-invoke'
+import { useAuthStore } from '../store/authStore'
+import { GraphQLError } from '../services/api/errors'
+
+const proxy = corsProxy()
 
 /**
  * Hook that provides a function to fetch and infer schema from a URL.
@@ -33,6 +43,19 @@ export function useAPIFetch() {
   }
 
   /**
+   * Heuristic to detect if a URL points to a GraphQL endpoint
+   */
+  const isGraphQLUrl = (url: string): boolean => {
+    try {
+      const { pathname } = new URL(url)
+      const lower = pathname.toLowerCase()
+      return lower.endsWith('/graphql') || lower.endsWith('/gql')
+    } catch {
+      return false
+    }
+  }
+
+  /**
    * Fetch and parse an OpenAPI spec URL
    */
   const fetchSpec = async (url: string) => {
@@ -57,7 +80,34 @@ export function useAPIFetch() {
   }
 
   /**
-   * Fetch data from an OpenAPI operation with parameters
+   * Fetch and parse a GraphQL endpoint via introspection
+   */
+  const fetchGraphQL = async (url: string) => {
+    try {
+      startFetch()
+      const spec = await parseGraphQLSchema(url, {
+        // Route introspection POST through the CORS proxy
+        fetch: async (input, init) => {
+          const targetUrl = typeof input === 'string' ? input : (input as Request).url
+          const rewritten = proxy.onRequest
+            ? (await proxy.onRequest(targetUrl, init ?? {})).url
+            : targetUrl
+          return fetch(rewritten, init)
+        },
+      })
+      specSuccess(spec)
+    } catch (error) {
+      if (error instanceof Error) {
+        fetchError(error)
+      } else {
+        fetchError(new Error(String(error)))
+      }
+    }
+  }
+
+  /**
+   * Execute an operation via api-invoke's executeOperation.
+   * Handles auth injection, CORS proxy, buildBody hooks (for GraphQL), and error mapping.
    */
   const fetchOperation = async (
     baseUrl: string,
@@ -68,18 +118,35 @@ export function useAPIFetch() {
     try {
       startFetch()
 
-      const fullUrl = buildUrl(baseUrl, operation, params)
+      const credential = useAuthStore.getState().getActiveCredential(baseUrl)
+      const args: Record<string, unknown> = { ...params }
+      if (bodyJson) {
+        args.body = JSON.parse(bodyJson)
+      }
 
-      const data = await fetchWithAuth(fullUrl, {
-        method: operation.method,
-        body: bodyJson,
+      const result = await executeOperation(baseUrl, operation, args, {
+        auth: credential ? credentialToAuth(credential) : undefined,
+        middleware: [proxy],
       })
 
+      // Check for GraphQL-level errors (HTTP 200 but errors in body)
+      if (hasGraphQLErrors(result)) {
+        const gqlErrors = getGraphQLErrors(result)
+        // Partial errors: data + errors — show data with warning
+        if (result.data && typeof result.data === 'object' && 'data' in (result.data as Record<string, unknown>) && (result.data as Record<string, unknown>).data !== null) {
+          const schema = inferSchema(result.data, `${baseUrl}${operation.path}`)
+          fetchSuccess(result.data, schema)
+          return
+        }
+        // Total failure: only errors, no data
+        throw new GraphQLError(`${baseUrl}${operation.path}`, gqlErrors)
+      }
+
       // Infer schema from response
-      const schema = inferSchema(data, fullUrl)
+      const schema = inferSchema(result.data, `${baseUrl}${operation.path}`)
 
       // Store success result
-      fetchSuccess(data, schema)
+      fetchSuccess(result.data, schema)
     } catch (error) {
       if (error instanceof Error) {
         fetchError(error)
@@ -94,7 +161,13 @@ export function useAPIFetch() {
       // Clear stale field configs from previous schema
       clearFieldConfigs()
 
-      // Detect if this is a spec URL
+      // Detect GraphQL endpoint
+      if (isGraphQLUrl(url)) {
+        await fetchGraphQL(url)
+        return
+      }
+
+      // Detect OpenAPI/Swagger spec URL
       if (isSpecUrl(url)) {
         await fetchSpec(url)
         return
@@ -124,5 +197,5 @@ export function useAPIFetch() {
     }
   }
 
-  return { fetchAndInfer, fetchSpec, fetchOperation }
+  return { fetchAndInfer, fetchSpec, fetchGraphQL, fetchOperation }
 }

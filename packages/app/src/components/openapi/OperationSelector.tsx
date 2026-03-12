@@ -15,6 +15,17 @@ interface OperationSelectorProps {
 }
 
 export function OperationSelector({ operations, selectedIndex, onSelect }: OperationSelectorProps) {
+  // Check if all operations share the same path (e.g. GraphQL: all POST /graphql)
+  const allSamePath = operations.length > 1 &&
+    operations.every(op => op.path === operations[0].path)
+
+  const getOperationLabel = (operation: Operation): string => {
+    if (allSamePath) {
+      return `${operation.method} ${operation.summary || operation.id}`
+    }
+    return `${operation.method} ${operation.path}${operation.summary ? ` — ${operation.summary}` : ''}`
+  }
+
   // Single operation: render as static text
   if (operations.length === 1) {
     const operation = operations[0]
@@ -27,8 +38,10 @@ export function OperationSelector({ operations, selectedIndex, onSelect }: Opera
           <span className={`px-2 py-1 text-xs font-semibold rounded ${methodBadgeClass(operation.method)}`}>
             {operation.method}
           </span>
-          <code className="text-sm font-mono text-foreground">{operation.path}</code>
-          {operation.summary && (
+          <code className="text-sm font-mono text-foreground">
+            {allSamePath ? (operation.summary || operation.id) : operation.path}
+          </code>
+          {!allSamePath && operation.summary && (
             <span className="text-sm text-muted-foreground">— {operation.summary}</span>
           )}
         </div>
@@ -50,8 +63,7 @@ export function OperationSelector({ operations, selectedIndex, onSelect }: Opera
       >
         {operations.map((operation, index) => (
           <option key={index} value={index}>
-            {operation.method} {operation.path}
-            {operation.summary ? ` — ${operation.summary}` : ''}
+            {getOperationLabel(operation)}
           </option>
         ))}
       </select>

@@ -13,9 +13,11 @@ interface OperationItemProps {
   index: number
   isSelected: boolean
   onSelect: (index: number) => void
+  /** When true, show operation name/id instead of path (e.g. GraphQL where all ops share /graphql) */
+  showNameInsteadOfPath?: boolean
 }
 
-export function OperationItem({ operation, index, isSelected, onSelect }: OperationItemProps) {
+export function OperationItem({ operation, index, isSelected, onSelect, showNameInsteadOfPath }: OperationItemProps) {
   return (
     <button
       onClick={() => onSelect(index)}
@@ -31,9 +33,11 @@ export function OperationItem({ operation, index, isSelected, onSelect }: Operat
         <span className={`px-1.5 py-0.5 text-xs font-semibold rounded uppercase ${methodBadgeClass(operation.method)}`}>
           {operation.method}
         </span>
-        <code className="text-xs font-mono text-foreground">{operation.path}</code>
+        <code className="text-xs font-mono text-foreground">
+          {showNameInsteadOfPath ? (operation.summary || operation.id) : operation.path}
+        </code>
       </div>
-      {operation.summary && (
+      {!showNameInsteadOfPath && operation.summary && (
         <p className="text-xs text-muted-foreground truncate">
           {operation.summary}
         </p>

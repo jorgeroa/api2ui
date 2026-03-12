@@ -8,9 +8,10 @@ interface TagGroupProps {
   operationIndices: number[]
   selectedIndex: number
   onSelect: (index: number) => void
+  showNameInsteadOfPath?: boolean
 }
 
-export function TagGroup({ tag, operations, operationIndices, selectedIndex, onSelect }: TagGroupProps) {
+export function TagGroup({ tag, operations, operationIndices, selectedIndex, onSelect, showNameInsteadOfPath }: TagGroupProps) {
   return (
     <Disclosure defaultOpen>
       {({ open }) => (
@@ -40,6 +41,7 @@ export function TagGroup({ tag, operations, operationIndices, selectedIndex, onS
                 index={operationIndices[localIndex]!}
                 isSelected={operationIndices[localIndex] === selectedIndex}
                 onSelect={onSelect}
+                showNameInsteadOfPath={showNameInsteadOfPath}
               />
             ))}
           </DisclosurePanel>

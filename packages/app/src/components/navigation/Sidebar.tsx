@@ -31,6 +31,10 @@ export function Sidebar({ parsedSpec, selectedIndex, onSelect }: SidebarProps) {
   // Check if all operations are uncategorized
   const allUncategorized = groupedOperations.size === 1 && groupedOperations.has('Uncategorized')
 
+  // Check if all operations share the same path (e.g. GraphQL: all POST /graphql)
+  const allSamePath = parsedSpec.operations.length > 1 &&
+    parsedSpec.operations.every(op => op.path === parsedSpec.operations[0].path)
+
   return (
     <nav
       aria-label="API endpoints"
@@ -55,6 +59,7 @@ export function Sidebar({ parsedSpec, selectedIndex, onSelect }: SidebarProps) {
                 index={index}
                 isSelected={index === selectedIndex}
                 onSelect={onSelect}
+                showNameInsteadOfPath={allSamePath}
               />
             </li>
           ))
@@ -68,6 +73,7 @@ export function Sidebar({ parsedSpec, selectedIndex, onSelect }: SidebarProps) {
                 operationIndices={indices}
                 selectedIndex={selectedIndex}
                 onSelect={onSelect}
+                showNameInsteadOfPath={allSamePath}
               />
             </li>
           ))
