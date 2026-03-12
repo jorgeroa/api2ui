@@ -5,10 +5,10 @@
  * error details to the LLM).
  */
 
-import { executeOperation, withRetry } from 'api-invoke'
-import type { Operation, Auth, ExecutionResult } from 'api-invoke'
+import { executeOperation, executeOperationStream, withRetry } from 'api-invoke'
+import type { Operation, Auth, ExecutionResult, StreamingExecutionResult } from 'api-invoke'
 
-export type { ExecutionResult }
+export type { ExecutionResult, StreamingExecutionResult }
 
 const retryFetch = withRetry({ maxRetries: 2, initialDelayMs: 1000 })
 
@@ -22,6 +22,23 @@ export async function executeTool(
     auth,
     throwOnHttpError: false,
     timeoutMs: 30000,
+    fetch: retryFetch,
+  })
+}
+
+/**
+ * Execute a streaming API call for a tool invocation.
+ * Returns a StreamingExecutionResult with an async iterable of SSE events.
+ */
+export async function executeToolStream(
+  baseUrl: string,
+  operation: Operation,
+  args: Record<string, unknown>,
+  auth?: Auth
+): Promise<StreamingExecutionResult> {
+  return executeOperationStream(baseUrl, operation, args, {
+    auth,
+    timeoutMs: 120000,
     fetch: retryFetch,
   })
 }

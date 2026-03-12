@@ -9,7 +9,7 @@ import { createServer } from './server'
 
 describe('createServer', () => {
   it('throws when neither openapi nor api url is provided', async () => {
-    await expect(createServer({})).rejects.toThrow('Either --openapi or --api must be specified')
+    await expect(createServer({})).rejects.toThrow('One of --openapi, --graphql, or --api must be specified')
   })
 
   it('throws when given an invalid openapi url', async () => {

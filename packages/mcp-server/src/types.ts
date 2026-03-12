@@ -10,6 +10,8 @@ export interface ServerConfig {
   apiUrl?: string
   /** OpenAPI/Swagger spec URL */
   openapiUrl?: string
+  /** GraphQL endpoint URL */
+  graphqlUrl?: string
   /** Server name (shown in MCP clients) */
   name?: string
   /** Bearer token for API auth */

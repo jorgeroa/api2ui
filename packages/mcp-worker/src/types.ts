@@ -23,6 +23,8 @@ export interface TenantConfig {
   apiUrl: string
   baseUrl: string
   name: string
+  /** Source type: 'openapi', 'graphql', or 'raw' */
+  sourceType?: 'openapi' | 'graphql' | 'raw'
   authType: AuthConfigType
   authParamName?: string
   authSource?: ParamLocation

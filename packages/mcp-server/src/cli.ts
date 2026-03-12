@@ -43,6 +43,10 @@ function parseArgs(argv: string[]): CliOptions {
         config.apiUrl = next
         i += 2
         break
+      case '--graphql':
+        config.graphqlUrl = next
+        i += 2
+        break
       case '--name':
         config.name = next
         i += 2
@@ -100,11 +104,13 @@ api2aux-mcp — Turn any API into MCP tools
 Usage:
   api2aux-mcp --openapi <url>             Start MCP server from OpenAPI spec
   api2aux-mcp --api <url>                 Start MCP server for raw API URL
+  api2aux-mcp --graphql <url>             Start MCP server from GraphQL endpoint
   api2aux-mcp export --openapi <url>      Generate client config snippet
 
 Options:
   --openapi <url>     OpenAPI/Swagger spec URL
   --api <url>         Raw API base URL
+  --graphql <url>     GraphQL endpoint URL (runs introspection)
   --name <name>       Server name (default: api2aux-mcp)
   --token <token>     Bearer token for API authentication
   --header <h:v>      Custom header (e.g., "X-API-Key: secret")
@@ -120,12 +126,13 @@ Examples:
   api2aux-mcp --api https://jsonplaceholder.typicode.com --name jsonplaceholder
   api2aux-mcp export --openapi https://api.example.com/openapi.json --name my-api
   api2aux-mcp export --api https://example.com/api --format claude-code
+  api2aux-mcp --graphql https://countries.trevorblades.com/graphql --name countries
 `)
 }
 
 function handleExport(config: CliOptions): void {
-  if (!config.openapiUrl && !config.apiUrl) {
-    console.error('Error: Either --openapi or --api must be specified\n')
+  if (!config.openapiUrl && !config.apiUrl && !config.graphqlUrl) {
+    console.error('Error: One of --openapi, --api, or --graphql must be specified\n')
     process.exit(1)
   }
 
