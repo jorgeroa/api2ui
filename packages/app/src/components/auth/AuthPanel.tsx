@@ -44,7 +44,7 @@ export function AuthPanel({ url, isOpen, authError, detectedAuth, onConfigureCli
     [detectedAuth]
   )
   const unsupportedSchemes = useMemo(
-    () => detectedAuth?.filter(s => s.authType === null) ?? [],
+    () => detectedAuth?.filter(s => s.authType === null || !APP_AUTH_TYPES.has(s.authType)) ?? [],
     [detectedAuth]
   )
 

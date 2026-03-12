@@ -29,8 +29,8 @@ export function formatResponse(data: unknown, fullResponse?: boolean): string {
   if (fullResponse) {
     try {
       return JSON.stringify(data, null, 2)
-    } catch {
-      return String(data)
+    } catch (err) {
+      return `[Error: Could not serialize response — ${err instanceof Error ? err.message : String(err)}]`
     }
   }
 
