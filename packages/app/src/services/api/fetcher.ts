@@ -1,6 +1,6 @@
 import { executeRaw, corsProxy, ApiInvokeError, ErrorKind, ParamLocation } from 'api-invoke'
 import type { Auth } from 'api-invoke'
-import { CORSError, NetworkError, APIError, ParseError, AuthError } from './errors'
+import { CORSError, NetworkError, APIError, ParseError, AuthError, GraphQLError } from './errors'
 import { useAuthStore } from '../../store/authStore'
 import type { Credential } from '../../types/auth'
 
@@ -53,6 +53,12 @@ function mapError(err: unknown, url: string, credential: Credential | null): nev
       }
       case ErrorKind.PARSE:
         throw new ParseError(url)
+      case ErrorKind.GRAPHQL: {
+        const errors = Array.isArray(err.responseBody)
+          ? err.responseBody
+          : [{ message: err.message }]
+        throw new GraphQLError(url, errors)
+      }
       default:
         throw new APIError(url, err.status ?? 0, err.message)
     }

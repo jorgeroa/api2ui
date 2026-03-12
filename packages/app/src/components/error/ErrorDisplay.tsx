@@ -59,6 +59,14 @@ export function ErrorDisplay({ error, onRetry }: ErrorDisplayProps) {
       textColor: 'text-blue-800',
       iconBg: 'bg-blue-100',
     },
+    graphql: {
+      title: 'GraphQL Error',
+      icon: '⬡',
+      bgColor: 'bg-indigo-50',
+      borderColor: 'border-indigo-300',
+      textColor: 'text-indigo-800',
+      iconBg: 'bg-indigo-100',
+    },
     unknown: {
       title: 'Error',
       icon: '❌',
@@ -127,6 +135,16 @@ export function ErrorDisplay({ error, onRetry }: ErrorDisplayProps) {
             <p className="text-xs font-mono text-foreground mb-2">
               <span className="font-semibold">Kind:</span> {appError.kind}
             </p>
+          )}
+          {'errors' in error && Array.isArray((error as any).errors) && (
+            <div className="mt-2">
+              <p className="text-xs font-semibold text-foreground mb-1">GraphQL Errors:</p>
+              <ul className="text-xs font-mono text-muted-foreground list-disc ml-4 space-y-1">
+                {(error as any).errors.map((e: { message: string }, i: number) => (
+                  <li key={i}>{e.message}</li>
+                ))}
+              </ul>
+            </div>
           )}
           {error.stack && (
             <div className="mt-2">

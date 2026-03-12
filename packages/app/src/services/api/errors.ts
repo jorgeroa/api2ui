@@ -50,6 +50,20 @@ export class ParseError extends Error implements AppError {
   }
 }
 
+export class GraphQLError extends Error implements AppError {
+  readonly kind: ErrorKind = 'graphql'
+  readonly suggestion: string
+  readonly errors: Array<{ message: string }>
+
+  constructor(url: string, errors: Array<{ message: string }>) {
+    const messages = errors.map(e => e.message).join('; ')
+    super(`GraphQL error from ${url}: ${messages}`)
+    this.name = 'GraphQLError'
+    this.errors = errors
+    this.suggestion = 'Check the GraphQL query and variables.'
+  }
+}
+
 export class AuthError extends Error implements AppError {
   readonly kind: ErrorKind = 'auth'
   readonly suggestion: string

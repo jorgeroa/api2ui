@@ -5,6 +5,7 @@ export const ErrorKind = {
   Api: 'api',
   Parse: 'parse',
   Auth: 'auth',
+  Graphql: 'graphql',
   Unknown: 'unknown',
 } as const
 export type ErrorKind = typeof ErrorKind[keyof typeof ErrorKind]
