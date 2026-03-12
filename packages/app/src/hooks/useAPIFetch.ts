@@ -6,13 +6,14 @@ import { parseOpenAPISpec } from '@api2aux/semantic-analysis'
 import type { Operation } from '@api2aux/semantic-analysis'
 import {
   executeOperation,
+  executeOperationStream,
   buildRequest,
   corsProxy,
   parseGraphQLSchema,
   hasGraphQLErrors,
   getGraphQLErrors,
 } from 'api-invoke'
-import type { BuiltRequest } from 'api-invoke'
+import type { BuiltRequest, SSEEvent } from 'api-invoke'
 import { useAuthStore } from '../store/authStore'
 import { GraphQLError } from '../services/api/errors'
 
@@ -23,7 +24,7 @@ const proxy = corsProxy()
  * The function orchestrates: fetchWithAuth -> inferSchema -> store update.
  */
 export function useAPIFetch() {
-  const { startFetch, fetchSuccess, fetchError, specSuccess, clearSpec } = useAppStore()
+  const { startFetch, fetchSuccess, fetchError, specSuccess, clearSpec, startStream, appendStreamEvents, streamComplete } = useAppStore()
   const { clearFieldConfigs } = useConfigStore()
 
   /**
@@ -199,6 +200,68 @@ export function useAPIFetch() {
     }
   }
 
+  /**
+   * Stream an SSE operation. Batches events via requestAnimationFrame to avoid
+   * overwhelming React with per-event re-renders.
+   */
+  const fetchOperationStream = async (
+    baseUrl: string,
+    operation: Operation,
+    params: Record<string, string>,
+    bodyJson?: string,
+    signal?: AbortSignal,
+  ) => {
+    try {
+      startStream()
+
+      const credential = useAuthStore.getState().getActiveCredential(baseUrl)
+      const args: Record<string, unknown> = { ...params }
+      if (bodyJson) {
+        args.body = JSON.parse(bodyJson)
+      }
+
+      const result = await executeOperationStream(baseUrl, operation, args, {
+        auth: credential ? credentialToAuth(credential) : undefined,
+        middleware: [proxy],
+        signal,
+      })
+
+      // Batch events with requestAnimationFrame to throttle renders
+      let buffer: SSEEvent[] = []
+      let rafId: number | null = null
+
+      const flush = () => {
+        if (buffer.length > 0) {
+          appendStreamEvents(buffer)
+          buffer = []
+        }
+        rafId = null
+      }
+
+      for await (const event of result.stream) {
+        buffer.push(event)
+        if (rafId === null) {
+          rafId = requestAnimationFrame(flush)
+        }
+      }
+
+      // Flush remaining events
+      if (rafId !== null) cancelAnimationFrame(rafId)
+      flush()
+      streamComplete()
+    } catch (error) {
+      if (signal?.aborted) {
+        streamComplete()
+        return
+      }
+      if (error instanceof Error) {
+        fetchError(error)
+      } else {
+        fetchError(new Error(String(error)))
+      }
+    }
+  }
+
   const previewRequest = (
     baseUrl: string,
     operation: Operation,
@@ -215,5 +278,5 @@ export function useAPIFetch() {
     })
   }
 
-  return { fetchAndInfer, fetchSpec, fetchGraphQL, fetchOperation, previewRequest }
+  return { fetchAndInfer, fetchSpec, fetchGraphQL, fetchOperation, fetchOperationStream, previewRequest }
 }

@@ -4,6 +4,9 @@ import type { ParsedAPI } from '@api2aux/semantic-analysis'
 import type { ImportanceScore, GroupingResult } from '../services/analysis/types'
 import type { ComponentSelection } from '../services/selection/types'
 import type { DeployResult } from '../services/mcp/deploy'
+import type { SSEEvent } from 'api-invoke'
+
+const MAX_STREAM_EVENTS = 1000
 
 interface AnalysisCacheEntry {
   semantics: Map<string, SemanticMetadata>
@@ -49,6 +52,14 @@ interface AppState {
   mcpDeployResult: DeployResult | null
   setMcpDeployResult: (result: DeployResult | null) => void
 
+  // Streaming state
+  streaming: boolean
+  streamEvents: SSEEvent[]
+  startStream: () => void
+  appendStreamEvents: (events: SSEEvent[]) => void
+  streamComplete: () => void
+  clearStream: () => void
+
   // Detail panel state
   detailPanelOpen: boolean
   setDetailPanelOpen: (open: boolean) => void
@@ -81,6 +92,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
   analysisCache: new Map(),
   tabSelections: new Map(),
   mcpDeployResult: null,
+  streaming: false,
+  streamEvents: [],
   detailPanelOpen: false,
 
   setUrl: (url) => set({ url }),
@@ -126,6 +139,15 @@ export const useAppStore = create<AppState>()((set, get) => ({
 
   // MCP deploy
   setMcpDeployResult: (result) => set({ mcpDeployResult: result }),
+
+  // Streaming
+  startStream: () => set({ streaming: true, streamEvents: [], loading: true, error: null, data: null, schema: null }),
+  appendStreamEvents: (events) => set((state) => {
+    const combined = [...state.streamEvents, ...events]
+    return { streamEvents: combined.length > MAX_STREAM_EVENTS ? combined.slice(-MAX_STREAM_EVENTS) : combined }
+  }),
+  streamComplete: () => set({ streaming: false, loading: false }),
+  clearStream: () => set({ streaming: false, streamEvents: [] }),
 
   // Detail panel
   setDetailPanelOpen: (open) => set({ detailPanelOpen: open }),

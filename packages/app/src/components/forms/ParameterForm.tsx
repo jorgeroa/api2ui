@@ -19,6 +19,7 @@ interface ParameterFormProps {
   requestBody?: RequestBody
   onSubmit: (values: Record<string, string>, bodyJson?: string) => void
   onPreview?: (values: Record<string, string>, bodyJson?: string) => void
+  submitLabel?: string
   loading?: boolean
   endpoint?: string           // For persistence key
   rawUrl?: string             // Raw URL to parse (alternative to parameters)
@@ -47,6 +48,7 @@ export function ParameterForm({
   requestBody,
   onSubmit,
   onPreview,
+  submitLabel,
   loading = false,
   endpoint,
   rawUrl,
@@ -337,7 +339,7 @@ export function ParameterForm({
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
             )}
-            {loading ? 'Fetching...' : 'Fetch Data'}
+            {loading ? 'Fetching...' : (submitLabel ?? 'Fetch Data')}
           </button>
         </div>
 
@@ -550,7 +552,7 @@ export function ParameterForm({
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
           )}
-          {loading ? 'Fetching...' : 'Fetch Data'}
+          {loading ? 'Fetching...' : (submitLabel ?? 'Fetch Data')}
         </button>
       </div>
 

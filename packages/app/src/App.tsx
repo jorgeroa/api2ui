@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAppStore } from './store/appStore'
 import { useConfigStore } from './store/configStore'
 import { useParameterStore } from './store/parameterStore'
@@ -29,6 +29,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
 import { ExamplesPage } from './pages/ExamplesPage'
 import { RequestPreview } from './components/forms/RequestPreview'
+import { StreamDisplay } from './components/renderers/StreamDisplay'
 import { AuthError } from './services/api/errors'
 import type { BuiltRequest } from 'api-invoke'
 import 'react-loading-skeleton/dist/skeleton.css'
@@ -63,10 +64,16 @@ function App() {
     reset,
     detailPanelOpen
   } = useAppStore()
+  const streaming = useAppStore((s) => s.streaming)
+  const hasStreamEvents = useAppStore((s) => s.streamEvents.length > 0)
+  const clearStream = useAppStore((s) => s.clearStream)
   const chatOpen = useChatStore((s) => s.open)
   const { clearFieldConfigs } = useConfigStore()
   const { getValues, clearValue, clearEndpoint } = useParameterStore()
-  const { fetchAndInfer, fetchOperation, previewRequest } = useAPIFetch()
+  const { fetchAndInfer, fetchOperation, fetchOperationStream, previewRequest } = useAPIFetch()
+
+  // AbortController for streaming
+  const streamAbortRef = useRef<AbortController | null>(null)
 
   // Hash-based routing for /examples page
   const [page, setPage] = useState<'main' | 'examples'>(
@@ -163,11 +170,28 @@ function App() {
     return ''
   }
 
+  // Check if the selected operation produces an SSE stream
+  const isStreamingOperation = selectedOperation?.responseContentType === 'text/event-stream'
+
   // Handle parameter form submission
   const handleParameterSubmit = (values: Record<string, string>, bodyJson?: string) => {
     if (parsedSpec && selectedOperation) {
-      fetchOperation(parsedSpec.baseUrl, selectedOperation, values, bodyJson)
+      if (isStreamingOperation) {
+        // Abort any existing stream
+        streamAbortRef.current?.abort()
+        const controller = new AbortController()
+        streamAbortRef.current = controller
+        fetchOperationStream(parsedSpec.baseUrl, selectedOperation, values, bodyJson, controller.signal)
+      } else {
+        fetchOperation(parsedSpec.baseUrl, selectedOperation, values, bodyJson)
+      }
     }
+  }
+
+  // Stop an active stream
+  const handleStopStream = () => {
+    streamAbortRef.current?.abort()
+    streamAbortRef.current = null
   }
 
   // Handle request preview
@@ -222,6 +246,8 @@ function App() {
 
   const handleSelectOperation = (index: number) => {
     clearFieldConfigs()
+    handleStopStream()
+    clearStream()
     setSelectedOperation(index)
   }
 
@@ -346,6 +372,7 @@ function App() {
                             requestBody={selectedOperation.requestBody}
                             onSubmit={handleParameterSubmit}
                             onPreview={handlePreview}
+                            submitLabel={isStreamingOperation ? 'Stream' : undefined}
                             loading={loading}
                             endpoint={`${parsedSpec.baseUrl}${selectedOperation.path}`}
                             baseUrl={`${parsedSpec.baseUrl}${selectedOperation.path}`}
@@ -363,11 +390,18 @@ function App() {
                             {/* Inline operation error — form stays usable above */}
                             {error && <ErrorDisplay error={error} />}
 
+                            {/* Streaming display */}
+                            {(streaming || (isStreamingOperation && hasStreamEvents)) && (
+                              <div className="border-t border-border pt-6">
+                                <StreamDisplay onStop={handleStopStream} />
+                              </div>
+                            )}
+
                             {/* Loading indicator for operation fetch */}
-                            {loading && <SkeletonTable />}
+                            {loading && !streaming && <SkeletonTable />}
 
                             {/* Data Rendering (after fetching operation) */}
-                            {schema && data !== null && (
+                            {!streaming && schema && data !== null && (
                               <div id="response-data" className="border-t border-border pt-6">
                                 <h3 className="text-lg font-semibold text-foreground mb-4">Response Data</h3>
                                 <DynamicRenderer
@@ -462,6 +496,7 @@ function App() {
                           parameters={selectedOperation.parameters}
                           onSubmit={handleParameterSubmit}
                           onPreview={handlePreview}
+                          submitLabel={isStreamingOperation ? 'Stream' : undefined}
                           loading={loading}
                           endpoint={`${parsedSpec.baseUrl}${selectedOperation.path}`}
                           baseUrl={`${parsedSpec.baseUrl}${selectedOperation.path}`}
@@ -479,11 +514,18 @@ function App() {
                           {/* Inline operation error — form stays usable above */}
                           {error && <ErrorDisplay error={error} />}
 
+                          {/* Streaming display */}
+                          {(streaming || (isStreamingOperation && hasStreamEvents)) && (
+                            <div className="border-t border-border pt-6">
+                              <StreamDisplay onStop={handleStopStream} />
+                            </div>
+                          )}
+
                           {/* Loading indicator for operation fetch */}
-                          {loading && <SkeletonTable />}
+                          {loading && !streaming && <SkeletonTable />}
 
                           {/* Data Rendering (after fetching operation) */}
-                          {schema && data !== null && (
+                          {!streaming && schema && data !== null && (
                             <div id="response-data" className="border-t border-border pt-6">
                               <h3 className="text-lg font-semibold text-foreground mb-4">Response Data</h3>
                               <DynamicRenderer
