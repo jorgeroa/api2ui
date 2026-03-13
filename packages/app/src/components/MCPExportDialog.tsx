@@ -7,7 +7,8 @@ import { parseUrlParameters } from '../services/urlParser/parser'
 import { deployAsMcpServer, findExistingDeployment, isMcpWorkerConfigured } from '../services/mcp/deploy'
 import type { Credential } from '../types/auth'
 import type { Operation } from '@api2aux/semantic-analysis'
-import { generateToolName, generateDescription } from '@api2aux/tool-utils'
+import { generateToolName, generateToolDefinitions } from '@api2aux/tool-utils'
+import type { UnifiedToolDefinition } from '@api2aux/tool-utils'
 
 type ExportFormat = 'claude-desktop' | 'claude-code' | 'cli'
 
@@ -43,10 +44,6 @@ function deriveServerName(url: string): string {
 
 function operationToolName(op: Operation): string {
   return generateToolName(op)
-}
-
-function operationDescription(op: Operation): string {
-  return generateDescription(op)
 }
 
 function getMcpCommand(): { command: string; pkg: string } {
@@ -241,6 +238,17 @@ export function MCPExportDialog({ open, onClose }: MCPExportDialogProps) {
       if (existing) setDeployResult(existing)
     })
   }, [open, parsedSpec?.baseUrl])
+
+  // Pre-compute enriched tool definitions from tool-utils (single source of truth)
+  const toolDefs = useMemo<Map<string, UnifiedToolDefinition>>(() => {
+    if (!parsedSpec || parsedSpec.operations.length === 0) return new Map()
+    const defs = generateToolDefinitions(parsedSpec.operations)
+    const map = new Map<string, UnifiedToolDefinition>()
+    for (const def of defs) {
+      map.set(def.name, def)
+    }
+    return map
+  }, [parsedSpec])
 
   const toolInfo = useMemo(() => {
     if (!url) return null
@@ -456,7 +464,7 @@ export function MCPExportDialog({ open, onClose }: MCPExportDialogProps) {
                                             <ChevronIcon open={opOpen} />
                                           )}
                                         </div>
-                                        <p className="text-muted-foreground mt-0.5">{operationDescription(op)}</p>
+                                        <p className="text-muted-foreground mt-0.5">{toolDefs.get(operationToolName(op))?.description ?? ''}</p>
                                       </div>
                                     </DisclosureButton>
                                     {(op.parameters.length > 0 || op.requestBody) && (
