@@ -173,8 +173,8 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
           onConfigureClick={() => setAuthPanelOpen(true)}
         />
 
-        {/* Request Body (for non-GET methods) */}
-        {httpMethod !== 'GET' && (
+        {/* Request Body (for non-GET methods, hidden when a spec provides its own form) */}
+        {httpMethod !== 'GET' && !parsedSpec && (
           <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1">
               Request Body (JSON)

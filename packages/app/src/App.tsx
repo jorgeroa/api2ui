@@ -494,6 +494,7 @@ function App() {
                       parameters={
                         <ParameterForm
                           parameters={selectedOperation.parameters}
+                          requestBody={selectedOperation.requestBody}
                           onSubmit={handleParameterSubmit}
                           onPreview={handlePreview}
                           submitLabel={isStreamingOperation ? 'Stream' : undefined}

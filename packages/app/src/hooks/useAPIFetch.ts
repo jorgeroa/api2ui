@@ -19,6 +19,26 @@ import { GraphQLError } from '../services/api/errors'
 
 const proxy = corsProxy()
 
+/** Build args for executeOperation, handling buildBody-aware operations (GraphQL). */
+function buildArgs(
+  params: Record<string, string>,
+  bodyJson: string | undefined,
+  operation: Operation,
+): Record<string, unknown> {
+  const args: Record<string, unknown> = { ...params }
+  if (bodyJson) {
+    const parsed = JSON.parse(bodyJson)
+    if (operation.buildBody && typeof parsed === 'object' && parsed !== null) {
+      // Operations with buildBody (e.g. GraphQL) expect fields as top-level args
+      // so the hook can wrap them into { query, variables }
+      Object.assign(args, parsed)
+    } else {
+      args.body = parsed
+    }
+  }
+  return args
+}
+
 /**
  * Hook that provides a function to fetch and infer schema from a URL.
  * The function orchestrates: fetchWithAuth -> inferSchema -> store update.
@@ -122,10 +142,7 @@ export function useAPIFetch() {
       startFetch()
 
       const credential = useAuthStore.getState().getActiveCredential(baseUrl)
-      const args: Record<string, unknown> = { ...params }
-      if (bodyJson) {
-        args.body = JSON.parse(bodyJson)
-      }
+      const args = buildArgs(params, bodyJson, operation)
 
       const result = await executeOperation(baseUrl, operation, args, {
         auth: credential ? credentialToAuth(credential) : undefined,
@@ -215,10 +232,7 @@ export function useAPIFetch() {
       startStream()
 
       const credential = useAuthStore.getState().getActiveCredential(baseUrl)
-      const args: Record<string, unknown> = { ...params }
-      if (bodyJson) {
-        args.body = JSON.parse(bodyJson)
-      }
+      const args = buildArgs(params, bodyJson, operation)
 
       const result = await executeOperationStream(baseUrl, operation, args, {
         auth: credential ? credentialToAuth(credential) : undefined,
@@ -269,10 +283,7 @@ export function useAPIFetch() {
     bodyJson?: string
   ): BuiltRequest => {
     const credential = useAuthStore.getState().getActiveCredential(baseUrl)
-    const args: Record<string, unknown> = { ...params }
-    if (bodyJson) {
-      args.body = JSON.parse(bodyJson)
-    }
+    const args = buildArgs(params, bodyJson, operation)
     return buildRequest(baseUrl, operation, args, {
       auth: credential ? credentialToAuth(credential) : undefined,
     })

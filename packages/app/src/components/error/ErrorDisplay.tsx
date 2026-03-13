@@ -78,7 +78,7 @@ export function ErrorDisplay({ error, onRetry }: ErrorDisplayProps) {
     },
   }
 
-  const config = errorConfig[kind]
+  const config = errorConfig[kind] || errorConfig[ErrorKind.Unknown]
 
   return (
     <div

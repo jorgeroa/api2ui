@@ -13,7 +13,9 @@ import { chatCompletion } from '../services/llm/client'
 import { buildToolsFromUrl, buildToolsFromSpec, buildSystemPrompt } from '../services/llm/toolBuilder'
 import { generateToolName } from '@api2aux/tool-utils'
 import { useParameterStore } from '../store/parameterStore'
-import { fetchWithAuth } from '../services/api/fetcher'
+import { fetchWithAuth, credentialToAuth } from '../services/api/fetcher'
+import { executeOperation, corsProxy } from 'api-invoke'
+import { useAuthStore } from '../store/authStore'
 import { inferSchema } from '../services/schema/inferrer'
 import type { ChatMessage, UIMessage, Tool, ToolResultEntry } from '../services/llm/types'
 
@@ -81,8 +83,8 @@ async function executeToolCall(
     return fetchWithAuth(targetUrl)
   }
 
-  // OpenAPI mode: build URL from operation spec
-  // Find the matching operation from parsedSpec
+  // Spec mode: use executeOperation which handles buildBody hooks (GraphQL),
+  // CORS proxy, auth injection, and proper body serialization
   const parsedSpec = useAppStore.getState().parsedSpec
   if (parsedSpec) {
     const operation = parsedSpec.operations.find(op =>
@@ -90,27 +92,28 @@ async function executeToolCall(
     )
 
     if (operation) {
-      let path = operation.path
-      for (const param of operation.parameters) {
-        if (param.in === 'path' && args[param.name] !== undefined) {
-          path = path.replace(`{${param.name}}`, encodeURIComponent(String(args[param.name])))
+      // Build args: if operation has buildBody (GraphQL), body fields go as top-level args;
+      // otherwise parse args.body string back into the body key
+      const execArgs: Record<string, unknown> = {}
+      for (const [k, v] of Object.entries(args)) {
+        if (k === 'body') continue
+        execArgs[k] = v
+      }
+      if (args.body) {
+        const parsed = typeof args.body === 'string' ? JSON.parse(args.body as string) : args.body
+        if (operation.buildBody && typeof parsed === 'object' && parsed !== null) {
+          Object.assign(execArgs, parsed)
+        } else {
+          execArgs.body = parsed
         }
       }
 
-      let opUrl = `${parsedSpec.baseUrl}${path}`
-      const queryParams = new URLSearchParams()
-      for (const param of operation.parameters) {
-        if (param.in === 'query' && args[param.name] !== undefined) {
-          queryParams.set(param.name, String(args[param.name]))
-        }
-      }
-      const qs = queryParams.toString()
-      if (qs) opUrl += `?${qs}`
-
-      const options = operation.method !== 'get' && args.body
-        ? { method: operation.method.toUpperCase(), body: String(args.body) }
-        : undefined
-      return fetchWithAuth(opUrl, options)
+      const credential = useAuthStore.getState().getActiveCredential(parsedSpec.baseUrl)
+      const result = await executeOperation(parsedSpec.baseUrl, operation, execArgs, {
+        auth: credential ? credentialToAuth(credential) : undefined,
+        middleware: [corsProxy()],
+      })
+      return result.data
     }
   }
 
