@@ -247,6 +247,38 @@ export function generateDescription(op: ToolOperation, opts?: DescriptionOptions
     parts.push(`Tags: ${op.tags.join(', ')}`)
   }
 
+  // Parameter highlights: required params and key optional params with defaults/examples
+  if (opts?.parameters && opts.parameters.length > 0) {
+    const requiredParams = opts.parameters.filter(p => p.required)
+    if (requiredParams.length > 0) {
+      const reqStrs = requiredParams.map(p => {
+        let s = `${p.name} (${p.in})`
+        if (p.schema.example !== undefined) s += ` e.g. '${p.schema.example}'`
+        return s
+      })
+      parts.push(`Required: ${reqStrs.join(', ')}`)
+    }
+
+    const keyOptional = opts.parameters.filter(p =>
+      !p.required && (p.schema.default !== undefined || p.schema.example !== undefined || (p.schema.enum && p.schema.enum.length > 0))
+    )
+    if (keyOptional.length > 0) {
+      const keyStrs = keyOptional.slice(0, 6).map(p => {
+        let s = p.name
+        if (p.schema.default !== undefined) s += ` (default: ${p.schema.default})`
+        else if (p.schema.enum && p.schema.enum.length > 0 && p.schema.enum.length <= 5) s += ` (${p.schema.enum.map(String).join('|')})`
+        else if (p.schema.example !== undefined) s += ` (e.g. '${p.schema.example}')`
+        return s
+      })
+      parts.push(`Key params: ${keyStrs.join(', ')}`)
+    }
+  }
+
+  // Cross-operation hint
+  if (opts?.crossOpHint) {
+    parts.push(opts.crossOpHint)
+  }
+
   // Include full DTO schema summary for LLM context
   const dtoSummary = summarizeResponseSchema(op.responseSchema)
   if (dtoSummary) {
@@ -282,6 +314,9 @@ export function parameterToJsonSchema(param: ToolParameter): JsonSchemaProperty 
   const descParts: string[] = []
   if (param.description) descParts.push(param.description)
   if (param.schema.format) descParts.push(`Format: ${param.schema.format}`)
+  if (param.schema.enum && param.schema.enum.length > 0) {
+    descParts.push(`Options: ${param.schema.enum.map(String).join(', ')}`)
+  }
   if (param.schema.default !== undefined) descParts.push(`Default: ${String(param.schema.default)}`)
   if (param.schema.example !== undefined) descParts.push(`Example: ${String(param.schema.example)}`)
   if (descParts.length > 0) prop.description = descParts.join('. ')
@@ -325,9 +360,15 @@ export function generateToolDefinition(
     }
   }
 
+  // Merge parameters into opts for description generation
+  const descOpts: DescriptionOptions = {
+    ...opts,
+    parameters: op.parameters,
+  }
+
   return {
     name: generateToolName(op),
-    description: generateDescription(op, opts),
+    description: generateDescription(op, descOpts),
     inputSchema: {
       type: 'object',
       properties,
@@ -337,13 +378,55 @@ export function generateToolDefinition(
 }
 
 /**
+ * Build cross-operation hints that tell the LLM where to get IDs for detail endpoints.
+ * Matches path params like {id} to list operations on the same base path.
+ */
+function buildCrossOpHints(operations: ToolOperationWithParams[]): Map<string, string> {
+  const hints = new Map<string, string>()
+
+  // Index list operations (GET without path params) by their base path
+  const listOps = new Map<string, string>() // basePath → toolName
+  for (const op of operations) {
+    if (op.method.toUpperCase() !== 'GET') continue
+    if (op.path.includes('{')) continue
+    listOps.set(op.path, generateToolName(op))
+  }
+
+  // For each operation with path params, find the matching list operation
+  for (const op of operations) {
+    const pathParams = op.parameters.filter(p => p.in === 'path')
+    if (pathParams.length === 0) continue
+
+    // Extract base path: /resources/{id} → /resources, /resources/{id}/sub → /resources
+    const basePath = op.path.replace(/\/\{[^}]+\}.*$/, '')
+    const listToolName = listOps.get(basePath)
+    if (!listToolName) continue
+
+    const toolName = generateToolName(op)
+    if (toolName === listToolName) continue // Don't hint to self
+
+    const paramNames = pathParams.map(p => p.name).join(', ')
+    hints.set(toolName, `Use ${paramNames} from ${listToolName} results`)
+  }
+
+  return hints
+}
+
+/**
  * Batch version — generate UnifiedToolDefinitions for multiple operations.
+ * Includes cross-operation hints that link detail endpoints to their list operations.
  */
 export function generateToolDefinitions(
   operations: ToolOperationWithParams[],
   opts?: DescriptionOptions,
 ): UnifiedToolDefinition[] {
-  return operations.map(op => generateToolDefinition(op, opts))
+  const crossOpHints = buildCrossOpHints(operations)
+  return operations.map(op => {
+    const toolName = generateToolName(op)
+    const hint = crossOpHints.get(toolName)
+    const opOpts = hint ? { ...opts, crossOpHint: hint } : opts
+    return generateToolDefinition(op, opOpts)
+  })
 }
 
 /**

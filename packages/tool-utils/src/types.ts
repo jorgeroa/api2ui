@@ -15,6 +15,10 @@ export interface ToolOperation {
 export interface DescriptionOptions {
   /** Include "METHOD /path" line after summary (used by chat for LLM context) */
   includePath?: boolean
+  /** Parameters to include as highlights in the description (required params, key filters, etc.) */
+  parameters?: ToolParameter[]
+  /** Cross-operation hint appended to the description (e.g. "Use id from list_users results") */
+  crossOpHint?: string
 }
 
 // ── Unified Tool Definition types ───────────────────────────────────
