@@ -10,6 +10,7 @@ import { cors } from 'hono/cors'
 import type { AppDeps, AppEnv } from './types'
 import { health } from './routes/health'
 import { apisRouter } from './routes/apis'
+import { mcpRouter } from './routes/mcp'
 
 export function createApp(deps: AppDeps) {
   const app = new OpenAPIHono<AppEnv>()
@@ -19,8 +20,9 @@ export function createApp(deps: AppDeps) {
     origin: deps.auth
       ? (process.env.TRUSTED_ORIGINS || 'http://localhost:3000').split(',')
       : '*',
-    allowHeaders: ['Content-Type', 'Authorization'],
+    allowHeaders: ['Content-Type', 'Authorization', 'mcp-session-id', 'mcp-protocol-version'],
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    exposeHeaders: ['mcp-session-id'],
     credentials: !!deps.auth,
   }))
 
@@ -43,6 +45,7 @@ export function createApp(deps: AppDeps) {
   // Mount routes
   app.route('/', health)
   app.route('/', apisRouter)
+  app.route('/', mcpRouter)
 
   // OpenAPI spec endpoint
   app.doc('/api/openapi.json', {
