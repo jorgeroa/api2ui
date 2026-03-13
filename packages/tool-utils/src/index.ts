@@ -294,6 +294,16 @@ export function generateDescription(op: ToolOperation, opts?: DescriptionOptions
     }
   }
 
+  // Error hints from spec
+  if (op.errorHints) {
+    const hints = Object.entries(op.errorHints)
+      .slice(0, 4)
+      .map(([code, desc]) => `${code}: ${desc}`)
+    if (hints.length > 0) {
+      parts.push(`Errors: ${hints.join('; ')}`)
+    }
+  }
+
   return parts.join(' | ')
 }
 

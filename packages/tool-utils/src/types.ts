@@ -10,6 +10,8 @@ export interface ToolOperation {
   description?: string
   tags: string[]
   responseSchema?: unknown
+  /** Error response descriptions keyed by HTTP status code (e.g. '404' → 'Not found'). */
+  errorHints?: Record<string, string>
 }
 
 export interface DescriptionOptions {

@@ -170,6 +170,121 @@ function detectSearchHints(spec: ParsedAPI): string | null {
   return lines.join('\n')
 }
 
+// ── Option 3: Full Semantic Layer helpers ────────────────────────────
+
+/** Detect CRUD and list→detail workflows from operation structure. */
+function detectWorkflows(spec: ParsedAPI): string | null {
+  // Group operations by base path (path without {param} segments)
+  const groups = new Map<string, { method: string; toolName: string; hasPathParam: boolean }[]>()
+
+  for (const op of spec.operations) {
+    const basePath = op.path.replace(/\/\{[^}]+\}.*$/, '') || '/'
+    const entry = {
+      method: op.method.toUpperCase(),
+      toolName: generateToolName(op),
+      hasPathParam: op.path.includes('{'),
+    }
+    const list = groups.get(basePath) || []
+    list.push(entry)
+    groups.set(basePath, list)
+  }
+
+  const workflows: string[] = []
+
+  for (const [, ops] of groups) {
+    const listOp = ops.find(o => o.method === 'GET' && !o.hasPathParam)
+    const detailOp = ops.find(o => o.method === 'GET' && o.hasPathParam)
+    const createOp = ops.find(o => o.method === 'POST' && !o.hasPathParam)
+    const updateOp = ops.find(o => (o.method === 'PUT' || o.method === 'PATCH') && o.hasPathParam)
+    const deleteOp = ops.find(o => o.method === 'DELETE' && o.hasPathParam)
+
+    // List → Detail pattern
+    if (listOp && detailOp) {
+      workflows.push(`Browse: ${listOp.toolName} → ${detailOp.toolName}`)
+    }
+
+    // Full or partial CRUD
+    const crudOps = [createOp, updateOp, deleteOp].filter(Boolean)
+    if (crudOps.length >= 2) {
+      const names = crudOps.map(o => o!.toolName).join(' → ')
+      workflows.push(`Mutate: ${names} (may require auth)`)
+    }
+  }
+
+  if (workflows.length === 0) return null
+  return 'Common workflows:\n' + workflows.map(w => `- ${w}`).join('\n')
+}
+
+/** Extract semantic highlights from response schema fields. */
+function detectResponseSemantics(spec: ParsedAPI): string | null {
+  const ID_NAMES = new Set(['id', '_id', 'uuid', 'slug'])
+  const URL_NAMES = new Set(['url', 'link', 'href', 'uri', 'website', 'homepage'])
+  const DATE_NAMES = new Set(['created_at', 'createdat', 'updated_at', 'updatedat', 'date', 'timestamp'])
+
+  const semantics = new Map<string, Set<string>>() // category → field names
+
+  for (const op of spec.operations) {
+    const schema = op.responseSchema
+    if (!schema || typeof schema !== 'object') continue
+
+    const s = schema as Record<string, unknown>
+    let properties: Record<string, Record<string, unknown>> | null = null
+
+    // Direct object
+    if (s.type === 'object' && s.properties && typeof s.properties === 'object') {
+      properties = s.properties as Record<string, Record<string, unknown>>
+    }
+    // Array of objects — unwrap
+    if (s.type === 'array' && s.items && typeof s.items === 'object') {
+      const items = s.items as Record<string, unknown>
+      if (items.properties && typeof items.properties === 'object') {
+        properties = items.properties as Record<string, Record<string, unknown>>
+      }
+    }
+    // List wrapper — unwrap (e.g. { items: [{...}], total })
+    if (properties && Object.keys(properties).length <= 4) {
+      for (const prop of Object.values(properties)) {
+        if (prop.type === 'array' && prop.items && typeof prop.items === 'object') {
+          const inner = prop.items as Record<string, unknown>
+          if (inner.properties && typeof inner.properties === 'object') {
+            properties = inner.properties as Record<string, Record<string, unknown>>
+            break
+          }
+        }
+      }
+    }
+
+    if (!properties) continue
+
+    for (const [name, prop] of Object.entries(properties)) {
+      const lower = name.toLowerCase()
+      const format = prop.format as string | undefined
+
+      if (ID_NAMES.has(lower)) {
+        const set = semantics.get('identifiers') || new Set()
+        set.add(name)
+        semantics.set('identifiers', set)
+      } else if (URL_NAMES.has(lower) || format === 'uri' || format === 'url') {
+        const set = semantics.get('URLs') || new Set()
+        set.add(name)
+        semantics.set('URLs', set)
+      } else if (DATE_NAMES.has(lower) || format === 'date-time' || format === 'date') {
+        const set = semantics.get('dates') || new Set()
+        set.add(name)
+        semantics.set('dates', set)
+      }
+    }
+  }
+
+  if (semantics.size === 0) return null
+
+  const lines = ['Response field semantics:']
+  for (const [category, fields] of semantics) {
+    lines.push(`- ${category}: ${[...fields].join(', ')}`)
+  }
+  return lines.join('\n')
+}
+
 /**
  * Build the system prompt that describes the API and instructs the LLM.
  */
@@ -198,6 +313,14 @@ export function buildSystemPrompt(url: string, spec?: ParsedAPI | null): string 
 
     const searchHint = detectSearchHints(spec)
     if (searchHint) sections.push(searchHint)
+
+    // Workflow detection
+    const workflowHint = detectWorkflows(spec)
+    if (workflowHint) sections.push(workflowHint)
+
+    // Response field semantics
+    const responseSemantics = detectResponseSemantics(spec)
+    if (responseSemantics) sections.push(responseSemantics)
 
     // Navigation guidance for large APIs
     if (spec.operations.length > 10) {
