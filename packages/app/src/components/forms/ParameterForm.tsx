@@ -281,7 +281,10 @@ export function ParameterForm({
     if (quickValuesVersion === 0) return  // Skip initial render
 
     const timer = setTimeout(() => {
-      onSubmit(values, getBodyJson())
+      const nonEmpty = Object.fromEntries(
+        Object.entries(values).filter(([, v]) => v !== '')
+      )
+      onSubmit(nonEmpty, getBodyJson())
     }, 300)
 
     return () => clearTimeout(timer)
@@ -289,7 +292,11 @@ export function ParameterForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(values, getBodyJson())
+    // Filter out empty values so they don't become empty query params (e.g., limit=)
+    const nonEmpty = Object.fromEntries(
+      Object.entries(values).filter(([, v]) => v !== '')
+    )
+    onSubmit(nonEmpty, getBodyJson())
   }
 
   // Check if there are any values to reset

@@ -159,13 +159,16 @@ function App() {
   // Auto-invoke first safe endpoint after spec loads
   useEffect(() => {
     if (parsedSpec && parsedSpec.operations.length > 0 && !data && !schema && !loading) {
-      const autoOp = parsedSpec.operations.find(op =>
+      // Find a GET operation with no required params (safe to call with empty args)
+      const safeOp = parsedSpec.operations.find(op =>
         op.method === 'GET' &&
-        !op.parameters.some(p => p.in === 'path' && p.required)
-      ) ?? parsedSpec.operations[0]
-      const idx = parsedSpec.operations.indexOf(autoOp)
-      if (idx !== selectedOperationIndex) setSelectedOperation(idx)
-      fetchOperation(parsedSpec.baseUrl, autoOp, {})
+        !op.parameters.some(p => p.required)
+      )
+      if (safeOp) {
+        const idx = parsedSpec.operations.indexOf(safeOp)
+        if (idx !== selectedOperationIndex) setSelectedOperation(idx)
+        fetchOperation(parsedSpec.baseUrl, safeOp, {})
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [parsedSpec])

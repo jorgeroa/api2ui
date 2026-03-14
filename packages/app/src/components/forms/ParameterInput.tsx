@@ -177,6 +177,7 @@ export function ParameterInput({
               type="number"
               value={value}
               onChange={(e) => handleChange(e.target.value)}
+              onWheel={(e) => e.currentTarget.blur()}
               onBlur={handleBlur}
               min={schema.minimum}
               max={schema.maximum}
@@ -277,6 +278,7 @@ export function ParameterInput({
           type="number"
           value={value}
           onChange={(e) => handleChange(e.target.value)}
+          onWheel={(e) => e.currentTarget.blur()}
           onBlur={handleBlur}
           min={schema.minimum}
           max={schema.maximum}
