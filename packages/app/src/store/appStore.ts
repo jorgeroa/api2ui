@@ -15,6 +15,14 @@ interface AnalysisCacheEntry {
   grouping: GroupingResult | null
 }
 
+export const BodyFormat = {
+  JSON: 'json',
+  FORM_URLENCODED: 'form-urlencoded',
+  FORM_DATA: 'form-data',
+  TEXT: 'text',
+} as const
+export type BodyFormat = (typeof BodyFormat)[keyof typeof BodyFormat]
+
 export const UrlMode = {
   AUTO: 'auto',
   SPEC: 'spec',
@@ -48,8 +56,10 @@ interface AppState {
   // Direct URL method + body (for non-OpenAPI requests)
   httpMethod: string
   requestBody: string
+  requestBodyFormat: BodyFormat
   setHttpMethod: (method: string) => void
   setRequestBody: (body: string) => void
+  setRequestBodyFormat: (format: BodyFormat) => void
 
   // Multi-endpoint (Endpoint mode)
   additionalEndpoints: Array<{ url: string; method: string }>
@@ -112,6 +122,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   parameterValues: {},
   httpMethod: 'GET',
   requestBody: '',
+  requestBodyFormat: BodyFormat.JSON,
   additionalEndpoints: [],
   analysisCache: new Map(),
   tabSelections: new Map(),
@@ -125,6 +136,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   setOptionsOpen: (open) => set({ optionsOpen: open }),
   setHttpMethod: (method) => set({ httpMethod: method }),
   setRequestBody: (body) => set({ requestBody: body }),
+  setRequestBodyFormat: (format) => set({ requestBodyFormat: format }),
 
   // Multi-endpoint actions
   addEndpoint: () => set((state) => ({
@@ -155,6 +167,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     parameterValues: {},
     httpMethod: 'GET',
     requestBody: '',
+    requestBodyFormat: BodyFormat.JSON,
     additionalEndpoints: [],
     analysisCache: new Map(),
     mcpDeployResult: null,

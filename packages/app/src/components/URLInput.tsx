@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useAppStore, UrlMode } from '../store/appStore'
+import { useAppStore, UrlMode, BodyFormat } from '../store/appStore'
 import { useAPIFetch } from '../hooks/useAPIFetch'
 import { useAuthStore } from '../store/authStore'
 import { LockIcon } from './auth/LockIcon'
@@ -8,6 +8,20 @@ import { ExamplesCarousel } from './ExamplesCarousel'
 import { RequestBodyEditor } from './forms/RequestBodyEditor'
 import type { AuthStatus } from '../types/auth'
 import type { AuthScheme } from '@api2aux/semantic-analysis'
+
+const BODY_FORMATS = [
+  { value: BodyFormat.JSON, label: 'JSON' },
+  { value: BodyFormat.FORM_URLENCODED, label: 'Form' },
+  { value: BodyFormat.FORM_DATA, label: 'Multipart' },
+  { value: BodyFormat.TEXT, label: 'Text' },
+] as const
+
+const BODY_FORMAT_CONTENT_TYPE: Record<BodyFormat, string> = {
+  [BodyFormat.JSON]: 'application/json',
+  [BodyFormat.FORM_URLENCODED]: 'application/x-www-form-urlencoded',
+  [BodyFormat.FORM_DATA]: 'multipart/form-data',
+  [BodyFormat.TEXT]: 'text/plain',
+}
 
 const URL_MODES = [
   { value: UrlMode.AUTO, label: 'Auto', tooltip: 'Auto-detect format from URL and content' },
@@ -22,7 +36,7 @@ interface URLInputProps {
 }
 
 export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
-  const { url, setUrl, loading, schema, parsedSpec, error, httpMethod, setHttpMethod, requestBody, setRequestBody, reset, urlMode, setUrlMode, optionsOpen, setOptionsOpen, additionalEndpoints, addEndpoint, removeEndpoint, updateEndpoint } = useAppStore()
+  const { url, setUrl, loading, schema, parsedSpec, error, httpMethod, setHttpMethod, requestBody, setRequestBody, requestBodyFormat, setRequestBodyFormat, reset, urlMode, setUrlMode, optionsOpen, setOptionsOpen, additionalEndpoints, addEndpoint, removeEndpoint, updateEndpoint } = useAppStore()
   const { fetchAndInfer, fetchMultiEndpoints } = useAPIFetch()
   const [validationError, setValidationError] = useState<string | null>(null)
   const [loadingExampleUrl, setLoadingExampleUrl] = useState<string | null>(null)
@@ -85,7 +99,11 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
     }
 
     const useCustomMethod = urlMode === UrlMode.ENDPOINT && httpMethod !== 'GET'
-    fetchAndInfer(url, useCustomMethod ? { method: httpMethod, body: requestBody || undefined } : undefined)
+    fetchAndInfer(url, useCustomMethod ? {
+      method: httpMethod,
+      body: requestBody || undefined,
+      contentType: BODY_FORMAT_CONTENT_TYPE[requestBodyFormat],
+    } : undefined)
   }
 
   const handleExampleClick = async (exampleUrl: string, method?: string, body?: string) => {
@@ -237,10 +255,32 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
                     </select>
                   </div>
 
+                  {httpMethod !== 'GET' && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-muted-foreground w-12 shrink-0">Body</span>
+                      <div className="inline-flex rounded-md border border-border overflow-hidden">
+                        {BODY_FORMATS.map((fmt) => (
+                          <button
+                            key={fmt.value}
+                            type="button"
+                            onClick={() => setRequestBodyFormat(fmt.value)}
+                            className={`px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
+                              requestBodyFormat === fmt.value
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
+                            }`}
+                          >
+                            {fmt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {httpMethod !== 'GET' && !parsedSpec && additionalEndpoints.length === 0 && (
                     <div>
                       <label className="block text-xs font-medium text-muted-foreground mb-1">
-                        Request Body (JSON)
+                        Request Body
                       </label>
                       <RequestBodyEditor
                         value={requestBody}

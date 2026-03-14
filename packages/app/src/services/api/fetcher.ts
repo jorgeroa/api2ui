@@ -81,8 +81,9 @@ export async function fetchAPI(url: string): Promise<unknown> {
 }
 
 export interface FetchOptions {
-  method?: string   // defaults to 'GET'
-  body?: string     // JSON string for request body
+  method?: string       // defaults to 'GET'
+  body?: string         // request body string
+  contentType?: string  // defaults to 'application/json'
 }
 
 /**
@@ -95,13 +96,14 @@ export async function fetchWithAuth(url: string, options?: FetchOptions): Promis
   const credential = useAuthStore.getState().getActiveCredential(url)
   const method = options?.method ?? 'GET'
   const body = options?.body
+  const contentType = options?.contentType ?? 'application/json'
 
   try {
     const result = await executeRaw(url, {
       method,
       body,
       accept: 'application/json',
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      headers: body ? { 'Content-Type': contentType } : undefined,
       auth: credential ? credentialToAuth(credential) : undefined,
       middleware: [proxy],
     })
