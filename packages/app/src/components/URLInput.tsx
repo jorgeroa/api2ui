@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useAppStore } from '../store/appStore'
+import { useAppStore, UrlMode } from '../store/appStore'
 import { useAPIFetch } from '../hooks/useAPIFetch'
 import { useAuthStore } from '../store/authStore'
 import { LockIcon } from './auth/LockIcon'
@@ -9,13 +9,20 @@ import { RequestBodyEditor } from './forms/RequestBodyEditor'
 import type { AuthStatus } from '../types/auth'
 import type { AuthScheme } from '@api2aux/semantic-analysis'
 
+const URL_MODES = [
+  { value: UrlMode.AUTO, label: 'Auto', tooltip: 'Auto-detect format from URL and content' },
+  { value: UrlMode.SPEC, label: 'API Spec', tooltip: 'Treat as an OpenAPI or Swagger specification' },
+  { value: UrlMode.GRAPHQL, label: 'GraphQL', tooltip: 'Discover operations via GraphQL introspection' },
+  { value: UrlMode.ENDPOINT, label: 'Endpoint', tooltip: 'Treat as a direct API endpoint' },
+] as const
+
 interface URLInputProps {
   authError?: { status: 401 | 403; message: string } | null
   detectedAuth?: AuthScheme[]
 }
 
 export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
-  const { url, setUrl, loading, schema, parsedSpec, error, httpMethod, setHttpMethod, requestBody, setRequestBody, reset } = useAppStore()
+  const { url, setUrl, loading, schema, parsedSpec, error, httpMethod, setHttpMethod, requestBody, setRequestBody, reset, urlMode, setUrlMode, optionsOpen, setOptionsOpen } = useAppStore()
   const { fetchAndInfer } = useAPIFetch()
   const [validationError, setValidationError] = useState<string | null>(null)
   const [loadingExampleUrl, setLoadingExampleUrl] = useState<string | null>(null)
@@ -72,7 +79,8 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
     newUrl.searchParams.set('api', url)
     window.history.pushState({}, '', newUrl.toString())
 
-    fetchAndInfer(url, httpMethod !== 'GET' ? { method: httpMethod, body: requestBody || undefined } : undefined)
+    const useCustomMethod = urlMode === UrlMode.ENDPOINT && httpMethod !== 'GET'
+    fetchAndInfer(url, useCustomMethod ? { method: httpMethod, body: requestBody || undefined } : undefined)
   }
 
   const handleExampleClick = async (exampleUrl: string, method?: string, body?: string) => {
@@ -117,15 +125,6 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
     <div className="w-full max-w-4xl">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex gap-2">
-          <select
-            value={httpMethod}
-            onChange={(e) => setHttpMethod(e.target.value)}
-            className="px-2 py-2 border border-input rounded-md bg-background text-sm font-mono focus:outline-none focus:ring-2 focus-visible:ring-ring/50"
-            disabled={loading}
-          >
-            <option value="GET">GET</option>
-            <option value="POST">POST</option>
-          </select>
           <input
             type="text"
             value={url}
@@ -163,6 +162,94 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
           </button>
         </div>
 
+        {/* Collapsible Options section */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setOptionsOpen(!optionsOpen)}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          >
+            <svg
+              className={`w-3 h-3 transition-transform ${optionsOpen ? 'rotate-90' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+            Options
+            {urlMode !== UrlMode.AUTO && (
+              <span className="ml-1 px-1.5 py-0.5 rounded bg-muted text-[10px] font-medium">
+                {URL_MODES.find(m => m.value === urlMode)?.label}
+              </span>
+            )}
+          </button>
+
+          {optionsOpen && (
+            <div className="mt-2 p-3 border border-border rounded-md bg-muted/20 space-y-3">
+              {/* Mode toggle */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-muted-foreground w-12 shrink-0">Mode</span>
+                <div className="inline-flex rounded-md border border-border overflow-hidden">
+                  {URL_MODES.map((mode) => (
+                    <button
+                      key={mode.value}
+                      type="button"
+                      title={mode.tooltip}
+                      onClick={() => {
+                        setUrlMode(mode.value)
+                        if (mode.value !== UrlMode.AUTO) setOptionsOpen(true)
+                      }}
+                      className={`px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
+                        urlMode === mode.value
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
+                      }`}
+                    >
+                      {mode.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Endpoint-specific options: method selector + body */}
+              {urlMode === UrlMode.ENDPOINT && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-muted-foreground w-12 shrink-0">Method</span>
+                    <select
+                      value={httpMethod}
+                      onChange={(e) => setHttpMethod(e.target.value)}
+                      className="px-2 py-1 border border-input rounded-md bg-background text-xs font-mono focus:outline-none focus:ring-2 focus-visible:ring-ring/50"
+                      disabled={loading}
+                    >
+                      <option value="GET">GET</option>
+                      <option value="POST">POST</option>
+                      <option value="PUT">PUT</option>
+                      <option value="PATCH">PATCH</option>
+                      <option value="DELETE">DELETE</option>
+                    </select>
+                  </div>
+
+                  {httpMethod !== 'GET' && !parsedSpec && (
+                    <div>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">
+                        Request Body (JSON)
+                      </label>
+                      <RequestBodyEditor
+                        value={requestBody}
+                        onChange={setRequestBody}
+                        rows={4}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Auth Panel */}
         <AuthPanel
           url={url}
@@ -172,20 +259,6 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
           detectedAuth={detectedAuth}
           onConfigureClick={() => setAuthPanelOpen(true)}
         />
-
-        {/* Request Body (for non-GET methods, hidden when a spec provides its own form) */}
-        {httpMethod !== 'GET' && !parsedSpec && (
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">
-              Request Body (JSON)
-            </label>
-            <RequestBodyEditor
-              value={requestBody}
-              onChange={setRequestBody}
-              rows={4}
-            />
-          </div>
-        )}
 
         {validationError && (
           <div className="text-red-600 text-sm">{validationError}</div>

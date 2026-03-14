@@ -1,4 +1,4 @@
-import { useAppStore } from '../store/appStore'
+import { useAppStore, UrlMode } from '../store/appStore'
 import { useConfigStore } from '../store/configStore'
 import { fetchWithAuth, credentialToAuth, type FetchOptions } from '../services/api/fetcher'
 import { inferSchema } from '../services/schema/inferrer'
@@ -153,43 +153,46 @@ export function useAPIFetch() {
       // Clear stale field configs from previous schema
       clearFieldConfigs()
 
-      // Detect GraphQL endpoint
-      if (isGraphQLUrl(url)) {
+      const mode = useAppStore.getState().urlMode
+
+      // Forced modes skip all detection
+      if (mode === UrlMode.SPEC) {
+        await fetchSpec(url)
+        return
+      }
+      if (mode === UrlMode.GRAPHQL) {
         await fetchGraphQL(url)
         return
       }
 
-      // Detect OpenAPI/Swagger spec URL
-      if (isSpecUrl(url)) {
-        await fetchSpec(url)
-        return
+      // Auto mode: URL-based detection
+      if (mode === UrlMode.AUTO) {
+        if (isGraphQLUrl(url)) {
+          await fetchGraphQL(url)
+          return
+        }
+        if (isSpecUrl(url)) {
+          await fetchSpec(url)
+          return
+        }
       }
 
-      // Clear any previous spec (switching from spec to direct URL)
+      // Endpoint mode or Auto mode with no URL match — fetch raw data
       clearSpec()
-
-      // Signal start of fetch
       startFetch()
 
-      // Fetch raw data from API
       const data = await fetchWithAuth(url, options)
 
-      // Content-based spec detection fallback: if the response looks like
-      // an OpenAPI/Swagger spec (has `openapi` or `swagger` top-level key),
-      // parse it as a spec instead of treating it as raw data.
-      if (isSpecContent(data)) {
+      // Content-based spec detection fallback (Auto mode only)
+      if (mode === UrlMode.AUTO && isSpecContent(data)) {
         const spec = await parseOpenAPISpec(data as Record<string, unknown>, { specUrl: url })
         specSuccess(spec)
         return
       }
 
-      // Infer schema from data
       const schema = inferSchema(data, url)
-
-      // Store success result
       fetchSuccess(data, schema)
     } catch (error) {
-      // Store error
       if (error instanceof Error) {
         fetchError(error)
       } else {
