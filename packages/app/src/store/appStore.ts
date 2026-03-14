@@ -51,6 +51,13 @@ interface AppState {
   setHttpMethod: (method: string) => void
   setRequestBody: (body: string) => void
 
+  // Multi-endpoint (Endpoint mode)
+  additionalEndpoints: Array<{ url: string; method: string }>
+  addEndpoint: () => void
+  removeEndpoint: (index: number) => void
+  updateEndpoint: (index: number, field: 'url' | 'method', value: string) => void
+  clearEndpoints: () => void
+
   // Analysis cache (run once per API response)
   analysisCache: Map<string, AnalysisCacheEntry>
   setAnalysisCache: (path: string, data: AnalysisCacheEntry) => void
@@ -105,6 +112,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   parameterValues: {},
   httpMethod: 'GET',
   requestBody: '',
+  additionalEndpoints: [],
   analysisCache: new Map(),
   tabSelections: new Map(),
   mcpDeployResult: null,
@@ -117,6 +125,20 @@ export const useAppStore = create<AppState>()((set, get) => ({
   setOptionsOpen: (open) => set({ optionsOpen: open }),
   setHttpMethod: (method) => set({ httpMethod: method }),
   setRequestBody: (body) => set({ requestBody: body }),
+
+  // Multi-endpoint actions
+  addEndpoint: () => set((state) => ({
+    additionalEndpoints: [...state.additionalEndpoints, { url: '', method: 'GET' }],
+  })),
+  removeEndpoint: (index) => set((state) => ({
+    additionalEndpoints: state.additionalEndpoints.filter((_, i) => i !== index),
+  })),
+  updateEndpoint: (index, field, value) => set((state) => ({
+    additionalEndpoints: state.additionalEndpoints.map((ep, i) =>
+      i === index ? { ...ep, [field]: value } : ep
+    ),
+  })),
+  clearEndpoints: () => set({ additionalEndpoints: [] }),
   startFetch: () => set({ loading: true, error: null, data: null, schema: null }),
   fetchSuccess: (data, schema) => set({ loading: false, data, schema, error: null }),
   fetchError: (error) => set({ loading: false, error, data: null, schema: null }),
@@ -133,6 +155,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     parameterValues: {},
     httpMethod: 'GET',
     requestBody: '',
+    additionalEndpoints: [],
     analysisCache: new Map(),
     mcpDeployResult: null,
   }),

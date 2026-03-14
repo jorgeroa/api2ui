@@ -10,13 +10,14 @@ import {
   buildRequest,
   corsProxy,
   parseGraphQLSchema,
+  parseRawUrls,
   hasGraphQLErrors,
   getGraphQLErrors,
   isSpecUrl,
   isSpecContent,
   isGraphQLUrl,
 } from 'api-invoke'
-import type { BuiltRequest, SSEEvent } from 'api-invoke'
+import type { BuiltRequest, SSEEvent, RawEndpoint } from 'api-invoke'
 import { useAuthStore } from '../store/authStore'
 import { GraphQLError } from '../services/api/errors'
 
@@ -273,5 +274,25 @@ export function useAPIFetch() {
     })
   }
 
-  return { fetchAndInfer, fetchSpec, fetchGraphQL, fetchOperation, fetchOperationStream, previewRequest }
+  /**
+   * Parse multiple raw endpoints into a ParsedAPI spec (no data fetching).
+   * Data fetching happens per-operation via fetchOperation when the user selects one.
+   */
+  const fetchMultiEndpoints = () => {
+    const { url, httpMethod, additionalEndpoints } = useAppStore.getState()
+    const endpoints: RawEndpoint[] = [
+      { url, method: httpMethod },
+      ...additionalEndpoints.map(ep => ({ url: ep.url, method: ep.method })),
+    ]
+    clearFieldConfigs()
+    try {
+      startFetch()
+      const spec = parseRawUrls(endpoints)
+      specSuccess(spec)
+    } catch (error) {
+      fetchError(error instanceof Error ? error : new Error(String(error)))
+    }
+  }
+
+  return { fetchAndInfer, fetchSpec, fetchGraphQL, fetchOperation, fetchOperationStream, fetchMultiEndpoints, previewRequest }
 }

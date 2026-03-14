@@ -22,8 +22,8 @@ interface URLInputProps {
 }
 
 export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
-  const { url, setUrl, loading, schema, parsedSpec, error, httpMethod, setHttpMethod, requestBody, setRequestBody, reset, urlMode, setUrlMode, optionsOpen, setOptionsOpen } = useAppStore()
-  const { fetchAndInfer } = useAPIFetch()
+  const { url, setUrl, loading, schema, parsedSpec, error, httpMethod, setHttpMethod, requestBody, setRequestBody, reset, urlMode, setUrlMode, optionsOpen, setOptionsOpen, additionalEndpoints, addEndpoint, removeEndpoint, updateEndpoint } = useAppStore()
+  const { fetchAndInfer, fetchMultiEndpoints } = useAPIFetch()
   const [validationError, setValidationError] = useState<string | null>(null)
   const [loadingExampleUrl, setLoadingExampleUrl] = useState<string | null>(null)
   const [authPanelOpen, setAuthPanelOpen] = useState(false)
@@ -78,6 +78,11 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
     const newUrl = new URL(window.location.href)
     newUrl.searchParams.set('api', url)
     window.history.pushState({}, '', newUrl.toString())
+
+    if (urlMode === UrlMode.ENDPOINT && additionalEndpoints.length > 0) {
+      fetchMultiEndpoints()
+      return
+    }
 
     const useCustomMethod = urlMode === UrlMode.ENDPOINT && httpMethod !== 'GET'
     fetchAndInfer(url, useCustomMethod ? { method: httpMethod, body: requestBody || undefined } : undefined)
@@ -232,7 +237,7 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
                     </select>
                   </div>
 
-                  {httpMethod !== 'GET' && !parsedSpec && (
+                  {httpMethod !== 'GET' && !parsedSpec && additionalEndpoints.length === 0 && (
                     <div>
                       <label className="block text-xs font-medium text-muted-foreground mb-1">
                         Request Body (JSON)
@@ -244,6 +249,56 @@ export function URLInput({ authError, detectedAuth }: URLInputProps = {}) {
                       />
                     </div>
                   )}
+
+                  {/* Additional endpoints */}
+                  {additionalEndpoints.length > 0 && (
+                    <div className="space-y-2">
+                      <span className="text-xs font-medium text-muted-foreground">Additional Endpoints</span>
+                      {additionalEndpoints.map((ep, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <select
+                            value={ep.method}
+                            onChange={(e) => updateEndpoint(i, 'method', e.target.value)}
+                            className="px-2 py-1 border border-input rounded-md bg-background text-xs font-mono focus:outline-none focus:ring-2 focus-visible:ring-ring/50"
+                            disabled={loading}
+                          >
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="PATCH">PATCH</option>
+                            <option value="DELETE">DELETE</option>
+                          </select>
+                          <input
+                            type="text"
+                            value={ep.url}
+                            onChange={(e) => updateEndpoint(i, 'url', e.target.value)}
+                            placeholder="https://api.example.com/resource"
+                            className="flex-1 px-2 py-1 border border-input rounded-md text-xs focus:outline-none focus:ring-2 focus-visible:ring-ring/50"
+                            disabled={loading}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeEndpoint(i)}
+                            className="px-1 py-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                            title="Remove endpoint"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={addEndpoint}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                    disabled={loading}
+                  >
+                    + Add endpoint
+                  </button>
                 </div>
               )}
             </div>
