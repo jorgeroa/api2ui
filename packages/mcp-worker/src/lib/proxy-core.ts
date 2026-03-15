@@ -97,6 +97,10 @@ export async function proxyRequest(
   })
 
   const responseHeaders = new Headers(resp.headers)
+  // fetch() auto-decompresses the response, so the original content-encoding
+  // and content-length (which reflect the compressed payload) are now wrong.
+  responseHeaders.delete('content-encoding')
+  responseHeaders.delete('content-length')
   responseHeaders.set('Access-Control-Allow-Origin', '*')
 
   return new Response(resp.body, {
