@@ -101,6 +101,9 @@ export async function proxyRequest(
   // and content-length (which reflect the compressed payload) are now wrong.
   responseHeaders.delete('content-encoding')
   responseHeaders.delete('content-length')
+  // Prevent the browser from showing a native auth dialog for proxied 401s —
+  // the app handles auth itself via the UI.
+  responseHeaders.delete('www-authenticate')
   responseHeaders.set('Access-Control-Allow-Origin', '*')
 
   return new Response(resp.body, {
